@@ -1,6 +1,6 @@
 #include"kernel.h"
 #include"yalnix.h"
-#include"hardwareh.h"
+#include"hardware.h"
 #include"loadprogram.h"
 
 int g_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)
@@ -84,11 +84,11 @@ int kernelreclaim(int id){
     Kernel Initiailization functions
 
 */
-void SetKernelData(void *_KernelDataStart void *_KernelDataEnd){
-    kernel_brk = _KernelDataEnd;
-    kernel_data = _KernelDataStart;
-    //return to the hardware startup
+void SetKernelData(void *_KernelDataStart, void *_KernelDataEnd){
+    m_kernel_brk = _KernelDataEnd;
+    m_kernel_data_start = _KernelDataStart;
 
+    return;
 }
 
 void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
@@ -98,8 +98,17 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     
     //Build a structure to track free frame
     g_freeFrame = listinit();
-    //Build initial page for Region 0 and Region 1 
+
+    int numOfFrames = (pmem_size / PAGESIZE);
+    //keep track of free frame;
+    //TODO
     
+    int kDataEdPage = ; 
+    int kDataStPage = ;
+        
+    // 
+
+    //Build initial page for Region 0 and Region 1;
     WriteRegister(REG_PTBR0, (unsigned int) base0);
     WriteRegister(REG_PTLR0, (unsigned int) limit0);
 
