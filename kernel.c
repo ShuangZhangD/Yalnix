@@ -187,7 +187,7 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     WriteRegister(REG_PTLR1, (unsigned int) MAX_PT_LEN);
 
     // Enable virtual memory
-    WriteRegister(REG_VM_ENABLE,1);
+    WriteRegister(REG_VM_ENABLE,(unsigned int) 1);
     m_enableVM = 1;
     
     
@@ -255,31 +255,31 @@ int SetKernelBrk(void *addr){
         if (newBrk > m_kernel_brk){
 
             //TODO Jason Please finish this function(), I give you a sketch here.
-            rc = function(){
-                if (Have Enough Memory){
-                    g_pageTableR0[i].valid = 1;
-                    g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
-                    g_pageTableR0[i].pfn = 0x001;//TODO Physical Frame Number; 
-                }
-
-                //FLUSH!!!
-            }
+            // rc = function(){
+            //     if (Have Enough Memory){
+            //         g_pageTableR0[i].valid = 1;
+            //         g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
+            //         g_pageTableR0[i].pfn = 0x001;//TODO Physical Frame Number; 
+            //     }
+            //
+            //   //FLUSH!!!
+            // }
 
             if (rc) return -1;
                 
         } else if (newBrk < m_kernel_brk){
 
             //TODO Jason Please finish this function(), I give you a sketch here.
-            rc = function(){
+            // rc = function(){
 
-                g_pageTableR0[i].valid = 0;
-                g_pageTableR0.prot = (PROT_NONE);
-                g_pageTableR0[i].pfn = 0x001;//TODO Invalid Physical Frame Number; 
+            //     g_pageTableR0[i].valid = 0;
+            //     g_pageTableR0.prot = (PROT_NONE);
+            //     g_pageTableR0[i].pfn = 0x001;//TODO Invalid Physical Frame Number; 
 
-                //Add this frame back to free frame tracker
+            //     //Add this frame back to free frame tracker
 
-                //FLUSH!!!
-            }
+            //     //FLUSH!!!
+            // }
             if (rc) return -1;
         }
         //Let addr be the new kernel break

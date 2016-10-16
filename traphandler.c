@@ -1,15 +1,16 @@
-#include<stdio.h>
-#include"hardware.h"
-#include"yalnix.h"
-#include"kernel.h"
-#include"lock.h"
-#include"cvar.h"
-#include"pipe.h"
-#include"io.h"
-#include"pcb.h"
+#include <stdio.h>
+#include "hardware.h"
+#include "yalnix.h"
+#include "kernel.h"
+#include "lock.h"
+#include "cvar.h"
+#include "pipe.h"
+#include "io.h"
+#include "pcb.h"
+#include "traphandler.h"
+#include "kernel.h"
 
-
-extern dlqueue pqueue[MAX_QUEUE_SIZE];
+// extern dlqueue pqueue[MAX_QUEUE_SIZE];
 
 //capture TRAP_CLOCK
 void TrapKernel(UserContext *uctxt){
@@ -183,6 +184,17 @@ void TrapIllegal(UserContext *uctxt){
 //Capture TRAP_MEMORY
 void TrapMemory(UserContext *uctxt){
     int trapCode = uctxt->code;
+    switch(trapCode){
+        case (YALNIX_MAPERR):
+            
+        break;
+        case (YALNIX_ACCERR):
+
+
+        break;
+        default:
+        break;
+    }
 
     if (YALNIX_MAPERR == trapCode){
 
@@ -253,19 +265,19 @@ void TrapDisk(UserContext *uctxt){
 void InitInterruptTable(){
 
     //Allocate memory to interupt vector table 
-    intrpttb = malloc(sizeof(TRAP_VECTOR_SIZE), *(some struct));
+    intrptTb = (trapvector_t *) malloc(sizeof(TRAP_SIZE) * sizeof(trapvector_t));
 
     //Fill interrupt vector table
-    intrpttb[TRAP_KERNEL] = TrapKernel; 
-    intrpttb[TRAP_CLOCK] = TrapClock;
-    intrpttb[TRAP_ILLEGAL]= TrapIllegal;       
-    intrpttb[TRAP_MEMORY] = TrapMemory;    
-    intrpttb[TRAP_MATH] = TrapMath; 
-    intrpttb[TRAP_TTY_RECEIVE] = TrapTtyReceive;    
-    intrpttb[TRAP_TTY_TRANSMIT] = TrapTtyTransmit; 
-    intrpttb[TRAP_DISK] = TrapDisk;
+    intrptTb[TRAP_KERNEL] = TrapKernel; 
+    intrptTb[TRAP_CLOCK] = TrapClock;
+    intrptTb[TRAP_ILLEGAL]= TrapIllegal;       
+    intrptTb[TRAP_MEMORY] = TrapMemory;    
+    intrptTb[TRAP_MATH] = TrapMath; 
+    intrptTb[TRAP_TTY_RECEIVE] = TrapTtyReceive;    
+    intrptTb[TRAP_TTY_TRANSMIT] = TrapTtyTransmit; 
+    intrptTb[TRAP_DISK] = TrapDisk;
 
     //Write talbe into register
-    WriteRegister(REG_VECTOR_BASE, table);
+    WriteRegister(REG_VECTOR_BASE,(unsigned int) &intrptTb);
 
 }

@@ -26,7 +26,7 @@ KERNEL_SRCS = kernel.c traphandler.c datastructure.c
 #List the objects to be formed form the kernel source files here.  Should be the same as the prvious list, replacing ".c" with ".o"
 KERNEL_OBJS = kernel.o traphandler.o datastructure.o
 #List all of the header files necessary for your kernel
-KERNEL_INCS = hardware.h yalnix.h kernel.h pcb.h datastructure.h
+KERNEL_INCS = kernel.h pcb.h datastructure.h traphandler.h
 
 
 #List all user programs here.
