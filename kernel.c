@@ -3,8 +3,10 @@
 #include"hardware.h"
 #include"loadprogram.h"
 
-int g_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)
-dblist* g_freeFrame;
+//Global Variables
+int m_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)
+unsigned int m_kernel_brk;
+unsigned int m_kernel_data_start;
 
 int kernelfork(UserContext *uctxt){
     return ERROR;
@@ -85,16 +87,82 @@ int kernelreclaim(int id){
 
 */
 void SetKernelData(void *_KernelDataStart, void *_KernelDataEnd){
-    m_kernel_brk = _KernelDataEnd;
-    m_kernel_data_start = _KernelDataStart;
+    m_kernel_brk = (unsigned int) _KernelDataEnd;
+    m_kernel_data_start = (unsigned int) _KernelDataStart;
 
     return;
+}
+
+void InitUserPageTable (pcb_t *proc){
+    int i;
+    
+    //Mark User Page table as Invalid;
+    for (i = 0; i < MAX_PT_LEN; i++){
+        proc->usrPtb[i].valid = 0;
+    }
+}
+
+
+void InitKernelPageTable(pcb_t *proc) {
+    
+    unsigned int kDataEdPage = DOWN_TO_PAGE(m_kernel_brk); 
+    unsigned int kDataStPage = DOWN_TO_PAGE(m_kernel_data_start);
+    unsigned int kStackStPage = DOWN_TO_PAGE(KERNEL_STACK_LIMIT);
+    unsigned int kStackEdPage = DOWN_TO_PAGE(KERNEL_STACK_BASE);
+    int stackInx = 0;
+    int numOfStack = kStackEdPage - kStackStPage + 1;
+    int i;
+    
+    //Protect Kernel Text, Data and Heap
+    for (i=0; i < kDataEdPage; i++){
+        if (i < kDataStPage){
+            //Protect Kernel Text
+            g_pageTableR0[i].valid = 1;
+            g_pageTableR0[i].prot = (PROT_READ | PROT_EXEC);
+            g_pageTableR0[i].pfn = i;
+        } else {
+            //Protect Kernel Data & Heap
+            g_pageTableR0[i].valid = 1;
+            g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
+            g_pageTableR0[i].pfn = i;
+        }
+    }
+    
+    proc->krnlPtb = (pte_t *) calloc(numOfStack ,sizeof(pte_t));
+    proc->krnlPtbSize = numOfStack;
+
+    //Protect Kernel Stack
+    for (i=kStackStPage, stackInx; i< kStackEdPage && stackInx < numOfStack; i++, stackInx++ ){
+        g_pageTableR0[i].valid = 1;
+        g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
+        g_pageTableR0[i].pfn = i;
+        
+        //Let a userprocess have its own kernel stack
+        if (stackInx < numOfStack){
+            proc->krnlPtb[stackInx] = g_pageTableR0[i];
+        } else {
+            //TODO print ErrorMsg
+        }
+    }
+    
+    return;
+
+}
+
+pcb_t *InitPcb(){
+    //Initialize Queue;
+
+    //Initialize Process
+
 }
 
 void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
 
     //Initialize interrupt vector table and REG_VECTOR_BASE
     InitInterruptTable();
+    
+    //Initialize New Process
+    pcb_t *idleProc = InitPcb();
     
     //Build a structure to track free frame
     g_freeFrame = listinit();
@@ -103,32 +171,39 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     //keep track of free frame;
     //TODO
     
-    int kDataEdPage = ; 
-    int kDataStPage = ;
-        
-    // 
+    //Build initial page table for Region 0
+    InitKernelPageTable(idleProc);
+    WriteRegister(REG_PTBR0, (unsigned int) &g_pageTableR0);
+    WriteRegister(REG_PTLR0, (unsigned int) MAX_PT_LEN);
+    
+    //Build initial page table for Region 1
+    InitUserPageTable(idleProc);
+    WriteRegister(REG_PTBR1, (unsigned int) &(idleProc->usrPtb));
+    WriteRegister(REG_PTLR1, (unsigned int) MAX_PT_LEN);
 
-    //Build initial page for Region 0 and Region 1;
-    WriteRegister(REG_PTBR0, (unsigned int) base0);
-    WriteRegister(REG_PTLR0, (unsigned int) limit0);
-
-    WriteRegister(REG_PTBR0, (unsigned int) base1);
-    WriteRegister(REG_PTLR0, (unsigned int) limit1);
-
-    // enable virtual memory
+    // Enable virtual memory
     WriteRegister(REG_VM_ENABLE,1);
-    g_enableVM = 1;
+    m_enableVM = 1;
     //Create idle process
 
     //Create first process  and load initial program to it
-    loadprogram(char *name, char *args[], proc);
+    // loadprogram(char *name, char *args[], proc);
 
     return;
 }
 
+//Do Idle Process
+void DoIdle (void){
+    while(1){
+        TracePrintf(1, "Doodle\n");
+        Pause();
+    }
+}
+
+
 int SetKernelBrk(void *addr){
     //returns to the kernel lib
-    if (g_enableVM){
+    if (m_enableVM){
         //make sure addresses from [addr] to [VMEM_BASE] are valid
 
         //check no virtual memory in Region 0 out of range are valid
@@ -150,12 +225,15 @@ int SetKernelBrk(void *addr){
 */
 // when someone calls KernelContextSwitch, it might come to here.
 KernelContext *MyKCS(KernelContext *kc_in,void *curr_pcb_p,void *next_pcb_p){
+    pcb_t *cur = (pcb_t *) curr_pcb_p;
+    pcb_t *next = (pcb_t *) next_pcb_p;
+
     //Copy the kernel context to current process's pcb
-    (PCB*) curr_pcb_p->kernelcontext = *kc_in;
+    cur->kctxt = kc_in;
 
     //Remember to change page table entries for kernel stack
 
     //Return a pointer to a kernel context it had earlier saved
-    return (PCB* )next_pcb_p->kernelcontext;
+    return next->kctxt;
 
 }
