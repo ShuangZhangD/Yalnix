@@ -186,7 +186,7 @@ void TrapMemory(UserContext *uctxt){
     int trapCode = uctxt->code;
     switch(trapCode){
         case (YALNIX_MAPERR):
-            
+
         break;
         case (YALNIX_ACCERR):
 
@@ -268,14 +268,14 @@ void InitInterruptTable(){
     intrptTb = (trapvector_t *) malloc(sizeof(TRAP_SIZE) * sizeof(trapvector_t));
 
     //Fill interrupt vector table
-    intrptTb[TRAP_KERNEL] = TrapKernel; 
-    intrptTb[TRAP_CLOCK] = TrapClock;
-    intrptTb[TRAP_ILLEGAL]= TrapIllegal;       
-    intrptTb[TRAP_MEMORY] = TrapMemory;    
-    intrptTb[TRAP_MATH] = TrapMath; 
-    intrptTb[TRAP_TTY_RECEIVE] = TrapTtyReceive;    
-    intrptTb[TRAP_TTY_TRANSMIT] = TrapTtyTransmit; 
-    intrptTb[TRAP_DISK] = TrapDisk;
+    intrptTb[TRAP_KERNEL] = &TrapKernel; 
+    intrptTb[TRAP_CLOCK] = &TrapClock;
+    intrptTb[TRAP_ILLEGAL]= &TrapIllegal;       
+    intrptTb[TRAP_MEMORY] = &TrapMemory;    
+    intrptTb[TRAP_MATH] = &TrapMath; 
+    intrptTb[TRAP_TTY_RECEIVE] = &TrapTtyReceive;    
+    intrptTb[TRAP_TTY_TRANSMIT] = &TrapTtyTransmit; 
+    intrptTb[TRAP_DISK] = &TrapDisk;
 
     //Write talbe into register
     WriteRegister(REG_VECTOR_BASE,(unsigned int) &intrptTb);
