@@ -5,7 +5,7 @@
 enum processState {WAITING, RUNNING,BLOCKED,TERMINATED}; //define the state of a process
 
 typedef struct ProcessControlBlock{
-    int processState;                       //State of Process   
+    int procState;                       //State of Process   
     int pid;                                //Process ID
     UserContext *uctxt;                      //Snapshot of user context
     KernelContext *kctxt;                    //Snapshot of kernel context

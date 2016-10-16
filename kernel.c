@@ -5,7 +5,7 @@
 
 //Global Variables
 int m_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)
-int g_pid = 0;
+int g_pid = 1;
 unsigned int m_kernel_brk;
 unsigned int m_kernel_data_start;
 
@@ -150,11 +150,16 @@ void InitKernelPageTable(pcb_t *proc) {
 
 }
 
-pcb_t *InitPcb(){
-    //Initialize Queue;
-
+pcb_t *InitPcb(UserContext *uctxt){
+    //Initialize Queue TODO Jason Please finish this! At least finish running queue!
+    
     //Initialize Process
-
+    pcb_t *proc = (pcb_t *) malloc (sizeof(pcb_t));
+    proc->procState = RUNNING;
+    proc->pid = g_pid++;
+    proc->uctxt = uctxt;
+    
+    return proc;
 }
 
 void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
@@ -163,14 +168,14 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     InitInterruptTable();
     
     //Initialize New Process
-    pcb_t *idleProc = InitPcb();
+    pcb_t *idleProc = InitPcb(uctxt);
     
     //Build a structure to track free frame
     g_freeFrame = listinit();
 
     int numOfFrames = (pmem_size / PAGESIZE);
     //keep track of free frame;
-    //TODO
+    //TODO Jason Please finish this tracker! Thanks!
      
     //Build initial page table for Region 0
     InitKernelPageTable(idleProc);
