@@ -5,6 +5,7 @@
 
 //Global Variables
 int m_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)
+int g_pid = 0;
 unsigned int m_kernel_brk;
 unsigned int m_kernel_data_start;
 
@@ -100,6 +101,8 @@ void InitUserPageTable (pcb_t *proc){
     for (i = 0; i < MAX_PT_LEN; i++){
         proc->usrPtb[i].valid = 0;
     }
+
+    return;
 }
 
 
@@ -170,7 +173,7 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     int numOfFrames = (pmem_size / PAGESIZE);
     //keep track of free frame;
     //TODO
-    
+     
     //Build initial page table for Region 0
     InitKernelPageTable(idleProc);
     WriteRegister(REG_PTBR0, (unsigned int) &g_pageTableR0);
@@ -184,8 +187,16 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     // Enable virtual memory
     WriteRegister(REG_VM_ENABLE,1);
     m_enableVM = 1;
-    //Create idle process
+    
+    //Cook DoIdle()
+    idleProc->usrPtb[0].valid = 1; 
+    idleProc->usrPtb[0].proc = (PROT_WRITE | PROT_READ);
+    idleProc->usrPtb[0].pfn = //TODO Allocate a free frame and give it a number
 
+    //Allocate One page to it
+    idleProc->sp = (VMEM_1_LIMIT - pagesize - INITIAL_STACK_FRAME_SIZE);
+    idleProc->pc = &DoIdle;
+    
     //Create first process  and load initial program to it
     // loadprogram(char *name, char *args[], proc);
 
@@ -198,6 +209,8 @@ void DoIdle (void){
         TracePrintf(1, "Doodle\n");
         Pause();
     }
+
+    return;
 }
 
 

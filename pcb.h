@@ -11,7 +11,7 @@ typedef struct ProcessControlBlock{
     KernelContext *kctxt;                    //Snapshot of kernel context
     pte_t usrPtb[MAX_PT_LEN];               //PageTable for Userland
     pte_t *krnlPtb;                         //Pointer to Kernel Page Table
-    long krnlPtbSize;
+    int krnlPtbSize;
     pte_t *parent;                            //A pointer to parent process
     dlqueue *children;                        //A pointer to mulitple child processes
 
