@@ -83,9 +83,7 @@ int kernelreclaim(int id){
 }
 
 /*
-
     Kernel Initiailization functions
-
 */
 void SetKernelData(void *_KernelDataStart, void *_KernelDataEnd){
     m_kernel_brk = (unsigned int) _KernelDataEnd;
@@ -108,10 +106,10 @@ void InitUserPageTable (pcb_t *proc){
 
 void InitKernelPageTable(pcb_t *proc) {
     
-    unsigned int kDataEdPage = DOWN_TO_PAGE(m_kernel_brk); 
-    unsigned int kDataStPage = DOWN_TO_PAGE(m_kernel_data_start);
-    unsigned int kStackStPage = DOWN_TO_PAGE(KERNEL_STACK_LIMIT);
-    unsigned int kStackEdPage = DOWN_TO_PAGE(KERNEL_STACK_BASE);
+    unsigned int kDataEdPage = m_kernel_brk >> PAGESHIFT; 
+    unsigned int kDataStPage = m_kernel_data_start >> PAGESHIFT;
+    unsigned int kStackStPage = KERNEL_STACK_LIMIT >> PAGESHIFT;
+    unsigned int kStackEdPage = KERNEL_STACK_BASE >> PAGESHIFT;
     int stackInx = 0;
     int numOfStack = kStackEdPage - kStackStPage + 1;
     int i;
@@ -188,15 +186,22 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     WriteRegister(REG_VM_ENABLE,1);
     m_enableVM = 1;
     
-    //Cook DoIdle()
+    
+    //====Cook DoIdle()====
+    
     idleProc->usrPtb[0].valid = 1; 
-    idleProc->usrPtb[0].proc = (PROT_WRITE | PROT_READ);
-    idleProc->usrPtb[0].pfn = //TODO Allocate a free frame and give it a number
+    idleProc->usrPtb[0].prot = (PROT_WRITE | PROT_READ);
+    idleProc->usrPtb[0].pfn = 0x001;//TODO Allocate a free frame and give it a number
 
     //Allocate One page to it
-    idleProc->sp = (VMEM_1_LIMIT - pagesize - INITIAL_STACK_FRAME_SIZE);
-    idleProc->pc = &DoIdle;
+    idleProc->uctxt->sp = (void *) (VMEM_1_LIMIT - PAGESIZE - INITIAL_STACK_FRAME_SIZE);
     
+    //Get the function pointer of DoIdle
+    void (*idlePtr)(void) = &DoIdle;
+    idleProc->uctxt->pc = idlePtr;
+    
+    //====================
+
     //Create first process  and load initial program to it
     // loadprogram(char *name, char *args[], proc);
 
@@ -209,27 +214,70 @@ void DoIdle (void){
         TracePrintf(1, "Doodle\n");
         Pause();
     }
-
     return;
+}
+
+int checkPageStatus(unsigned int addr){
+    unsigned int i, pageAddr = (addr >> PAGESHIFT),rc = 0;
+
+    //make sure addresses from [addr] to [VMEM_BASE] are valid
+    for (i = (VMEM_BASE >> PAGESHIFT); i < pageAddr; i++){
+        if (0 == g_pageTableR0[i].valid) return -1;
+    }
+
+    //check no virtual memory in Region 0 out of range are valid
+    for (i = pageAddr; i < MAX_PT_LEN; i++){
+        if (1 == g_pageTableR0[i].valid) return -1;
+    }
+
+    return 0;
 }
 
 
 int SetKernelBrk(void *addr){
     //returns to the kernel lib
+    unsigned int newBrk = (unsigned int) addr;
+
+
+    int rc;
     if (m_enableVM){
-        //make sure addresses from [addr] to [VMEM_BASE] are valid
 
-        //check no virtual memory in Region 0 out of range are valid
+        rc = checkPageStatus(newBrk);
+        if (rc) return -1;
+        
+        int newBrkPage = newBrk >> PAGESHIFT;
+        int oldBrkPage = m_kernel_brk >> PAGESHIFT;
+        
+        if (newBrk > m_kernel_brk){
 
-        //Traverse through frames and mapping valid frame with virtual memory
-        traverselist(g_freeFrame);
+            //TODO Jason Please finish this function(), I give you a sketch here.
+            rc = function(){
+                if (Have Enough Memory){
+                    g_pageTableR0[i].valid = 1;
+                    g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
+                    g_pageTableR0[i].pfn = 0x001;//TODO Physical Frame Number; 
+                }
+            }
 
+            if (rc) return -1;
+                
+        } else if (newBrk < m_kernel_brk){
+
+            //TODO Jason Please finish this function(), I give you a sketch here.
+            rc = function(){
+
+                g_pageTableR0[i].valid = 0;
+                g_pageTableR0.prot = (PROT_NONE);
+                g_pageTableR0[i].pfn = 0x001;//TODO Invalid Physical Frame Number; 
+
+                //Add this frame back to free frame tracker
+            }
+            if (rc) return -1;
+        }
         //Let addr be the new kernel break
-    }
+    } 
     
-    //IF ERROR
-    return -1;
-    //ELSE
+    m_kernel_brk = newBrk;
     return 0;
 }
 
