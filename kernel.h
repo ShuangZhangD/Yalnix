@@ -4,6 +4,8 @@
 typedef struct pte pte_t;
 
 //global variables
+unsigned int m_kernel_brk;
+unsigned int m_kernel_data_start;
 pte_t g_pageTableR0[MAX_PT_LEN];
 dblist* g_freeFrame;
 

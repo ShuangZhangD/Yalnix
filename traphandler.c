@@ -182,6 +182,17 @@ void TrapIllegal(UserContext *uctxt){
 
 //Capture TRAP_MEMORY
 void TrapMemory(UserContext *uctxt){
+    int trapCode = uctxt->code;
+
+    if (YALNIX_MAPERR == trapCode){
+
+
+    } else if (YALNIX_ACCERR == trapCode){
+
+    }
+    else{
+
+    } 
     /*
         IF  [current break of heap] < uctxt->addr < [allocated memory for the stack](uctxt->ebp)
             keep going 

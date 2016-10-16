@@ -6,8 +6,7 @@
 //Global Variables
 int m_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)
 int g_pid = 1;
-unsigned int m_kernel_brk;
-unsigned int m_kernel_data_start;
+
 
 int kernelfork(UserContext *uctxt){
     return ERROR;
@@ -110,7 +109,7 @@ void InitKernelPageTable(pcb_t *proc) {
     unsigned int kDataStPage = m_kernel_data_start >> PAGESHIFT;
     unsigned int kStackStPage = KERNEL_STACK_LIMIT >> PAGESHIFT;
     unsigned int kStackEdPage = KERNEL_STACK_BASE >> PAGESHIFT;
-    int stackInx = 0;
+    int stackInx ;
     int numOfStack = kStackEdPage - kStackStPage + 1;
     int i;
     
@@ -133,7 +132,7 @@ void InitKernelPageTable(pcb_t *proc) {
     proc->krnlPtbSize = numOfStack;
 
     //Protect Kernel Stack
-    for (i=kStackStPage, stackInx; i< kStackEdPage && stackInx < numOfStack; i++, stackInx++ ){
+    for (i=kStackStPage, stackInx = 0; i< kStackEdPage && stackInx < numOfStack; i++, stackInx++ ){
         g_pageTableR0[i].valid = 1;
         g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
         g_pageTableR0[i].pfn = i;
@@ -262,6 +261,8 @@ int SetKernelBrk(void *addr){
                     g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
                     g_pageTableR0[i].pfn = 0x001;//TODO Physical Frame Number; 
                 }
+
+                //FLUSH!!!
             }
 
             if (rc) return -1;
@@ -276,6 +277,8 @@ int SetKernelBrk(void *addr){
                 g_pageTableR0[i].pfn = 0x001;//TODO Invalid Physical Frame Number; 
 
                 //Add this frame back to free frame tracker
+
+                //FLUSH!!!
             }
             if (rc) return -1;
         }
