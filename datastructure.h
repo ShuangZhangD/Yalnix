@@ -1,26 +1,24 @@
 typedef struct node{
  	int id;
- 	// struct node *pre;
-	// struct node *next;
-} dblist;
+ 	struct node *pre;
+	struct node *next;
+} lstnode;
 
-dblist* listinit();
+typedef struct list
+{
+	int size;
+	lstnode *head;
+	lstnode *tail;
+}dblist;
+
+dblist* listinit(dblist *list);
+lstnode *firstnode(dblist *list)
 int isemptylist(dblist* list);
-void insert_node(int i, int p, dblist* list);
-void delete_node(int p,dblist* list);
+void insert_tail(lstnode *node，dblist* list);
+void insert_head(lstnode *node，dblist* list);
+void remove_tail(dblist *list);
+void remove_head(dblist *list);
+lstnode *search_node(lstnode *node,dblist *list);
+void remove_node(lstnode *node, dblist *list);
 void traverselist(dblist* list);
 
-//use queue to implement all the waiting queues
-typedef struct queue{
-
-    int id;
-    // dblist* head;
-    // dblist* tail;
-
-} dlqueue;
-
-
-dlqueue* queueinit(dblist* f);
-void enqueue(dlqueue* queue,int frameid);
-void dequeue(dlqueue *queue);
-int IsEmpty(dlqueue *queue);

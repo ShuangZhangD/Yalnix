@@ -2,6 +2,7 @@
 #include"yalnix.h"
 #include"hardware.h"
 #include"loadprogram.h"
+#include"datastucture.h"
 
 //Global Variables
 int m_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)
@@ -173,6 +174,14 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     g_freeFrame = listinit();
 
     int numOfFrames = (pmem_size / PAGESIZE);
+    dblist *freeframe_list;
+    dblist* listinit(freeframe_list);
+    lstnode *frame;
+    for(i = 0;i<numOfFrames,i++)
+    {
+        frame->id = i;
+        insert_tail(frame,freeframe_list);
+    }
     //keep track of free frame;
     //TODO Jason Please finish this tracker! Thanks!
      
@@ -254,33 +263,38 @@ int SetKernelBrk(void *addr){
         if (newBrk > m_kernel_brk){
 
             //TODO Jason Please finish this function(), I give you a sketch here.
-            // rc = function(){
-            //     if (Have Enough Memory){
-            //         g_pageTableR0[i].valid = 1;
-            //         g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
-            //         g_pageTableR0[i].pfn = 0x001;//TODO Physical Frame Number; 
-            //     }
-            //
-            //   //FLUSH!!!
-            // }
+            rc = function();
+            int function(freeframe_list){
+            if (isemptylist(freeframe_list){
+            g_pageTableR0[i].valid = 1;
+            g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
+            lstnode *first = firstnode(freeframe_list);
+            g_pageTableR0[i].pfn = first->id;//TODO Physical Frame Number; 
+            }
+            return 
+            }
+            ///FLUSH!!!
+            
 
             if (rc) return -1;
-                
-        } else if (newBrk < m_kernel_brk){
+        }        
+        else if (newBrk < m_kernel_brk){
 
             //TODO Jason Please finish this function(), I give you a sketch here.
-            // rc = function(){
+            rc = function();
+            int function(){
 
-            //     g_pageTableR0[i].valid = 0;
-
-            //     //Add this frame back to free frame tracker
+            g_pageTableR0[i].valid = 0;
+            insert_tail(frame,freeframe_list);
+            //Add this frame back to free frame tracker
 
             //     //FLUSH!!!
-            // }
+            }
+            return 
             if (rc) return -1;
         }
         //Let addr be the new kernel break
-    } 
+    
     
     m_kernel_brk = newBrk;
     return 0;
