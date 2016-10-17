@@ -1,4 +1,5 @@
 #include "yalnix.h"
+#include "hardware.h"
 
 enum processState {RUNNING,WAITING,BLOCKED,TERMINATED}; //define the state of a process
 
@@ -12,6 +13,8 @@ typedef struct ProcessControlBlock{
     int krnlPtbSize;
     pte_t *parent;                            //A pointer to parent process
     dlqueue *children;                        //A pointer to mulitple child processes
+    unsigned int sp; //TODO temp
+    unsigned int brk; //TODO temp
 
 } pcb_t;
 
@@ -20,5 +23,9 @@ int traverseChildren(pcb_t *proc);            //Traverse through its
 int apppendProcess(pcb_t *des, pcb_t *src);     //Add a process in PCB list
 int removeProcessBypid(pcb_t *des, int pid);   //Remove a process from PCB by PID
 int findProcessBypid(pcb_t *des, int pid);      //Find a process by PID
-void terminateProcess(pcb_t *proc);
 
+
+//Temp
+void terminateProcess(pcb_t *proc);
+int GrowUserStack(pcb_t *proc, unsigned int addr);
+int checkAvailFrame(int fn);

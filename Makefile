@@ -22,11 +22,11 @@ ALL = $(KERNEL_ALL) $(USER_APPS)
 KERNEL_ALL = yalnix
 
 #List all kernel source files here.  
-KERNEL_SRCS = kernel.c traphandler.c datastructure.c
+KERNEL_SRCS = kernel.c traphandler.c datastructure.c pcb.c
 #List the objects to be formed form the kernel source files here.  Should be the same as the prvious list, replacing ".c" with ".o"
-KERNEL_OBJS = kernel.o traphandler.o datastructure.o
+KERNEL_OBJS = kernel.o traphandler.o datastructure.o pcb.o
 #List all of the header files necessary for your kernel
-KERNEL_INCS = kernel.h pcb.h datastructure.h traphandler.h
+KERNEL_INCS = kernel.h traphandler.h datastructure.h pcb.h 
 
 
 #List all user programs here.
