@@ -186,25 +186,21 @@ void TrapMemory(UserContext *uctxt){
     int trapCode = uctxt->code;
     switch(trapCode){
         case (YALNIX_MAPERR):
-
+            if (uctxt->addr > uctxt->sp){
+                terminateProcess(uctxt);
+                return;
+            }
         break;
         case (YALNIX_ACCERR):
-
-
+            terminateProcess(curProc);
         break;
         default:
+            terminateProcess(curProc);
         break;
     }
 
-    if (YALNIX_MAPERR == trapCode){
+    return;
 
-
-    } else if (YALNIX_ACCERR == trapCode){
-
-    }
-    else{
-
-    } 
     /*
         IF  [current break of heap] < uctxt->addr < [allocated memory for the stack](uctxt->ebp)
             keep going 
@@ -265,7 +261,7 @@ void TrapDisk(UserContext *uctxt){
 void InitInterruptTable(){
 
     //Allocate memory to interupt vector table 
-    intrptTb = (trapvector_t *) malloc(sizeof(TRAP_SIZE) * sizeof(trapvector_t));
+    intrptTb = (trapvector_t *) malloc(sizeof(TRAP_VECTOR_SIZE) * sizeof(trapvector_t));
 
     //Fill interrupt vector table
     intrptTb[TRAP_KERNEL] = &TrapKernel; 

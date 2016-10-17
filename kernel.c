@@ -192,7 +192,6 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     
     
     //====Cook DoIdle()====
-    
     idleProc->usrPtb[0].valid = 1; 
     idleProc->usrPtb[0].prot = (PROT_WRITE | PROT_READ);
     idleProc->usrPtb[0].pfn = 0x001;//TODO Allocate a free frame and give it a number
@@ -273,8 +272,6 @@ int SetKernelBrk(void *addr){
             // rc = function(){
 
             //     g_pageTableR0[i].valid = 0;
-            //     g_pageTableR0.prot = (PROT_NONE);
-            //     g_pageTableR0[i].pfn = 0x001;//TODO Invalid Physical Frame Number; 
 
             //     //Add this frame back to free frame tracker
 
@@ -306,3 +303,21 @@ KernelContext *MyKCS(KernelContext *kc_in,void *curr_pcb_p,void *next_pcb_p){
     return next->kctxt;
 
 }
+
+void terminateProcess(pcb_t *proc){
+    int i;
+    proc->procState = TERMINATED;
+
+    for (i = 0; i < MAX_PT_LEN; i++){
+        if (proc->usrPtb[i].valid){
+            proc->usrPtb[i].valid = 0;
+            //TODO ReleaseFrame
+        }
+    }
+
+    //TODO terminatedQueue(proc->pid);
+
+    //TODO Delete process or relocate process pool
+
+}
+

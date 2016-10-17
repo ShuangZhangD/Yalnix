@@ -1,8 +1,6 @@
-#include "hardware.h"
 #include "yalnix.h"
-// #include "kernel.h"
 
-enum processState {WAITING, RUNNING,BLOCKED,TERMINATED}; //define the state of a process
+enum processState {RUNNING,WAITING,BLOCKED,TERMINATED}; //define the state of a process
 
 typedef struct ProcessControlBlock{
     int procState;                       //State of Process   
@@ -17,11 +15,10 @@ typedef struct ProcessControlBlock{
 
 } pcb_t;
 
-
 int traverseParent(pcb_t *proc);              //Traverse through its parent
 int traverseChildren(pcb_t *proc);            //Traverse through its 
 int apppendProcess(pcb_t *des, pcb_t *src);     //Add a process in PCB list
 int removeProcessBypid(pcb_t *des, int pid);   //Remove a process from PCB by PID
 int findProcessBypid(pcb_t *des, int pid);      //Find a process by PID
-
+void terminateProcess(pcb_t *proc);
 
