@@ -263,39 +263,28 @@ int SetKernelBrk(void *addr){
         if (newBrk > m_kernel_brk){
 
             //TODO Jason Please finish this function(), I give you a sketch here.
-            rc = function();
-            int function(freeframe_list){
-            if (isemptylist(freeframe_list){
-            g_pageTableR0[i].valid = 1;
-            g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
-            lstnode *first = firstnode(freeframe_list);
-            g_pageTableR0[i].pfn = first->id;//TODO Physical Frame Number; 
+            if (isemptylist(freeframe_list)){
+                g_pageTableR0[i].valid = 1;
+                g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
+                // lstnode *first = firstnode(freeframe_list);
+                g_pageTableR0[i].pfn = first->id;//TODO Physical Frame Number; 
             }
-            return 
-            }
-            ///FLUSH!!!
-            
-
-            if (rc) return -1;
-        }        
-        else if (newBrk < m_kernel_brk){
+            //FLUSH!!!
+                
+        }else if (newBrk < m_kernel_brk){
 
             //TODO Jason Please finish this function(), I give you a sketch here.
-            rc = function();
-            int function(){
 
             g_pageTableR0[i].valid = 0;
             insert_tail(frame,freeframe_list);
             //Add this frame back to free frame tracker
 
-            //     //FLUSH!!!
-            }
-            return 
+            //FLUSH!!!
             if (rc) return -1;
         }
         //Let addr be the new kernel break
     
-    
+    }
     m_kernel_brk = newBrk;
     return 0;
 }
