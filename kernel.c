@@ -1,11 +1,13 @@
-#include"kernel.h"
-#include"yalnix.h"
-#include"hardware.h"
-#include"loadprogram.h"
+#include "kernel.h"
+#include "yalnix.h"
+#include "hardware.h"
+#include "loadprogram.h"
+#include "datastructure.h"
 
 //Global Variables
 int m_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)
 int g_pid = 1;
+dblist* freeframe_list;
 
 
 int kernelfork(UserContext *uctxt){
@@ -134,8 +136,8 @@ void InitKernelPageTable(pcb_t *proc) {
         }
     }
     
-    proc->krnlPtb = (pte_t *) calloc(numOfStack ,sizeof(pte_t));
-    proc->krnlPtbSize = numOfStack;
+    proc->krnlStackPtb = (pte_t *) calloc(numOfStack ,sizeof(pte_t));
+    proc->krnlStackPtbSize = numOfStack;
 
     //Protect Kernel Stack
     for (i=kStackStPage, stackInx = 0; i< kStackEdPage; i++, stackInx++){
@@ -144,7 +146,7 @@ void InitKernelPageTable(pcb_t *proc) {
         g_pageTableR0[i].pfn = i;
         lstnode *frame;
         frame->id = i;
-        remove_node(frame, freeframe_list)
+        remove_node(frame, freeframe_list);
         //Let a userprocess have its own kernel stack
         if (stackInx < numOfStack){
             proc->krnlPtb[stackInx] = g_pageTableR0[i];
@@ -170,7 +172,7 @@ pcb_t *InitPcb(UserContext *uctxt){
 }
 
 void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
-
+    int i;
     //Initialize interrupt vector table and REG_VECTOR_BASE
     InitInterruptTable();
     
@@ -178,12 +180,12 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     pcb_t *idleProc = InitPcb(uctxt);
     
     //Build a structure to track free frame
-    g_freeFrame = listinit();
+    freeframe_list = listinit();
 
     int numOfFrames = (pmem_size / PAGESIZE);
     dblist* listinit(freeframe_list);
     lstnode *frame;
-    for(i = 0;i<numOfFrames,i++)
+    for(i = 0;i<numOfFrames;i++)
     {
         frame->id = i;
         insert_tail(frame,freeframe_list);
@@ -283,7 +285,7 @@ int SetKernelBrk(void *addr){
 
             g_pageTableR0[oldBrkPage].valid = 0;
             lstnode *frame;
-            for(i = newBrkPage,i < oldBrkPage,i++){
+            for(i = newBrkPage;i < oldBrkPage;i++){
             frame->id = i;
             insert_tail(frame,freeframe_list);
             }
