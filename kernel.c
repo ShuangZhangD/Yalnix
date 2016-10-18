@@ -184,6 +184,7 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     int numOfFrames = (pmem_size / PAGESIZE);
     listinit(freeframe_list);
     lstnode *frame;
+    nodeinit(frame);
     for(i = 0;i<numOfFrames;i++)
     {
         frame->id = i;
@@ -270,7 +271,7 @@ int SetKernelBrk(void *addr){
         if (newBrk > m_kernel_brk){
 
             //TODO Jason Please finish this function(), I give you a sketch here.
-            if (isemptylist(freeframe_list)){
+            if (!isemptylist(freeframe_list)){
                 g_pageTableR0[i].valid = 1;
                 g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
                 lstnode *first = firstnode(freeframe_list);
@@ -284,6 +285,7 @@ int SetKernelBrk(void *addr){
 
             g_pageTableR0[oldBrkPage].valid = 0;
             lstnode *frame;
+            listinit(frame);
             for(i = newBrkPage;i < oldBrkPage;i++){
             frame->id = i;
             insert_tail(frame,freeframe_list);
