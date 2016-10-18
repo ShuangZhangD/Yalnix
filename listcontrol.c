@@ -32,7 +32,7 @@ lstnode* firstnode(dblist* list)
 
 int isemptylist(dblist* list)
 {
-	if (list->head->next == NULL&&list->size == 0)
+	if (!list || (list->size == 0 && list->head->next == NULL))
 		{
 			return 1;
 		}

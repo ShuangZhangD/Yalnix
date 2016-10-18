@@ -1,7 +1,7 @@
 #include "datastructure.h"
 
 lstnode* nodeinit(int i);
-dblist* listinit(dblist* list);
+dblist* listinit();
 lstnode* firstnode(dblist* list);
 int isemptylist(dblist* list);
 void insert_tail(lstnode* node, dblist* list);

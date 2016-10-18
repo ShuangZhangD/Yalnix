@@ -179,7 +179,7 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     
     //Build a structure to track free frame
     int numOfFrames = (pmem_size / PAGESIZE);
-    listinit(freeframe_list);
+    freeframe_list = listinit();
 
     for(i = 0;i<numOfFrames;i++)
     {
