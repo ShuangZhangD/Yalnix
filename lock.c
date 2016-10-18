@@ -2,7 +2,7 @@
 #include "hardware.h"
 #include "lock.h"
 
-int kernellockinit(int *lock_idp){
+int kernellockinit(UserContext *uctxt){
 
 	//create a new lock
 
@@ -11,7 +11,7 @@ int kernellockinit(int *lock_idp){
     return ERROR;
 }
 
-int kernelaquire(int lock_id){
+int kernelaquire(UserContext *uctxt){
     
     //try to acquire the lock with the lock_id
 
@@ -25,7 +25,7 @@ int kernelaquire(int lock_id){
     return ERROR;
 }
 
-int kernelrelease(int lock_id){
+int kernelrelease(UserContext *uctxt){
 	
 	//try to release the lock with the lock_id
 
