@@ -31,9 +31,9 @@ lstnode* firstnode(dblist* list)
 	{
 		printf("%s\n", "error");
 		return NULL;
+	}
 	else{
 		return list->head->next;
-	}
 	}
 }
 
@@ -144,7 +144,6 @@ void remove_node(lstnode* node, dblist* list)
 	if(isemptylist(list))
 	{
 		printf("%s\n", "error");
-		return NULL;
 	}
 	else{
 	lstnode *remove = search_node(node,list);

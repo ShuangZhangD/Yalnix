@@ -207,7 +207,7 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     //====Cook DoIdle()====
     idleProc->usrPtb[0].valid = 1; 
     idleProc->usrPtb[0].prot = (PROT_WRITE | PROT_READ);
-    lstnode *free = remove_node(freeframe_list);
+    lstnode *free = remove_head(freeframe_list);
     idleProc->usrPtb[0].pfn = free->id;
 
     //Allocate One page to it
@@ -271,7 +271,7 @@ int SetKernelBrk(void *addr){
             if (!isemptylist(freeframe_list)){
                 g_pageTableR0[i].valid = 1;
                 g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
-                lstnode *first = firstnode(freeframe_list);
+                lstnode *first = remove_head(freeframe_list);
                 g_pageTableR0[i].pfn = first->id;//TODO Physical Frame Number; 
             }
             //FLUSH!!!
