@@ -124,6 +124,7 @@ void InitKernelPageTable(pcb_t *proc) {
             g_pageTableR0[i].prot = (PROT_READ | PROT_EXEC);
             g_pageTableR0[i].pfn = i;
             lstnode *frame;
+            nodeinit(frame);
             frame->id = i;
             remove_node(frame, freeframe_list);
         } else {
@@ -132,6 +133,7 @@ void InitKernelPageTable(pcb_t *proc) {
             g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
             g_pageTableR0[i].pfn = i;
             lstnode *frame;
+            nodeinit(frame);
             frame->id = i;
             remove_node(frame, freeframe_list);
         }
@@ -146,6 +148,7 @@ void InitKernelPageTable(pcb_t *proc) {
         g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
         g_pageTableR0[i].pfn = i;
         lstnode *frame;
+        nodeinit(frame);
         frame->id = i;
         remove_node(frame, freeframe_list);
         //Let a userprocess have its own kernel stack
@@ -183,10 +186,11 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     //Build a structure to track free frame
     int numOfFrames = (pmem_size / PAGESIZE);
     listinit(freeframe_list);
-    lstnode *frame;
-    nodeinit(frame);
+
     for(i = 0;i<numOfFrames;i++)
     {
+        lstnode *frame;
+        nodeinit(frame);
         frame->id = i;
         insert_tail(frame,freeframe_list);
     }
@@ -284,9 +288,10 @@ int SetKernelBrk(void *addr){
             //TODO Jason Please finish this function(), I give you a sketch here.
 
             g_pageTableR0[oldBrkPage].valid = 0;
-            lstnode *frame;
-            listinit(frame);
+
             for(i = newBrkPage;i < oldBrkPage;i++){
+            lstnode *frame;
+            nodeinit(frame);
             frame->id = i;
             insert_tail(frame,freeframe_list);
             }

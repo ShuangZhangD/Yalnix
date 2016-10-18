@@ -15,7 +15,7 @@ dblist* listinit(dblist* list)
 {
 	
 	lstnode* n = (lstnode *)malloc(sizeof(lstnode));
-	list = (dblist* )malloc(sizeof(list));
+	list = (dblist* )malloc(sizeof(dblist));
 	n->id = 0;
 	n->pre = NULL;
 	n->next = NULL;
@@ -32,7 +32,7 @@ lstnode* firstnode(dblist* list)
 
 int isemptylist(dblist* list)
 {
-	if (list->head->next = NULL&&list->size == 0)
+	if (list->head->next == NULL&&list->size == 0)
 		{
 			return 1;
 		}
