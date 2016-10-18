@@ -110,10 +110,10 @@ void InitKernelPageTable(pcb_t *proc) {
     
     unsigned int kDataEdPage = m_kernel_brk >> PAGESHIFT; 
     unsigned int kDataStPage = m_kernel_data_start >> PAGESHIFT;
-    unsigned int kStackStPage = KERNEL_STACK_LIMIT >> PAGESHIFT;
-    unsigned int kStackEdPage = KERNEL_STACK_BASE >> PAGESHIFT;
+    unsigned int kStackStPage = KERNEL_STACK_BASE >> PAGESHIFT;
+    unsigned int kStackEdPage = KERNEL_STACK_LIMIT >> PAGESHIFT;
     int stackInx ;
-    int numOfStack = kStackEdPage - kStackStPage + 1;
+    int numOfStack = kStackEdPage - kStackStPage;
     int i;
     
     //Protect Kernel Text, Data and Heap
@@ -138,8 +138,11 @@ void InitKernelPageTable(pcb_t *proc) {
     proc->krnlStackPtb = (pte_t *) calloc(numOfStack ,sizeof(pte_t));
     proc->krnlStackPtbSize = numOfStack;
 
+    TracePrintf(1, "Stack!!!");
     //Protect Kernel Stack
     for (i=kStackStPage, stackInx = 0; i< kStackEdPage; i++, stackInx++){
+        TracePrintf(1, "Page Number = %d\n", i);
+
         g_pageTableR0[i].valid = 1;
         g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
         g_pageTableR0[i].pfn = i;
