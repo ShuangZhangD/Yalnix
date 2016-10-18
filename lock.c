@@ -1,5 +1,6 @@
-#include"yalnix.h"
-#include"hardware.h"
+#include "yalnix.h"
+#include "hardware.h"
+#include "lock.h"
 
 int kernellockinit(int *lock_idp){
 

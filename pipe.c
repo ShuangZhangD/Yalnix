@@ -1,7 +1,8 @@
-#include"yalnix.h"
-#include"hardware.h"
+#include "yalnix.h"
+#include "hardware.h"
+#include "pipe.h"
 
-int kernelpipeinit(int *pipe_idp){
+int kernelpipeinit(UserContext *uctxt){
 	
 	//Create a new pipe
 
@@ -10,7 +11,7 @@ int kernelpipeinit(int *pipe_idp){
 return ERROR;
 }
 
-int kernelpiperead(int pipe_id, void *buf, int len){
+int kernelpiperead(UserContext *uctxt){
 
 	//if len is valid, use pipe_id to get the pipe to read from
 
@@ -21,7 +22,7 @@ int kernelpiperead(int pipe_id, void *buf, int len){
 return ERROR;
 }
 
-int kernelpipewrite(int pipe_id, void *buf, int len){
+int kernelpipewrite(UserContext *uctxt){
 
 	//if len is valid, use pipe_id to get the pipe to write to
 

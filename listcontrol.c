@@ -1,5 +1,5 @@
 #include "datastructure.h"
-
+#include "listcontrol.h"
 //use a doublylinkedlist to track free frame
 
 
@@ -24,7 +24,7 @@ int isemptylist(dblist* list)
 	return 1;
 }
 
-void insert_tail(lstnode* node，dblist* list)
+void insert_tail(lstnode* node, dblist* list)
 {
 	node->pre = list->tail->pre;
 	node->next = list->tail;
@@ -33,7 +33,7 @@ void insert_tail(lstnode* node，dblist* list)
 	list->size++;
 }
 
-void insert_head(lstnode* node，dblist* list)
+void insert_head(lstnode* node, dblist* list)
 {
 	node->next = list->head->next ;
 	node->pre = list->head;	
@@ -45,14 +45,14 @@ void insert_head(lstnode* node，dblist* list)
 void remove_tail(dblist* list)
 {
 	list->tail->pre = list->tail->pre->pre;
-	list->tail->pre = tail;
+	list->tail->pre = list->tail;
 	list->size--;
 }
 
 void remove_head(dblist* list)
 {
 	list->head->next = list->head->next->next;
-	head->next->previous = head;
+	list->head->next->pre = list->head;
 	list->size--;
 }
 
@@ -71,7 +71,7 @@ lstnode* search_node(lstnode* node,dblist* list)
 
 void remove_node(lstnode* node, dblist* list)
 {
-	lstnode *remove = search_node(lstnode *node,dblist *list);
+	lstnode *remove = search_node(node,list);
 	remove->pre->next = remove->next;
 	remove->next->pre = remove->pre;
 	list->size--;
@@ -87,7 +87,7 @@ void traverselist(dblist* list)
 	else
 		while(traverse != NULL)
 			{
-				traverse = traverse-next;
+				traverse = traverse->next;
 				printf("%s\n", traverse->id);
 			}
 }

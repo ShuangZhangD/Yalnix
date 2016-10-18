@@ -1,12 +1,13 @@
 #include "kernel.h"
 #include "yalnix.h"
-#include "hardware.h"
 #include "loadprogram.h"
-#include "datastructure.h"
+#include "listcontrol.h"
 
 //Global Variables
 int m_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)
 int g_pid = 1;
+
+
 dblist* freeframe_list;
 
 
@@ -149,7 +150,7 @@ void InitKernelPageTable(pcb_t *proc) {
         remove_node(frame, freeframe_list);
         //Let a userprocess have its own kernel stack
         if (stackInx < numOfStack){
-            proc->krnlPtb[stackInx] = g_pageTableR0[i];
+            proc->krnlStackPtb[stackInx] = g_pageTableR0[i];
         } else {
             //TODO print ErrorMsg
         }
@@ -180,8 +181,6 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     pcb_t *idleProc = InitPcb(uctxt);
     
     //Build a structure to track free frame
-    freeframe_list = listinit();
-
     int numOfFrames = (pmem_size / PAGESIZE);
     dblist* listinit(freeframe_list);
     lstnode *frame;
@@ -316,23 +315,6 @@ KernelContext *MyKCS(KernelContext *kc_in,void *curr_pcb_p,void *next_pcb_p){
 
     //Return a pointer to a kernel context it had earlier saved
     return next->kctxt;
-
-}
-
-void terminateProcess(pcb_t *proc){
-    int i;
-    proc->procState = TERMINATED;
-
-    for (i = 0; i < MAX_PT_LEN; i++){
-        if (proc->usrPtb[i].valid){
-            proc->usrPtb[i].valid = 0;
-            //TODO ReleaseFrame
-        }
-    }
-
-    //TODO terminatedQueue(proc->pid);
-
-    //TODO Delete process or relocate process pool
 
 }
 

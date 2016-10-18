@@ -1,12 +1,11 @@
 #include "hardware.h"
-
-
-typedef struct pte pte_t;
+#include "datastructure.h"
 
 //global variables
 unsigned int m_kernel_brk;
 unsigned int m_kernel_data_start;
-struct pte g_pageTableR0[MAX_PT_LEN];
+pte_t g_pageTableR0[MAX_PT_LEN];
+dblist* freeFrame_list;
 
 
 int kernelfork(UserContext *uctxt);

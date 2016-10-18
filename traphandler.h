@@ -1,3 +1,3 @@
-typedef void (*trapvector_t) (UserContext*);
+#include "datastructure.h"
 
 trapvector_t *intrptTb;

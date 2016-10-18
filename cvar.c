@@ -1,7 +1,8 @@
-#include"yalnix.h"
-#include"hardware.h"
+#include "yalnix.h"
+#include "hardware.h"
+#include "cvar.h"
 
-int kernelcvarinit(int *cvar_idp){
+int kernelcvarinit(UserContext *uctxt){
 
 	//Create a new condition variable
 
@@ -10,7 +11,7 @@ int kernelcvarinit(int *cvar_idp){
     return ERROR;
 }
 
-int kernelcvarsignal(int cvar_id){
+int kernelcvarsignal(UserContext *uctxt){
 
 	//if the cvar with cvar_id is not initialized, return ERROR
 
@@ -21,7 +22,7 @@ int kernelcvarsignal(int cvar_id){
     return ERROR;
 }
 
-int kenrnelcvarbroadcast(int cvar_id){
+int kenrnelcvarbroadcast(UserContext *uctxt){
 
 	//if the cvar with cvar_id is not initialized, return ERROR
 
@@ -32,7 +33,7 @@ int kenrnelcvarbroadcast(int cvar_id){
     return ERROR;
 }
 
-int kernelcvarwait(int cvar_id, int lock_id){
+int kernelcvarwait(UserContext *uctxt){
 
 	//if the cvar with cvar_id is not initialized, return ERROR
 

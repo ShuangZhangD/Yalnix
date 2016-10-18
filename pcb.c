@@ -23,10 +23,10 @@ int GrowUserStack(pcb_t *proc, unsigned int addr){
 	int i, rc;
 	
 	//TODO check How Many FreeFrame do we have, plus 1 for safety margin
-	rc = checkAvailFrame(newStackPage-oldStackPage+1);
+	rc = 0;//checkAvailFrame(newStackPage-oldStackPage+1);
 	if (rc) return -1;
 
-	for (i = oldStackPage + 1; i < =newStackPage; i++){
+	for (i = oldStackPage + 1; i <= newStackPage; i++){
 		proc->usrPtb[i].valid = 1;
 		proc->usrPtb[i].prot = (PROT_READ | PROT_WRITE);
 		proc->usrPtb[i].pfn = 0x001; //TODO JASON's Method

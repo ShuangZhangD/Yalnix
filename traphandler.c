@@ -106,55 +106,55 @@ void TrapKernel(UserContext *uctxt){
             rc = kernelpipewrite(uctxt);
             break;
 
-        case YALNIX_NOP:
-            rc = kernelnop(uctxt);
-            break;
+        // case YALNIX_NOP:
+        //     rc = kernelnop(uctxt);
+        //     break;
 
-        case YALNIX_LOCK_INIT:
-            rc = kernellockinit(uctxt);
-            break;
+        // case YALNIX_LOCK_INIT:
+        //     rc = kernellockinit(uctxt);
+        //     break;
 
-        case YALNIX_LOCK_ACQUIRE:
-            rc = kernelaquire(uctxt);
-            break;
+        // case YALNIX_LOCK_ACQUIRE:
+        //     rc = kernelaquire(uctxt);
+        //     break;
 
-        case YALNIX_LOCK_RELEASE:
-            rc = kernelrelease(uctxt);
-            break;
+        // case YALNIX_LOCK_RELEASE:
+        //     rc = kernelrelease(uctxt);
+        //     break;
 
-        case YALNIX_CVAR_INIT:
-            rc = kernelcvarinit(uctxt);
-            break;
+        // case YALNIX_CVAR_INIT:
+        //     rc = kernelcvarinit(uctxt);
+        //     break;
 
-        case YALNIX_CVAR_SIGNAL:
-            rc = kernelcavrsignal(uctxt);
-            break;
+        // case YALNIX_CVAR_SIGNAL:
+        //     rc = kernelcavrsignal(uctxt);
+        //     break;
 
-        case YALNIX_CVAR_BROADCAST:
-            rc = kernelcarbroadcast(uctxt);
-            break;
+        // case YALNIX_CVAR_BROADCAST:
+        //     rc = kernelcarbroadcast(uctxt);
+        //     break;
 
-        case YALNIX_CVAR_WAIT:
-            rc = kernelcvarwait(uctxt);
-            break;
+        // case YALNIX_CVAR_WAIT:
+        //     rc = kernelcvarwait(uctxt);
+        //     break;
 
-        case YALNIX_RECLAIM:
-            rc = kernelreclaim(uctxt);
-            break;
+        // case YALNIX_RECLAIM:
+        //     rc = kernelreclaim(uctxt);
+        //     break;
 
-        case YALNIX_CUSTOM_0:
-            rc = kernelcustom0(uctxt);
-            break;
-        case YALNIX_CUSTOM_1:
-            rc = kernelcustom1(uctxt);
-            break;
-        case YALNIX_CUSTOM_2:
-            rc = kernelcustom2(uctxt);
-            break;
+        // case YALNIX_CUSTOM_0:
+        //     rc = kernelcustom0(uctxt);
+        //     break;
+        // case YALNIX_CUSTOM_1:
+        //     rc = kernelcustom1(uctxt);
+        //     break;
+        // case YALNIX_CUSTOM_2:
+        //     rc = kernelcustom2(uctxt);
+        //     break;
 
-        case YALNIX_BOOT:
-            rc = kernelboot(uctxt);
-            break;
+        // case YALNIX_BOOT:
+        //     rc = kernelboot(uctxt);
+        //     break;
 
         default:
             break;
