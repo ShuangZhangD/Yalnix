@@ -123,18 +123,14 @@ void InitKernelPageTable(pcb_t *proc) {
             g_pageTableR0[i].valid = 1;
             g_pageTableR0[i].prot = (PROT_READ | PROT_EXEC);
             g_pageTableR0[i].pfn = i;
-            lstnode *frame;
-            nodeinit(frame);
-            frame->id = i;
+            lstnode *frame = nodeinit(i);
             remove_node(frame, freeframe_list);
         } else {
             //Protect Kernel Data & Heap
             g_pageTableR0[i].valid = 1;
             g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
             g_pageTableR0[i].pfn = i;
-            lstnode *frame;
-            nodeinit(frame);
-            frame->id = i;
+            lstnode *frame = nodeinit(i);
             remove_node(frame, freeframe_list);
         }
     }
@@ -147,9 +143,7 @@ void InitKernelPageTable(pcb_t *proc) {
         g_pageTableR0[i].valid = 1;
         g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
         g_pageTableR0[i].pfn = i;
-        lstnode *frame;
-        nodeinit(frame);
-        frame->id = i;
+        lstnode *frame = nodeinit(i);
         remove_node(frame, freeframe_list);
         //Let a userprocess have its own kernel stack
         if (stackInx < numOfStack){
@@ -189,9 +183,7 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
 
     for(i = 0;i<numOfFrames;i++)
     {
-        lstnode *frame;
-        nodeinit(frame);
-        frame->id = i;
+        lstnode *frame = nodeinit(i);
         insert_tail(frame,freeframe_list);
     }
     //keep track of free frame;
@@ -290,9 +282,7 @@ int SetKernelBrk(void *addr){
             g_pageTableR0[oldBrkPage].valid = 0;
 
             for(i = newBrkPage;i < oldBrkPage;i++){
-            lstnode *frame;
-            nodeinit(frame);
-            frame->id = i;
+            lstnode *frame = nodeinit(i);
             insert_tail(frame,freeframe_list);
             }
             //Add this frame back to free frame tracker

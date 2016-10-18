@@ -2,10 +2,10 @@
 #include "listcontrol.h"
 //use a doublylinkedlist to track free frame
 
-lstnode* nodeinit(lstnode* node)
+lstnode* nodeinit(int i)
 {
-	node = (lstnode *)malloc(sizeof(lstnode));
-	node->id = 0;
+	lstnode* node = (lstnode *)malloc(sizeof(lstnode));
+	node->id = i;
 	node->pre = NULL;
 	node->next = NULL;
 	return node;
