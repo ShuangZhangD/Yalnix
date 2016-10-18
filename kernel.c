@@ -121,11 +121,17 @@ void InitKernelPageTable(pcb_t *proc) {
             g_pageTableR0[i].valid = 1;
             g_pageTableR0[i].prot = (PROT_READ | PROT_EXEC);
             g_pageTableR0[i].pfn = i;
+            lstnode *frame;
+            frame->id = i;
+            remove_node(frame, freeframe_list);
         } else {
             //Protect Kernel Data & Heap
             g_pageTableR0[i].valid = 1;
             g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
             g_pageTableR0[i].pfn = i;
+            lstnode *frame;
+            frame->id = i;
+            remove_node(frame, freeframe_list);
         }
     }
     
@@ -133,11 +139,13 @@ void InitKernelPageTable(pcb_t *proc) {
     proc->krnlPtbSize = numOfStack;
 
     //Protect Kernel Stack
-    for (i=kStackStPage, stackInx = 0; i< kStackEdPage && stackInx < numOfStack; i++, stackInx++ ){
+    for (i=kStackStPage, stackInx = 0; i< kStackEdPage; i++, stackInx++){
         g_pageTableR0[i].valid = 1;
         g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
         g_pageTableR0[i].pfn = i;
-        
+        lstnode *frame;
+        frame->id = i;
+        remove_node(frame, freeframe_list)
         //Let a userprocess have its own kernel stack
         if (stackInx < numOfStack){
             proc->krnlPtb[stackInx] = g_pageTableR0[i];
@@ -174,7 +182,6 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     g_freeFrame = listinit();
 
     int numOfFrames = (pmem_size / PAGESIZE);
-    dblist *freeframe_list;
     dblist* listinit(freeframe_list);
     lstnode *frame;
     for(i = 0;i<numOfFrames,i++)
@@ -184,7 +191,7 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     }
     //keep track of free frame;
     //TODO Jason Please finish this tracker! Thanks!
-     
+    
     //Build initial page table for Region 0
     InitKernelPageTable(idleProc);
     WriteRegister(REG_PTBR0, (unsigned int) &g_pageTableR0);
@@ -259,14 +266,14 @@ int SetKernelBrk(void *addr){
         
         int newBrkPage = newBrk >> PAGESHIFT;
         int oldBrkPage = m_kernel_brk >> PAGESHIFT;
-        
+        int i;
         if (newBrk > m_kernel_brk){
 
             //TODO Jason Please finish this function(), I give you a sketch here.
             if (isemptylist(freeframe_list)){
                 g_pageTableR0[i].valid = 1;
                 g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
-                // lstnode *first = firstnode(freeframe_list);
+                lstnode *first = firstnode(freeframe_list);
                 g_pageTableR0[i].pfn = first->id;//TODO Physical Frame Number; 
             }
             //FLUSH!!!
@@ -275,8 +282,12 @@ int SetKernelBrk(void *addr){
 
             //TODO Jason Please finish this function(), I give you a sketch here.
 
-            g_pageTableR0[i].valid = 0;
+            g_pageTableR0[oldBrkPage].valid = 0;
+            lstnode *frame;
+            for(i = newBrkPage,i < oldBrkPage,i++){
+            frame->id = i;
             insert_tail(frame,freeframe_list);
+            }
             //Add this frame back to free frame tracker
 
             //FLUSH!!!

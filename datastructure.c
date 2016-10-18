@@ -3,14 +3,14 @@
 //use a doublylinkedlist to track free frame
 
 
-dblist* listinit(dblist *list)
+dblist* listinit(dblist* list)
 {
 	int size = 0;
 	list->head = NULL;
 	list->tail = NULL;
 }
 
-lstnode *firstnode(dblist *list)
+lstnode* firstnode(dblist* list)
 {
 	return list->head;
 }
@@ -24,7 +24,7 @@ int isemptylist(dblist* list)
 	return 1;
 }
 
-void insert_tail(lstnode *node，dblist* list)
+void insert_tail(lstnode* node，dblist* list)
 {
 	node->pre = list->tail->pre;
 	node->next = list->tail;
@@ -33,7 +33,7 @@ void insert_tail(lstnode *node，dblist* list)
 	list->size++;
 }
 
-void insert_head(lstnode *node，dblist* list)
+void insert_head(lstnode* node，dblist* list)
 {
 	node->next = list->head->next ;
 	node->pre = list->head;	
@@ -42,21 +42,21 @@ void insert_head(lstnode *node，dblist* list)
 	list->size++;
 }
 
-void remove_tail(dblist *list)
+void remove_tail(dblist* list)
 {
 	list->tail->pre = list->tail->pre->pre;
 	list->tail->pre = tail;
 	list->size--;
 }
 
-void remove_head(dblist *list)
+void remove_head(dblist* list)
 {
 	list->head->next = list->head->next->next;
 	head->next->previous = head;
 	list->size--;
 }
 
-lstnode *search_node(lstnode *node,dblist *list)
+lstnode* search_node(lstnode* node,dblist* list)
 {
 	lstnode *h = list->head;
 	if (isemptylist(list))
@@ -69,7 +69,7 @@ lstnode *search_node(lstnode *node,dblist *list)
 	return h;
 }
 
-void remove_node(lstnode *node, dblist *list)
+void remove_node(lstnode* node, dblist* list)
 {
 	lstnode *remove = search_node(lstnode *node,dblist *list);
 	remove->pre->next = remove->next;

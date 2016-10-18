@@ -8,7 +8,7 @@ typedef struct pte pte_t;
 unsigned int m_kernel_brk;
 unsigned int m_kernel_data_start;
 struct pte g_pageTableR0[MAX_PT_LEN];
-dblist* g_freeFrame;
+dblist* freeFrame_list;
 
 
 int kernelfork(UserContext *uctxt);
