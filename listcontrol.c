@@ -27,7 +27,7 @@ dblist* listinit(dblist* list)
 
 lstnode* firstnode(dblist* list)
 {
-	return list->head;
+	return list->head->next;
 }
 
 int isemptylist(dblist* list)
