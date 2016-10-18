@@ -2,7 +2,6 @@
 #include"yalnix.h"
 #include"hardware.h"
 #include"loadprogram.h"
-#include"datastucture.h"
 
 //Global Variables
 int m_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)

@@ -9,10 +9,10 @@ typedef struct ProcessControlBlock{
     UserContext *uctxt;                      //Snapshot of user context
     KernelContext *kctxt;                    //Snapshot of kernel context
     pte_t usrPtb[MAX_PT_LEN];               //PageTable for Userland
-    pte_t *krnlPtb;                         //Pointer to Kernel Page Table
-    int krnlPtbSize;
+    pte_t *krnlStackPtb;                         //Pointer to Kernel Page Table
+    int krnlStackPtbSize;
     pte_t *parent;                            //A pointer to parent process
-    dlqueue *children;                        //A pointer to mulitple child processes
+    dblist *children;                        //A pointer to mulitple child processes
     unsigned int sp; //TODO temp
     unsigned int brk; //TODO temp
 
