@@ -11,11 +11,11 @@ lstnode* nodeinit(int i)
 	return node;
 }
 
-dblist* listinit(dblist* list)
+dblist* listinit()
 {
 	
 	lstnode* n = (lstnode *)malloc(sizeof(lstnode));
-	list = (dblist* )malloc(sizeof(dblist));
+	dblist* list = (dblist* )malloc(sizeof(dblist));
 	n->id = 0;
 	n->pre = NULL;
 	n->next = NULL;
@@ -27,12 +27,19 @@ dblist* listinit(dblist* list)
 
 lstnode* firstnode(dblist* list)
 {
-	return list->head;
+	if(isemptylist(list))
+	{
+		printf("%s\n", "error");
+		return NULL;
+	else{
+		return list->head->next;
+	}
+	}
 }
 
 int isemptylist(dblist* list)
 {
-	if (!list || (list->size == 0 && list->head->next == NULL))
+	if (list->size == 0 && list->head->next == NULL)
 		{
 			return 1;
 		}
@@ -75,29 +82,47 @@ void insert_head(lstnode* node, dblist* list)
 	list->size++;
 }
 
-void remove_tail(dblist* list)
+lstnode* remove_tail(dblist* list)
 {
+	lstnode* tnode = list->tail->pre;
 	if(isemptylist(list))
 	{
 		printf("%s\n", "error");
+		return NULL;
+	}
+	else if(list->tail->pre->pre == NULL){
+		list->head->next = list->tail;
+		list->tail->pre = list->head;
+		list->size--;
+		return tnode;
 	}
 	else{
 	list->tail->pre = list->tail->pre->pre;
 	list->tail->pre = list->tail;
 	list->size--;
+	return tnode;
 	}
 }
 
-void remove_head(dblist* list)
+lstnode* remove_head(dblist* list)
 {
+	lstnode* hnode = list->head->next;
 	if(isemptylist(list))
 	{
 		printf("%s\n", "error");
+		return NULL;
+	}
+	else if(list->head->next->next == NULL){
+		list->head->next = list->tail;
+		list->tail->pre = list->head;
+		list->size--;
+		return hnode;
 	}
 	else{
 	list->head->next = list->head->next->next;
 	list->head->next->pre = list->head;
 	list->size--;
+	return hnode;
 	}
 }
 
@@ -119,6 +144,7 @@ void remove_node(lstnode* node, dblist* list)
 	if(isemptylist(list))
 	{
 		printf("%s\n", "error");
+		return NULL;
 	}
 	else{
 	lstnode *remove = search_node(node,list);
