@@ -110,10 +110,10 @@ void InitKernelPageTable(pcb_t *proc) {
     
     unsigned int kDataEdPage = m_kernel_brk >> PAGESHIFT; 
     unsigned int kDataStPage = m_kernel_data_start >> PAGESHIFT;
-    unsigned int kStackStPage = KERNEL_STACK_LIMIT >> PAGESHIFT;
-    unsigned int kStackEdPage = KERNEL_STACK_BASE >> PAGESHIFT;
+    unsigned int kStackStPage = KERNEL_STACK_BASE >> PAGESHIFT;
+    unsigned int kStackEdPage = KERNEL_STACK_LIMIT >> PAGESHIFT;
     int stackInx ;
-    int numOfStack = kStackEdPage - kStackStPage + 1;
+    int numOfStack = kStackEdPage - kStackStPage;
     int i;
     
     //Protect Kernel Text, Data and Heap
@@ -207,7 +207,8 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     //====Cook DoIdle()====
     idleProc->usrPtb[0].valid = 1; 
     idleProc->usrPtb[0].prot = (PROT_WRITE | PROT_READ);
-    idleProc->usrPtb[0].pfn = 0x001;//TODO Allocate a free frame and give it a number
+    lstnode *free = remove_node(freeframe_list);
+    idleProc->usrPtb[0].pfn = free->id;
 
     //Allocate One page to it
     idleProc->uctxt->sp = (void *) (VMEM_1_LIMIT - PAGESIZE - INITIAL_STACK_FRAME_SIZE);

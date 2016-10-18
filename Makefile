@@ -21,6 +21,10 @@
 ALL = $(KERNEL_ALL) $(USER_APPS)
 KERNEL_ALL = yalnix
 
+###
+BUILD_PATH = ~/Desktop/coredump
+###
+
 #List all kernel source files here.  
 KERNEL_SRCS = kernel.c traphandler.c listcontrol.c pcb.c io.c lock.c pipe.c cvar.c 
 #List the objects to be formed form the kernel source files here.  Should be the same as the prvious list, replacing ".c" with ".o"
@@ -113,9 +117,15 @@ $(KERNEL_ALL): $(KERNEL_OBJS) $(KERNEL_LIBS) $(KERNEL_INCS)
 $(USER_APPS): $(USER_OBJS) $(USER_INCS)
 	$(ETCDIR)/yuserbuild.sh $@ $(DDIR58) $@.o
 
-
-
-
+copy: 
+	cp -r ../sf_YalnixShare ~/Desktop/coredump
+	~/Desktop/coredump/yalnix
+	
+dt:
+	cd ~/Desktop/coredump/
+	
+sf: 
+	cd /media/sf_YalnixShare
 
 
 
