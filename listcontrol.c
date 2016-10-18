@@ -2,7 +2,7 @@
 #include "listcontrol.h"
 //use a doublylinkedlist to track free frame
 
-lstnode nodeinit(lstnode* node)
+lstnode* nodeinit(lstnode* node)
 {
 	node = (lstnode *)malloc(sizeof(lstnode));
 	node->id = 0;
@@ -32,7 +32,7 @@ lstnode* firstnode(dblist* list)
 
 int isemptylist(dblist* list)
 {
-	if (list->head->next = NULL&&list->size = 0)
+	if (list->head->next = NULL&&list->size == 0)
 		{
 			return 1;
 		}
