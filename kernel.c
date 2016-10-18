@@ -207,7 +207,8 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     //====Cook DoIdle()====
     idleProc->usrPtb[0].valid = 1; 
     idleProc->usrPtb[0].prot = (PROT_WRITE | PROT_READ);
-    idleProc->usrPtb[0].pfn = firstnode(freeframe_list)->id;
+    lstnode *free = remove_node(freeframe_list);
+    idleProc->usrPtb[0].pfn = free->id;
 
     //Allocate One page to it
     idleProc->uctxt->sp = (void *) (VMEM_1_LIMIT - PAGESIZE - INITIAL_STACK_FRAME_SIZE);
