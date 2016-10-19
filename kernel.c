@@ -195,6 +195,7 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
         insert_tail(frame,freeframe_list);
     }
     
+    InitUserPageTable(idleProc);
 
     TracePrintf(1, "init kernel page table \n");
     //Build initial page table for Region 0
@@ -204,7 +205,6 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
 
     TracePrintf(1, "init user page table \n");
     //Build initial page table for Region 1
-    InitUserPageTable(idleProc);
     WriteRegister(REG_PTBR1, (unsigned int) &(idleProc->usrPtb[0]));
     WriteRegister(REG_PTLR1, (unsigned int) MAX_PT_LEN);
 
@@ -230,7 +230,7 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     idleProc->uctxt->pc = idlePtr;
     
     //====================
-    
+
     TracePrintf(1, "Exit\n");
     return;
 }
