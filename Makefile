@@ -118,9 +118,8 @@ $(USER_APPS): $(USER_OBJS) $(USER_INCS)
 	$(ETCDIR)/yuserbuild.sh $@ $(DDIR58) $@.o
 
 copy: 
-	cp -r ../sf_yalnix ~/Desktop/coredump
-	~/Desktop/coredump/yalnix
-	
+	cp yalnix ~/Desktop/
+	~/Desktop/yalnix
 dt:
 	cd ~/Desktop/coredump/
 	

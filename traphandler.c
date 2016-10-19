@@ -291,6 +291,6 @@ void InitInterruptTable(){
     intrptTb[TRAP_DISK] = &TrapDisk;
 
     //Write talbe into register
-    WriteRegister(REG_VECTOR_BASE,(unsigned int) &intrptTb);
+    WriteRegister(REG_VECTOR_BASE,(unsigned int) intrptTb);
 
 }
