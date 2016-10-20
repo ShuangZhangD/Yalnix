@@ -24,7 +24,7 @@ typedef struct ProcessControlBlock{
     int pid;                                //Process ID
     UserContext *uctxt;                      //Snapshot of user context
     KernelContext *kctxt;                    //Snapshot of kernel context
-    pte_t usrPtb[MAX_PT_LEN];               //PageTable for Userland
+    pte_t *usrPtb;               //PageTable for Userland
     pte_t *krnlStackPtb;                         //Pointer to Kernel Page Table
     int krnlStackPtbSize;
     pte_t *parent;                            //A pointer to parent process

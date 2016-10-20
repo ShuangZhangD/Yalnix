@@ -97,13 +97,18 @@ void SetKernelData(void *_KernelDataStart, void *_KernelDataEnd){
 
 void InitUserPageTable (pcb_t *proc){
     int i;
-    
+    proc->usrPtb = (pte_t *) malloc(sizeof(pte_t) * MAX_PT_LEN);
     //Mark User Page table as Invalid;
     for (i = 0; i < MAX_PT_LEN; i++){
         proc->usrPtb[i].valid = 0;
         proc->usrPtb[i].prot = PROT_NONE;
         proc->usrPtb[i].pfn = -1;//TODO
     }
+
+    proc->usrPtb[MAX_PT_LEN - 1].valid = 1;
+    proc->usrPtb[MAX_PT_LEN - 1].prot = (PROT_READ | PROT_WRITE);
+    lstnode *free = remove_head(freeframe_list);
+    proc->usrPtb[MAX_PT_LEN -1].pfn = free->id;
 
     return;
 }
@@ -119,7 +124,7 @@ void InitKernelPageTable(pcb_t *proc) {
     int numOfStack = KERNEL_STACK_MAXSIZE / PAGESIZE;
     int i;
     
-    g_pageTableR0 = (pte_t *) malloc(sizeof(pte_t) * MAX_PT_LEN);
+    // g_pageTableR0 = (pte_t *) malloc(sizeof(pte_t) * MAX_PT_LEN);
 
     //Protect Kernel Text, Data and Heap
     for (i=0; i <= kDataEdPage; i++){
@@ -170,19 +175,20 @@ pcb_t *InitPcb(UserContext *uctxt){
     proc->procState = RUNNING;
     proc->pid = g_pid++;
     proc->uctxt = uctxt;
-    
+
     return proc;
 }
 
 void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
+
     int i;
     //Initialize interrupt vector table and REG_VECTOR_BASE
     InitInterruptTable();
     
     TracePrintf(1, "init pcb \n");
     //Initialize New Process
-    idleProc = InitPcb(uctxt);
-    
+    pcb_t* idleProc = InitPcb(uctxt);
+
     TracePrintf(1, "init free frame list \n");
     //Build a structure to track free frame
     int numOfFrames = (pmem_size / PAGESIZE);
@@ -197,39 +203,40 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     
     InitUserPageTable(idleProc);
 
+   //====Cook DoIdle()====
+    TracePrintf(1, "DoIdle\n");
+
+    //Allocate One page to it
+    
+    //Get the function pointer of DoIdle
+    // void (*idlePtr)(void) = &DoIdle
+    idleProc->uctxt->pc = &DoIdle;
+    idleProc->uctxt->sp = (void * )KERNEL_STACK_LIMIT-4;   
+    //====================
+
+
     TracePrintf(1, "init kernel page table \n");
     //Build initial page table for Region 0
     InitKernelPageTable(idleProc);
-    WriteRegister(REG_PTBR0, (unsigned int) &g_pageTableR0[0]);
+    WriteRegister(REG_PTBR0, (unsigned int) g_pageTableR0);
     WriteRegister(REG_PTLR0, (unsigned int) MAX_PT_LEN);
+
 
     TracePrintf(1, "init user page table \n");
     //Build initial page table for Region 1
-    WriteRegister(REG_PTBR1, (unsigned int) &(idleProc->usrPtb[0]));
+    WriteRegister(REG_PTBR1, (unsigned int) idleProc->usrPtb);
     WriteRegister(REG_PTLR1, (unsigned int) MAX_PT_LEN);
 
     TracePrintf(1, "enable VM\n");
     // Enable virtual memory
     WriteRegister(REG_VM_ENABLE,1);
     m_enableVM = 1;
+
+    // TracePrintf(1, "UserContext = %x \n", idleProc->uctxt);
     
     //Create first process  and load initial program to it
     // loadprogram(char *name, char *args[], proc);
-   //====Cook DoIdle()====
-    TracePrintf(1, "DoIdle\n");
-    idleProc->usrPtb[0].valid = 1; 
-    idleProc->usrPtb[0].prot = (PROT_WRITE | PROT_READ);
-    lstnode *free = remove_head(freeframe_list);
-    idleProc->usrPtb[0].pfn = free->id;
-
-    //Allocate One page to it
-    idleProc->uctxt->sp = (void *) (VMEM_1_LIMIT - PAGESIZE - INITIAL_STACK_FRAME_SIZE);
-    
-    //Get the function pointer of DoIdle
-    void (*idlePtr)(void) = &DoIdle;
-    idleProc->uctxt->pc = idlePtr;
-    
-    //====================
+   
 
     TracePrintf(1, "Exit\n");
     return;
@@ -307,7 +314,9 @@ int SetKernelBrk(void *addr){
         //Let addr be the new kernel break
     
     }
+
     m_kernel_brk = newBrk;
+    TracePrintf(1, "New Brk! m_kernel_brk = %x\n", m_kernel_brk);
     return 0;
 }
 
