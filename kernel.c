@@ -7,6 +7,7 @@
 int m_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)
 int g_pid = 1;
 
+pcb_t* userProc;
 
 dblist* freeframe_list;
 
@@ -203,17 +204,6 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     
     InitUserPageTable(idleProc);
 
-   //====Cook DoIdle()====
-    TracePrintf(1, "DoIdle\n");
-
-    //Allocate One page to it
-    
-    //Get the function pointer of DoIdle
-    // void (*idlePtr)(void) = &DoIdle
-    idleProc->uctxt->pc = &DoIdle;
-    idleProc->uctxt->sp = (void * )KERNEL_STACK_LIMIT-4;   
-    //====================
-
 
     TracePrintf(1, "init kernel page table \n");
     //Build initial page table for Region 0
@@ -232,8 +222,17 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
     WriteRegister(REG_VM_ENABLE,1);
     m_enableVM = 1;
 
-    // TracePrintf(1, "UserContext = %x \n", idleProc->uctxt);
-    
+
+   //====Cook DoIdle()====
+    TracePrintf(1, "DoIdle\n");
+
+    //Get the function pointer of DoIdle
+    void (*idlePtr)(void) = &DoIdle;
+    uctxt->pc = idlePtr;
+    uctxt->sp = (void*)(KERNEL_STACK_LIMIT  - INITIAL_STACK_FRAME_SIZE - POST_ARGV_NULL_SPACE);  
+    //====================
+
+
     //Create first process  and load initial program to it
     // loadprogram(char *name, char *args[], proc);
    
@@ -245,7 +244,7 @@ void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
 //Do Idle Process
 void DoIdle (void){
     while(1){
-        TracePrintf(1, "Doodle\n");
+        TracePrintf(1, "DoIdle\n");
         Pause();
     }
     return;
