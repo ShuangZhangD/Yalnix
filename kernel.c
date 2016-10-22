@@ -2,6 +2,7 @@
 #include "yalnix.h"
 #include "listcontrol.h"
 #include "pcb.h"
+#include "loadprogram.h"
 
 //Global Variables
 int m_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)
@@ -190,9 +191,9 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     
 
     //Create first process  and load initial program to it
-    rc = loadProgram("init", cmd_args, idleProc);
+    rc = LoadProgram("init", cmd_args, idleProc);
+    TracePrintf(1, "rc=%d\n", rc);
     if (rc == KILL){
-        
     }
 
     TracePrintf(1, "Exit\n");
