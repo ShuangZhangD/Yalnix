@@ -1,9 +1,11 @@
 #include "memorymanage.h"
-#include "datastructure.h"
 #include "hardware.h"
+#include "listcontrol.h"
+
+extern dblist* freeframe_list;
 
 //TODO return code
-void writepagetable(pte_t *pagetable[], int startPage, int endPage, int valid, int prot){
+void writepagetable(pte_t *pagetable, int startPage, int endPage, int valid, int prot){
  	int i;
 	for (i=startPage; i<=endPage; i++){
 		pagetable[i].valid = 1;

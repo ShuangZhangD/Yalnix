@@ -1,7 +1,7 @@
 #include "kernel.h"
 #include "yalnix.h"
-#include "loadprogram.h"
 #include "listcontrol.h"
+#include "pcb.h"
 
 //Global Variables
 int m_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)
@@ -150,24 +150,25 @@ int SetKernelBrk(void *addr){
 
 void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
 
-    int i;
+    int i, rc;
     //Initialize interrupt vector table and REG_VECTOR_BASE
     TracePrintf(1, "Init interrupt table.\n");
     InitInterruptTable();
     
     TracePrintf(1, "Init pcb.\n");
     //Initialize New Process
-    pcb_t* idleProc = InitPcb(uctxt);
+    pcb_t *idleProc = InitPcb(uctxt);
 
-    TracePrintf(1, "Init free frame list.\n");
     //Build a structure to track free frame
-    
+    TracePrintf(1, "Init free frame list.\n");
+    initFreeFrameTracking(pmem_size);
+
     TracePrintf(1, "Init user page table \n");
     //Build initial page table for Region 1 (before kernel page protection)
     InitUserPageTable(idleProc);
+    TracePrintf(1, "User PageTable Address: %x\n", idleProc->usrPtb);
 
-
-    TracePrintf(1, "init kernel page table \n");
+    TracePrintf(1, "Init kernel page table \n");
     //Build initial page table for Region 0
     InitKernelPageTable(idleProc);
     WriteRegister(REG_PTBR0, (unsigned int) g_pageTableR0);
@@ -176,8 +177,7 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     WriteRegister(REG_PTBR1, (unsigned int) idleProc->usrPtb);
     WriteRegister(REG_PTLR1, (unsigned int) MAX_PT_LEN);
 
-    TracePrintf(1, "enable VM\n");
-    // Enable virtual memory
+    TracePrintf(1, "Enable VM\n");
     WriteRegister(REG_VM_ENABLE,1);
     m_enableVM = 1;
 
@@ -185,11 +185,15 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
    //====Cook DoIdle()====
     TracePrintf(1, "DoIdle\n");
     CookDoIdle(uctxt);
+
+    idleProc->uctxt = *uctxt;
     
 
     //Create first process  and load initial program to it
-    loadprogram(char *name, cmd_args, idleProc);
-   
+    rc = loadProgram("init", cmd_args, idleProc);
+    if (rc == KILL){
+        
+    }
 
     TracePrintf(1, "Exit\n");
     return;
@@ -208,6 +212,9 @@ void InitUserPageTable (pcb_t *proc){
         proc->usrPtb[i].prot = PROT_NONE;
         proc->usrPtb[i].pfn = UNALLOCATED;
     }
+
+    // idleProc->usrPtb[MAX_PT_LEN - 1].pfn = nodeinit(i);
+    // remove_node(frame, freeframe_list);
 
     return;
 }
@@ -268,13 +275,14 @@ void InitKernelPageTable(pcb_t *proc) {
 //Do Idle Process
 void DoIdle (void){
     while(1){
-        TracePrintf(1, "Doodle\n");
+        TracePrintf(1, "DoIdle\n");
         Pause();
     }
     return;
 }
 
 void CookDoIdle(UserContext *uctxt){
+
     //Get the function pointer of DoIdle
     void (*idlePtr)(void) = &DoIdle;
     uctxt->pc = idlePtr;
@@ -304,7 +312,7 @@ pcb_t *InitPcb(UserContext *uctxt){
     pcb_t *proc = (pcb_t *) malloc (sizeof(pcb_t));
     proc->procState = RUNNING;
     proc->pid = g_pid++;
-    proc->uctxt = uctxt;
+    proc->uctxt = *uctxt;
 
     return proc;
 }
@@ -336,12 +344,12 @@ KernelContext *MyKCS(KernelContext *kc_in,void *curr_pcb_p,void *next_pcb_p){
     pcb_t *next = (pcb_t *) next_pcb_p;
 
     //Copy the kernel context to current process's pcb
-    cur->kctxt = kc_in;
+    cur->kctxt = *kc_in;
 
     //Remember to change page table entries for kernel stack
 
     //Return a pointer to a kernel context it had earlier saved
-    return next->kctxt;
+    return &next->kctxt;
 
 }
 

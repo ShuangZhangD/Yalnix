@@ -7,9 +7,11 @@
 #include <unistd.h>
 #include <hardware.h>
 #include <load_info.h>
-#include "memorymanage.h"
 
 // ==>> #include anything you need for your kernel here
+#include "memorymanage.h"
+#include "yalnix.h"
+#include "datastructure.h"
 
 /*
  *  Load a program into an existing address space.  The program comes from
@@ -18,8 +20,7 @@
  *  to the process or PCB structure for the process into which the program
  *  is to be loaded. 
  */
-int
-LoadProgram(char *name, char *args[], pcb_t *proc) 
+int LoadProgram(char *name, char *args[], pcb_t *proc) 
 // ==>> Declare the argument "proc" to be a pointer to your PCB or
 // ==>> process descriptor data structure.  We assume you have a member
 // ==>> of this structure used to hold the cpu context 
@@ -40,7 +41,6 @@ LoadProgram(char *name, char *args[], pcb_t *proc)
   int stack_npg;
   long segment_size;
   char *argbuf;
-  int i;
   
   /*
    * Open the executable file 
@@ -187,7 +187,7 @@ LoadProgram(char *name, char *args[], pcb_t *proc)
 // ==>> of the region 1 virtual address space.
 // ==>> These pages should be marked valid, with a
 // ==>> protection of (PROT_READ | PROT_WRITE).
-  writepagetable(proc->usrPtb, PT_MAX_LEN - 1 - stack_npg, PT_MAX_LEN - 1, VALID, (PROT_READ | PROT_WRITE));
+  writepagetable(proc->usrPtb, MAX_PT_LEN - 1 - stack_npg, MAX_PT_LEN - 1, VALID, (PROT_READ | PROT_WRITE));
   /*
    * All pages for the new address space are now in the page table.  
    * But they are not yet in the TLB, remember!

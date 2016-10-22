@@ -26,19 +26,19 @@ BUILD_PATH = ~/Desktop/coredump
 ###
 
 #List all kernel source files here.  
-KERNEL_SRCS = kernel.c traphandler.c listcontrol.c pcb.c io.c lock.c pipe.c cvar.c 
+KERNEL_SRCS = kernel.c traphandler.c listcontrol.c pcb.c io.c lock.c pipe.c cvar.c memorymanage.c loadprogram.c 
 #List the objects to be formed form the kernel source files here.  Should be the same as the prvious list, replacing ".c" with ".o"
-KERNEL_OBJS = kernel.o traphandler.o listcontrol.o pcb.o io.o lock.o pipe.o cvar.o
+KERNEL_OBJS = kernel.o traphandler.o listcontrol.o pcb.o io.o lock.o pipe.o cvar.o memorymanage.o loadprogram.o 
 #List all of the header files necessary for your kernel
-KERNEL_INCS = kernel.h traphandler.h listcontrol.h pcb.h datastructure.h  io.h lock.h pipe.h cvar.h 
+KERNEL_INCS = kernel.h traphandler.h listcontrol.h pcb.h io.h lock.h pipe.h cvar.h memorymanage.h datastructure.h  
 
 
 #List all user programs here.
-USER_APPS = 
+USER_APPS = init
 #List all user program source files here.  SHould be the same as the previous list, with ".c" added to each file
-USER_SRCS = 
+USER_SRCS = init.c
 #List the objects to be formed form the user  source files here.  Should be the same as the prvious list, replacing ".c" with ".o"
-USER_OBJS = 
+USER_OBJS = init.o
 #List all of the header files necessary for your user programs
 USER_INCS = 
 

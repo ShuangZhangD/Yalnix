@@ -4,8 +4,7 @@
 //global variables
 unsigned int m_kernel_brk;
 unsigned int m_kernel_data_start;
-// pte_t g_pageTableR0[MAX_PT_LEN];
-pte_t *g_pageTableR0;
+pte_t g_pageTableR0[MAX_PT_LEN];
 
 pcb_t *idleProc;
 dblist* freeFrame_list;
@@ -59,3 +58,7 @@ void DoIdle(void);
 void initFreeFrameTracking(int pmem_size);
 
 void CookDoIdle(UserContext *uctxt);
+
+void InitUserPageTable (pcb_t *proc);
+
+void InitKernelPageTable(pcb_t *proc);
