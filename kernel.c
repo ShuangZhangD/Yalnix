@@ -96,6 +96,109 @@ void SetKernelData(void *_KernelDataStart, void *_KernelDataEnd){
     return;
 }
 
+int SetKernelBrk(void *addr){
+    //returns to the kernel lib
+    unsigned int newBrk = (unsigned int) addr;
+
+    TracePrintf(1, "Being called ! addr = %x, m_enableVM = %d\n", addr, m_enableVM);
+
+    int rc = 0;
+    if (m_enableVM){
+
+        rc = checkPageStatus(newBrk);
+        if (rc) return -1;
+        
+        int newBrkPage = newBrk >> PAGESHIFT;
+        int oldBrkPage = m_kernel_brk >> PAGESHIFT;
+        int i;
+        if (newBrk > m_kernel_brk){
+
+            //TODO Jason Please finish this function(), I give you a sketch here.
+            if (!isemptylist(freeframe_list)){
+                g_pageTableR0[i].valid = 1;
+                g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
+                lstnode *first = remove_head(freeframe_list);
+                g_pageTableR0[i].pfn = first->id;//TODO Physical Frame Number; 
+            }
+            //Flush Tlb!
+            WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_0);
+
+        }else if (newBrk < m_kernel_brk){
+
+            g_pageTableR0[oldBrkPage].valid = 0;
+
+            //TODO REMAP
+            for(i = newBrkPage;i <= oldBrkPage;i++){
+                lstnode *frame = nodeinit(i);
+                insert_tail(frame,freeframe_list);
+            }
+            //Add this frame back to free frame tracker
+
+            //FLUSH!!!
+            WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_0);
+            if (rc) return -1;
+        }
+        //Let addr be the new kernel break
+    
+    }
+
+    m_kernel_brk = newBrk;
+    TracePrintf(1, "New Brk! m_kernel_brk = %x\n", m_kernel_brk);
+    return 0;
+}
+
+
+void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
+
+    int i;
+    //Initialize interrupt vector table and REG_VECTOR_BASE
+    TracePrintf(1, "Init interrupt table.\n");
+    InitInterruptTable();
+    
+    TracePrintf(1, "Init pcb.\n");
+    //Initialize New Process
+    pcb_t* idleProc = InitPcb(uctxt);
+
+    TracePrintf(1, "Init free frame list.\n");
+    //Build a structure to track free frame
+    
+    TracePrintf(1, "Init user page table \n");
+    //Build initial page table for Region 1 (before kernel page protection)
+    InitUserPageTable(idleProc);
+
+
+    TracePrintf(1, "init kernel page table \n");
+    //Build initial page table for Region 0
+    InitKernelPageTable(idleProc);
+    WriteRegister(REG_PTBR0, (unsigned int) g_pageTableR0);
+    WriteRegister(REG_PTLR0, (unsigned int) MAX_PT_LEN);
+
+    WriteRegister(REG_PTBR1, (unsigned int) idleProc->usrPtb);
+    WriteRegister(REG_PTLR1, (unsigned int) MAX_PT_LEN);
+
+    TracePrintf(1, "enable VM\n");
+    // Enable virtual memory
+    WriteRegister(REG_VM_ENABLE,1);
+    m_enableVM = 1;
+
+
+   //====Cook DoIdle()====
+    TracePrintf(1, "DoIdle\n");
+    CookDoIdle(uctxt);
+    
+
+    //Create first process  and load initial program to it
+    loadprogram(char *name, cmd_args, idleProc);
+   
+
+    TracePrintf(1, "Exit\n");
+    return;
+}
+
+//  =========================================================================
+
+
+
 void InitUserPageTable (pcb_t *proc){
     int i;
     proc->usrPtb = (pte_t *) malloc(sizeof(pte_t) * MAX_PT_LEN);
@@ -103,13 +206,8 @@ void InitUserPageTable (pcb_t *proc){
     for (i = 0; i < MAX_PT_LEN; i++){
         proc->usrPtb[i].valid = 0;
         proc->usrPtb[i].prot = PROT_NONE;
-        proc->usrPtb[i].pfn = -1;//TODO
+        proc->usrPtb[i].pfn = UNALLOCATED;
     }
-
-    proc->usrPtb[MAX_PT_LEN - 1].valid = 1;
-    proc->usrPtb[MAX_PT_LEN - 1].prot = (PROT_READ | PROT_WRITE);
-    lstnode *free = remove_head(freeframe_list);
-    proc->usrPtb[MAX_PT_LEN -1].pfn = free->id;
 
     return;
 }
@@ -125,7 +223,6 @@ void InitKernelPageTable(pcb_t *proc) {
     int numOfStack = KERNEL_STACK_MAXSIZE / PAGESIZE;
     int i;
     
-    // g_pageTableR0 = (pte_t *) malloc(sizeof(pte_t) * MAX_PT_LEN);
 
     //Protect Kernel Text, Data and Heap
     for (i=0; i <= kDataEdPage; i++){
@@ -168,6 +265,38 @@ void InitKernelPageTable(pcb_t *proc) {
 
 }
 
+//Do Idle Process
+void DoIdle (void){
+    while(1){
+        TracePrintf(1, "Doodle\n");
+        Pause();
+    }
+    return;
+}
+
+void CookDoIdle(UserContext *uctxt){
+    //Get the function pointer of DoIdle
+    void (*idlePtr)(void) = &DoIdle;
+    uctxt->pc = idlePtr;
+    uctxt->sp = (void*)(KERNEL_STACK_LIMIT  - INITIAL_STACK_FRAME_SIZE - POST_ARGV_NULL_SPACE); 
+    return;
+}
+
+
+void initFreeFrameTracking(int pmem_size){
+    int i;
+    int numOfFrames = (pmem_size / PAGESIZE);
+    freeframe_list = listinit();
+
+    for(i = 0;i<numOfFrames;i++)
+    {
+        lstnode *frame = nodeinit(i);
+        insert_tail(frame,freeframe_list);
+    }
+    return;
+}
+
+
 pcb_t *InitPcb(UserContext *uctxt){
     //Initialize Queue TODO Jason Please finish this! At least finish running queue!
     
@@ -180,75 +309,6 @@ pcb_t *InitPcb(UserContext *uctxt){
     return proc;
 }
 
-void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt){
-
-    int i;
-    //Initialize interrupt vector table and REG_VECTOR_BASE
-    InitInterruptTable();
-    
-    TracePrintf(1, "init pcb \n");
-    //Initialize New Process
-    pcb_t* idleProc = InitPcb(uctxt);
-
-    TracePrintf(1, "init free frame list \n");
-    //Build a structure to track free frame
-    int numOfFrames = (pmem_size / PAGESIZE);
-    freeframe_list = listinit();
-
-    TracePrintf(1, "insert freeframe list \n");
-    for(i = 0;i<numOfFrames;i++)
-    {
-        lstnode *frame = nodeinit(i);
-        insert_tail(frame,freeframe_list);
-    }
-    
-    InitUserPageTable(idleProc);
-
-
-    TracePrintf(1, "init kernel page table \n");
-    //Build initial page table for Region 0
-    InitKernelPageTable(idleProc);
-    WriteRegister(REG_PTBR0, (unsigned int) g_pageTableR0);
-    WriteRegister(REG_PTLR0, (unsigned int) MAX_PT_LEN);
-
-
-    TracePrintf(1, "init user page table \n");
-    //Build initial page table for Region 1
-    WriteRegister(REG_PTBR1, (unsigned int) idleProc->usrPtb);
-    WriteRegister(REG_PTLR1, (unsigned int) MAX_PT_LEN);
-
-    TracePrintf(1, "enable VM\n");
-    // Enable virtual memory
-    WriteRegister(REG_VM_ENABLE,1);
-    m_enableVM = 1;
-
-
-   //====Cook DoIdle()====
-    TracePrintf(1, "DoIdle\n");
-
-    //Get the function pointer of DoIdle
-    void (*idlePtr)(void) = &DoIdle;
-    uctxt->pc = idlePtr;
-    uctxt->sp = (void*)(KERNEL_STACK_LIMIT  - INITIAL_STACK_FRAME_SIZE - POST_ARGV_NULL_SPACE);  
-    //====================
-
-
-    //Create first process  and load initial program to it
-    // loadprogram(char *name, char *args[], proc);
-   
-
-    TracePrintf(1, "Exit\n");
-    return;
-}
-
-//Do Idle Process
-void DoIdle (void){
-    while(1){
-        TracePrintf(1, "DoIdle\n");
-        Pause();
-    }
-    return;
-}
 
 int checkPageStatus(unsigned int addr){
     unsigned int i, pageAddr = (addr >> PAGESHIFT),rc = 0;
@@ -266,58 +326,6 @@ int checkPageStatus(unsigned int addr){
     return 0;
 }
 
-
-int SetKernelBrk(void *addr){
-    //returns to the kernel lib
-    unsigned int newBrk = (unsigned int) addr;
-
-    TracePrintf(1, "Being called ! addr = %x, m_enableVM = %d\n", addr, m_enableVM);
-
-    int rc = 0;
-    if (m_enableVM){
-
-        rc = checkPageStatus(newBrk);
-        if (rc) return -1;
-        
-        int newBrkPage = newBrk >> PAGESHIFT;
-        int oldBrkPage = m_kernel_brk >> PAGESHIFT;
-        int i;
-        if (newBrk > m_kernel_brk){
-
-            //TODO Jason Please finish this function(), I give you a sketch here.
-            if (!isemptylist(freeframe_list)){
-                g_pageTableR0[i].valid = 1;
-                g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
-                lstnode *first = remove_head(freeframe_list);
-                g_pageTableR0[i].pfn = first->id;//TODO Physical Frame Number; 
-            }
-            //Flush Tlb!
-            WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_0);
-
-        }else if (newBrk < m_kernel_brk){
-
-            //TODO Jason Please finish this function(), I give you a sketch here.
-
-            g_pageTableR0[oldBrkPage].valid = 0;
-
-            for(i = newBrkPage;i < oldBrkPage;i++){
-                lstnode *frame = nodeinit(i);
-                insert_tail(frame,freeframe_list);
-            }
-            //Add this frame back to free frame tracker
-
-            //FLUSH!!!
-            WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_0);
-            if (rc) return -1;
-        }
-        //Let addr be the new kernel break
-    
-    }
-
-    m_kernel_brk = newBrk;
-    TracePrintf(1, "New Brk! m_kernel_brk = %x\n", m_kernel_brk);
-    return 0;
-}
 
 /*
     Context Switch

@@ -56,10 +56,10 @@ void insert_tail(lstnode* node, dblist* list)
 		list->tail->pre = node;
 	}
 	else{
-	node->pre = list->tail->pre;
-	node->next = list->tail;
-	list->tail->pre->next = node;
-	list->tail->pre = node;
+		node->pre = list->tail->pre;
+		node->next = list->tail;
+		list->tail->pre->next = node;
+		list->tail->pre = node;
 	}
 	list->size++;
 }
@@ -74,10 +74,10 @@ void insert_head(lstnode* node, dblist* list)
 		list->tail->pre = node;
 	}
 	else{
-	node->next = list->head->next ;
-	node->pre = list->head;	
-	list->head->next->pre = node;
-	list->head->next = node;
+		node->next = list->head->next ;
+		node->pre = list->head;	
+		list->head->next->pre = node;
+		list->head->next = node;
 	}
 	list->size++;
 }
@@ -97,10 +97,10 @@ lstnode* remove_tail(dblist* list)
 		return tnode;
 	}
 	else{
-	list->tail->pre = list->tail->pre->pre;
-	list->tail->pre = list->tail;
-	list->size--;
-	return tnode;
+		list->tail->pre = list->tail->pre->pre;
+		list->tail->pre = list->tail;
+		list->size--;
+		return tnode;
 	}
 }
 
@@ -119,10 +119,10 @@ lstnode* remove_head(dblist* list)
 		return hnode;
 	}
 	else{
-	list->head->next = list->head->next->next;
-	list->head->next->pre = list->head;
-	list->size--;
-	return hnode;
+		list->head->next = list->head->next->next;
+		list->head->next->pre = list->head;
+		list->size--;
+		return hnode;
 	}
 }
 
@@ -146,10 +146,10 @@ void remove_node(lstnode* node, dblist* list)
 		printf("%s\n", "error");
 	}
 	else{
-	lstnode *remove = search_node(node,list);
-	remove->pre->next = remove->next;
-	remove->next->pre = remove->pre;
-	list->size--;
+		lstnode *remove = search_node(node,list);
+		remove->pre->next = remove->next;
+		remove->next->pre = remove->pre;
+		list->size--;
 	}
 }
 
@@ -162,10 +162,11 @@ void traverselist(dblist* list)
 	}
 	else
 		while(traverse != NULL)
-			{
+		{
 				traverse = traverse->next;
 				printf("%s\n", traverse->id);
-			}
+		}
+
 }
 
 

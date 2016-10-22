@@ -3,6 +3,10 @@
 
 #include "hardware.h"
 
+#define VALID 1
+#define INVALID 0
+#define KILL (-2)
+
 typedef struct node{
  	int id;
  	int used;
@@ -32,7 +36,6 @@ typedef struct ProcessControlBlock{
     unsigned int sp; //TODO temp
     unsigned int brk; //TODO temp
 } pcb_t;
-
 
 typedef void (*trapvector_t) (UserContext*);
 #endif 

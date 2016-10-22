@@ -4,12 +4,13 @@
 //global variables
 unsigned int m_kernel_brk;
 unsigned int m_kernel_data_start;
-pte_t g_pageTableR0[MAX_PT_LEN];
-// pte_t *g_pageTableR0;
+// pte_t g_pageTableR0[MAX_PT_LEN];
+pte_t *g_pageTableR0;
 
-// pcb_t *idleProc;
+pcb_t *idleProc;
 dblist* freeFrame_list;
 
+pcb_t *InitPcb(UserContext *uctxt);
 
 int kernelfork(UserContext *uctxt);
 
@@ -49,9 +50,12 @@ int kernelreclaim(int id);
 
 void SetKernelData(void *_KernelDataStart ,void *_KernelDataEnd);
 
-void KernelStart(char *cnd_args[],unsigned int pmem_size, UserContext *uctxt);
+void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt);
 
 int SetKernelBrk(void *addr);
 
 void DoIdle(void);
 
+void initFreeFrameTracking(int pmem_size);
+
+void CookDoIdle(UserContext *uctxt);

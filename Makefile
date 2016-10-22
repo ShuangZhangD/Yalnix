@@ -117,14 +117,6 @@ $(KERNEL_ALL): $(KERNEL_OBJS) $(KERNEL_LIBS) $(KERNEL_INCS)
 $(USER_APPS): $(USER_OBJS) $(USER_INCS)
 	$(ETCDIR)/yuserbuild.sh $@ $(DDIR58) $@.o
 
-copy: 
-	cp yalnix ~/Desktop/
-	~/Desktop/yalnix
-dt:
-	cd ~/Desktop/coredump/
-	
-sf: 
-	cd /media/sf_YalnixShare
 
 
 

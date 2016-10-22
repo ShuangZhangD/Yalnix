@@ -1,13 +1,15 @@
-==>> This is a TEMPLATE for how to write your own LoadProgram function.
-==>> Places where you must change this file to work with your kernel are
-==>> marked with "==>>".  You must replace these lines with your own code.
-==>> You might also want to save the original annotations as comments.
+// ==>> This is a TEMPLATE for how to write your own LoadProgram function.
+// ==>> Places where you must change this file to work with your kernel are
+// ==>> marked with "==>>".  You must replace these lines with your own code.
+// ==>> You might also want to save the original annotations as comments.
 
 #include <fcntl.h>
 #include <unistd.h>
 #include <hardware.h>
 #include <load_info.h>
-==>> #include anything you need for your kernel here
+#include "memorymanage.h"
+
+// ==>> #include anything you need for your kernel here
 
 /*
  *  Load a program into an existing address space.  The program comes from
@@ -17,11 +19,11 @@
  *  is to be loaded. 
  */
 int
-LoadProgram(char *name, char *args[], proc) 
-==>> Declare the argument "proc" to be a pointer to your PCB or
-==>> process descriptor data structure.  We assume you have a member
-==>> of this structure used to hold the cpu context 
-==>> for the process holding the new program.  
+LoadProgram(char *name, char *args[], pcb_t *proc) 
+// ==>> Declare the argument "proc" to be a pointer to your PCB or
+// ==>> process descriptor data structure.  We assume you have a member
+// ==>> of this structure used to hold the cpu context 
+// ==>> for the process holding the new program.  
 {
   int fd;
   int (*entry)();
@@ -38,7 +40,7 @@ LoadProgram(char *name, char *args[], proc)
   int stack_npg;
   long segment_size;
   char *argbuf;
-
+  int i;
   
   /*
    * Open the executable file 
@@ -133,15 +135,17 @@ LoadProgram(char *name, char *args[], proc)
    * Set the new stack pointer value in the process's exception frame.
    */
 
-==>> Here you replace your data structure proc
-==>> proc->context.sp = cp2;
+// ==>> Here you replace your data structure proc
+  proc->uctxt.sp = cp2;
 
   /*
    * Now save the arguments in a separate buffer in region 0, since
    * we are about to blow away all of region 1.
    */
   cp2 = argbuf = (char *)malloc(size);
-==>> You should perhaps check that malloc returned valid space
+// ==>> You should perhaps check that malloc returned valid space
+  //TODO check malloc return value
+
   for (i = 0; args[i] != NULL; i++) {
     TracePrintf(3, "saving arg %d = '%s'\n", i, args[i]);
     strcpy(cp2, args[i]);
@@ -154,39 +158,41 @@ LoadProgram(char *name, char *args[], proc)
    * allocated, and set them all to writable.
    */
 
-==>> Throw away the old region 1 virtual address space of the
-==>> curent process by freeing
-==>> all physical pages currently mapped to region 1, and setting all 
-==>> region 1 PTEs to invalid.
-==>> Since the currently active address space will be overwritten
-==>> by the new program, it is just as easy to free all the physical
-==>> pages currently mapped to region 1 and allocate afresh all the
-==>> pages the new program needs, than to keep track of
-==>> how many pages the new process needs and allocate or
-==>> deallocate a few pages to fit the size of memory to the requirements
-==>> of the new process.
-
-==>> Allocate "li.t_npg" physical pages and map them starting at
-==>> the "text_pg1" page in region 1 address space.  
-==>> These pages should be marked valid, with a protection of 
-==>> (PROT_READ | PROT_WRITE).
-
-==>> Allocate "data_npg" physical pages and map them starting at
-==>> the  "data_pg1" in region 1 address space.  
-==>> These pages should be marked valid, with a protection of 
-==>> (PROT_READ | PROT_WRITE).
+// ==>> Throw away the old region 1 virtual address space of the
+// ==>> curent process by freeing
+// ==>> all physical pages currently mapped to region 1, and setting all 
+// ==>> region 1 PTEs to invalid.
+// ==>> Since the currently active address space will be overwritten
+// ==>> by the new program, it is just as easy to free all the physical
+// ==>> pages currently mapped to region 1 and allocate afresh all the
+// ==>> pages the new program needs, than to keep track of
+// ==>> how many pages the new process needs and allocate or
+// ==>> deallocate a few pages to fit the size of memory to the requirements
+// ==>> of the new process.
+  emptyregion1pagetable(proc);
+// ==>> Allocate "li.t_npg" physical pages and map them starting at
+// ==>> the "text_pg1" page in region 1 address space.  
+// ==>> These pages should be marked valid, with a protection of 
+// ==>> (PROT_READ | PROT_WRITE).
+  writepagetable(proc->usrPtb, text_pg1, text_pg1+li.t_npg, VALID, (PROT_READ | PROT_WRITE));
+// ==>> Allocate "data_npg" physical pages and map them starting at
+// ==>> the  "data_pg1" in region 1 address space.  
+// ==>> These pages should be marked valid, with a protection of 
+// ==>> (PROT_READ | PROT_WRITE).
+  writepagetable(proc->usrPtb, data_pg1, data_pg1+data_npg, VALID, (PROT_READ | PROT_WRITE));
   /*
    * Allocate memory for the user stack too.
    */
-==>> Allocate "stack_npg" physical pages and map them to the top
-==>> of the region 1 virtual address space.
-==>> These pages should be marked valid, with a
-==>> protection of (PROT_READ | PROT_WRITE).
-
+// ==>> Allocate "stack_npg" physical pages and map them to the top
+// ==>> of the region 1 virtual address space.
+// ==>> These pages should be marked valid, with a
+// ==>> protection of (PROT_READ | PROT_WRITE).
+  writepagetable(proc->usrPtb, PT_MAX_LEN - 1 - stack_npg, PT_MAX_LEN - 1, VALID, (PROT_READ | PROT_WRITE));
   /*
    * All pages for the new address space are now in the page table.  
    * But they are not yet in the TLB, remember!
    */
+   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
   /*
    * Read the text from the file into memory.
    */
@@ -194,9 +200,9 @@ LoadProgram(char *name, char *args[], proc)
   segment_size = li.t_npg << PAGESHIFT;
   if (read(fd, (void *) li.t_vaddr, segment_size) != segment_size) {
     close(fd);
-==>> KILL is not defined anywhere: it is an error code distinct
-==>> from ERROR because it requires different action in the caller.
-==>> Since this error code is internal to your kernel, you get to define it.
+// ==>> KILL is not defined anywhere: it is an error code distinct
+// ==>> from ERROR because it requires different action in the caller.
+// ==>> Since this error code is internal to your kernel, you get to define it.
     return KILL;
   }
   /*
@@ -214,16 +220,20 @@ LoadProgram(char *name, char *args[], proc)
    * Now set the page table entries for the program text to be readable
    * and executable, but not writable.
    */
+// ==>> Change the protection on the "li.t_npg" pages starting at
+// ==>> virtual address VMEM_1_BASE + (text_pg1 << PAGESHIFT).  Note
+// ==>> that these pages will have indices starting at text_pg1 in 
+// ==>> the page table for region 1.
+// ==>> The new protection should be (PROT_READ | PROT_EXEC).
+// ==>> If any of these page table entries is also in the TLB, either
+// ==>> invalidate their entries in the TLB or write the updated entries
+// ==>> into the TLB.  It's nice for the TLB and the page tables to remain
+// ==>> consistent.
 
-==>> Change the protection on the "li.t_npg" pages starting at
-==>> virtual address VMEM_1_BASE + (text_pg1 << PAGESHIFT).  Note
-==>> that these pages will have indices starting at text_pg1 in 
-==>> the page table for region 1.
-==>> The new protection should be (PROT_READ | PROT_EXEC).
-==>> If any of these page table entries is also in the TLB, either
-==>> invalidate their entries in the TLB or write the updated entries
-==>> into the TLB.  It's nice for the TLB and the page tables to remain
-==>> consistent.
+  for (i = text_pg1; i <= text_pg1+li.t_npg; i++){
+    proc->usrPtb[i].prot = (PROT_READ | PROT_EXEC);
+  }
+  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_0);
 
   close(fd);			/* we've read it all now */
 
@@ -235,8 +245,8 @@ LoadProgram(char *name, char *args[], proc)
   /*
    * Set the entry point in the exception frame.
    */
-==>> Here you should put your data structure (PCB or process)
-==>>  proc->context.pc = (caddr_t) li.entry;
+// ==>> Here you should put your data structure (PCB or process)
+  proc->uctxt.pc = (caddr_t) li.entry;
 
   /*
    * Now, finally, build the argument list on the new stack.
