@@ -149,7 +149,6 @@ void remove_node(int i, dblist* list)
 		lstnode *remove = search_node(i,list);
 		remove->pre->next = remove->next;
 		remove->next->pre = remove->pre;
-		free(remove);
 		list->size--;
 	}
 }

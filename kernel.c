@@ -13,6 +13,7 @@ pcb_t* currProc;
 dblist* freeframe_list;
 
 
+
 int kernelfork(UserContext *uctxt){
     return ERROR;
 }
@@ -168,7 +169,6 @@ int SetKernelBrk(void *addr){
 
 
 void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
-
     int i, rc;
     //Initialize interrupt vector table and REG_VECTOR_BASE
     TracePrintf(1, "Init interrupt table.\n");
