@@ -1,5 +1,7 @@
 #include "pcb.h"
-#include "listcontrol.h"
+
+
+extern dblist* freeframe_list;
 void terminateProcess(pcb_t *proc){
     int i;
     proc->procState = TERMINATED;

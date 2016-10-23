@@ -1,6 +1,7 @@
 #include "yalnix.h"
 #include "hardware.h"
 #include "datastructure.h"
+#include "listcontrol.h"
 
 dblist* waitingqueue;
 dblist* blockqueue;
@@ -17,4 +18,3 @@ int findProcessBypid(pcb_t *des, int pid);      //Find a process by PID
 //Temp
 void terminateProcess(pcb_t *proc);
 int GrowUserStack(pcb_t *proc, unsigned int addr);
-int checkAvailFrame(int fn);

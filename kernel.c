@@ -36,10 +36,10 @@ int kernelgetpid(){
 
 int kernelbrk(UserContext *uctxt){
     void* addr = (void*)uctxt->regs[0];
-    
+    int i,rc;
     unsigned int newBrk = (unsigned int) addr;
     int oldBrkPage = currProc->brk >> PAGESHIFT;
-    void* sppage = currProc->sp >> PAGESHIFT;
+    int sppage = (int)currProc->sp >> PAGESHIFT;
     int newBrkPage = newBrk >> PAGESHIFT;
         
         if(newBrk >= sppage - 1)
