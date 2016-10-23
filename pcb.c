@@ -2,6 +2,9 @@
 
 
 extern dblist* freeframe_list;
+readyqueue = listinit();
+waitingqueue = listinit();
+
 void terminateProcess(pcb_t *proc){
     int i;
     proc->procState = TERMINATED;
@@ -19,7 +22,39 @@ void terminateProcess(pcb_t *proc){
 
 }
 
+int enreadyqueue(pcb_t* pcb,dblist* readyqueue)
+{	
+	if (pcb == NULL){
+		return ERROR;
+	}
+	lstnode* readynode = nodeinit(pcb->id);
+	readynode->content = pcb;
+	pcb->procState = READY;
+	insert_tail(readynode,readyqueue);
+	return 0;
+}
 
+void* dereadyqueue(pcb_t* pcb,dblist* readyqueue)
+{
+	return remove_head(readyqueue)->content;
+}
+
+int enwaitingqueue(pcb_t* pcb,dblist* waitingqueue)
+{
+	if (pcb == NULL){
+		return ERROR;
+	}
+	lstnode* readynode = nodeinit(pcb->id);
+	waitingnode->content = pcb;
+	pcb->procState = WAITING;
+	insert_tail(readynode,readyqueue);
+	return 0;
+}
+
+void* dewaitingqueue(pcb_t* pcb,dblist* waitingqueue)
+{
+	return remove_head(waitingqueue)->content;
+}
 
 int GrowUserStack(pcb_t *proc, unsigned int addr){
 	int oldStackPage = (proc->sp >> PAGESHIFT);  
