@@ -2,6 +2,9 @@
 #include "hardware.h"
 #include "datastructure.h"
 
+dblist* waitingqueue;
+dblist* blockqueue;
+
 enum processState {RUNNING,WAITING,BLOCKED,TERMINATED}; //define the state of a process
 
 int traverseParent(pcb_t *proc);              //Traverse through its parent

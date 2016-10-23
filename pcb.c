@@ -1,5 +1,5 @@
 #include "pcb.h"
-
+#include "listcontrol.h"
 void terminateProcess(pcb_t *proc){
     int i;
     proc->procState = TERMINATED;
@@ -7,8 +7,8 @@ void terminateProcess(pcb_t *proc){
     for (i = 0; i < MAX_PT_LEN; i++){
         if (proc->usrPtb[i].valid){
             proc->usrPtb[i].valid = 0;
-            //TODO ReleaseFrame
-        }
+	    	remove_node(i , freeframe_list);   
+	    }
     }
 
     //TODO terminatedQueue(proc->pid);
@@ -16,6 +16,8 @@ void terminateProcess(pcb_t *proc){
     //TODO Delete process or relocate process pool
 
 }
+
+
 
 int GrowUserStack(pcb_t *proc, unsigned int addr){
 	int oldStackPage = (proc->sp >> PAGESHIFT);  
@@ -29,7 +31,7 @@ int GrowUserStack(pcb_t *proc, unsigned int addr){
 	for (i = oldStackPage + 1; i <= newStackPage; i++){
 		proc->usrPtb[i].valid = 1;
 		proc->usrPtb[i].prot = (PROT_READ | PROT_WRITE);
-		proc->usrPtb[i].pfn = 0x001; //TODO JASON's Method
+		proc->usrPtb[i].pfn = remove_head(freeframe_list)->id; //TODO JASON's Method
 	}
 
 	proc->sp = addr;

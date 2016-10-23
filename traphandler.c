@@ -192,15 +192,15 @@ void TrapMemory(UserContext *uctxt){
 
     switch(trapCode){
         case (YALNIX_MAPERR):
-            // if (newStackAddr > curProc->sp){
-            //     terminateProcess(curProc);
-            //     return;
-            // }
+             if (newStackAddr > curProc->sp){
+                 terminateProcess(curProc);
+                 return;
+             }
 
-            // if (newStackAddr < curProc->brk){
-            //     terminateProcess(curProc);
-            //     return;
-            // }
+             if (newStackAddr < curProc->brk){
+                 terminateProcess(curProc);
+                 return;
+             }
 
             rc = GrowUserStack(curProc,newStackAddr);
             if (rc){

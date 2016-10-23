@@ -36,9 +36,54 @@ int kernelgetpid(){
 
 int kernelbrk(UserContext *uctxt){
     void* addr = (void*)uctxt->regs[0];
+    
+    unsigned int newBrk = (unsigned int) addr;
+    int oldBrkPage = currProc->brk >> PAGESHIFT;
+    void* sppage = currProc->sp >> PAGESHIFT;
+    int newBrkPage = newBrk >> PAGESHIFT;
+        
+        if(newBrk >= sppage - 1)
+        {
+            return ERROR;
+        }
 
-    return ERROR;
-}
+        if (newBrk > m_kernel_brk){
+
+            for (i = oldBrkPage; i <= newBrk; i++){
+                if (!isemptylist(freeframe_list)){
+                    g_pageTableR0[i].valid = 1;
+                    g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
+                    lstnode *first = remove_head(freeframe_list);
+                    g_pageTableR0[i].pfn = first->id; 
+                } else {
+                    return ERROR;//TODO clean other 
+                }
+            }
+            //Flush Tlb!
+            WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
+
+        }else if (newBrk < m_kernel_brk){
+
+            g_pageTableR0[oldBrkPage].valid = 0;
+
+            //TODO REMAP
+            for(i = newBrkPage;i <= oldBrkPage;i++){
+                lstnode *frame = nodeinit(i);
+                insert_tail(frame,freeframe_list);
+            }
+            //Add this frame back to free frame tracker
+
+            //FLUSH!!!
+            WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
+            if (rc) return ERROR;
+        }
+        //Let addr be the new kernel break
+       currProc->brk = newBrk;
+
+
+    }
+
+
 
 int kerneldelay(UserContext *uctxt){
     int clock_ticks = uctxt->regs[0];
