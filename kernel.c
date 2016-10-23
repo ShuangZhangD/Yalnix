@@ -29,15 +29,31 @@ int kernelwait(UserContext *uctxt){
     return ERROR;
 }
 
-int kernelgetpid(UserContext *uctxt){
-    return ERROR;
+int kernelgetpid(){
+    return userProc->pid;
 }
 
 int kernelbrk(UserContext *uctxt){
-    return ERROR;            
+    void* addr = (void*)uctxt->regs[0];
+
+    return ERROR;
 }
 
 int kerneldelay(UserContext *uctxt){
+    int clock_ticks = uctxt->regs[0];
+    if (clock_ticks == 0)
+    {
+        return 0;
+    }
+    else if(clock_ticks <= 0)
+    {
+        return ERROR;
+    }
+    else
+    {
+        
+    }
+
     return ERROR;
 }
 
@@ -239,15 +255,13 @@ void InitKernelPageTable(pcb_t *proc) {
             g_pageTableR0[i].valid = 1;
             g_pageTableR0[i].prot = (PROT_READ | PROT_EXEC);
             g_pageTableR0[i].pfn = i;
-            lstnode *frame = nodeinit(i);
-            remove_node(frame, freeframe_list);
+            remove_node(i, freeframe_list);
         } else {
             //Protect Kernel Data & Heap
             g_pageTableR0[i].valid = 1;
             g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
             g_pageTableR0[i].pfn = i;
-            lstnode *frame = nodeinit(i);
-            remove_node(frame, freeframe_list);
+            remove_node(i, freeframe_list);
         }
     }
     
@@ -259,8 +273,7 @@ void InitKernelPageTable(pcb_t *proc) {
         g_pageTableR0[i].valid = 1;
         g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
         g_pageTableR0[i].pfn = i;
-        lstnode *frame = nodeinit(i);
-        remove_node(frame, freeframe_list);
+        remove_node(i, freeframe_list);
         //Let a userprocess have its own kernel stack
         if (stackInx < numOfStack){
             proc->krnlStackPtb[stackInx] = g_pageTableR0[i];

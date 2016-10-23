@@ -126,12 +126,12 @@ lstnode* remove_head(dblist* list)
 	}
 }
 
-lstnode* search_node(lstnode* node,dblist* list)
+lstnode* search_node(int i,dblist* list)
 {
 	lstnode *h = list->head;
 	if (!isemptylist(list))
 	{
-		while (h != NULL && h->id != node->id)
+		while (h != NULL && h->id != i)
 		{
 			h = h->next;
 		}
@@ -139,16 +139,17 @@ lstnode* search_node(lstnode* node,dblist* list)
 	return h;
 }
 
-void remove_node(lstnode* node, dblist* list)
+void remove_node(int i, dblist* list)
 {
 	if(isemptylist(list))
 	{
 		printf("%s\n", "error");
 	}
 	else{
-		lstnode *remove = search_node(node,list);
+		lstnode *remove = search_node(i,list);
 		remove->pre->next = remove->next;
 		remove->next->pre = remove->pre;
+		free(remove);
 		list->size--;
 	}
 }

@@ -19,7 +19,7 @@ int kernelexit(UserContext *uctxt);
 
 int kernelwait(UserContext *uctxt);
 
-int kernelgetpid(UserContext *uctxt);
+int kernelgetpid();
 
 int kernelbrk(UserContext *uctxt);
 
