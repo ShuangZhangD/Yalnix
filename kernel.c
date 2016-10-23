@@ -8,8 +8,7 @@
 int m_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)
 int g_pid = 1;
 
-lstnode* currProcnode;
-pcb_t* currProc =(pcb_t*) currProcnode->content;
+lstnode* currProc;
 dblist* freeframe_list;
 extern dblist* waitingqueue;
 extern dblist* readyqueue;
@@ -34,7 +33,7 @@ int kernelwait(UserContext *uctxt){
 }
 
 int kernelgetpid(){
-    return currProc->pid;
+    return currProc->content->pid;
 }
 
 int kernelbrk(UserContext *uctxt){
@@ -101,14 +100,14 @@ int kerneldelay(UserContext *uctxt){
     else
     {
         
-        enwaitingqueue(currProcnode,waitingqueue);
-        currProc->clock = clock_ticks;
+        enwaitingqueue(currProc,waitingqueue);
+        currProc->content->clock = clock_ticks;
         if (!isemptylist(waitingqueue))
         {
-            currProcnode = dereadyqueue(readyqueue);
+            currProc = dereadyqueue(readyqueue);
         }
         else{
-            //currProcnode = idleProc;
+            //currProc = idleProc;
         }
     }
 
