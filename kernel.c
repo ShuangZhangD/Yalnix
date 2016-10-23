@@ -268,8 +268,13 @@ pte_t* InitUserPageTable (){
     //Mark User Page table as Invalid;
     for (i = 0; i < MAX_PT_LEN; i++){
         usrPtb[i].valid = 0;
+<<<<<<< Updated upstream
+        // usrPtb[i].prot = PROT_NONE;
+        // usrPtb[i].pfn = UNALLOCATED;
+=======
         usrPtb[i].prot = PROT_NONE;
         usrPtb[i].pfn = UNALLOCATED;
+>>>>>>> Stashed changes
     }
 
     // idleProc->usrPtb[MAX_PT_LEN - 1].pfn = nodeinit(i);
@@ -284,7 +289,11 @@ void InitKernelPageTable(pcb_t *proc) {
     unsigned int kDataEdPage = m_kernel_brk >> PAGESHIFT; 
     unsigned int kDataStPage = m_kernel_data_start >> PAGESHIFT;
     unsigned int kStackStPage = KERNEL_STACK_BASE >> PAGESHIFT;
+<<<<<<< Updated upstream
+    unsigned int kStackEdPage = (KERNEL_STACK_LIMIT - 1) >> PAGESHIFT;
+=======
     unsigned int kStackEdPage = KERNEL_STACK_LIMIT >> PAGESHIFT;
+>>>>>>> Stashed changes
     int i, stackInx;
     
 
@@ -306,11 +315,16 @@ void InitKernelPageTable(pcb_t *proc) {
     }
 
     //Protect Kernel Stack
-    for (i=kStackStPage, stackInx = 0; i< kStackEdPage; i++, stackInx++){
+    for (i=kStackStPage, stackInx = 0; i <= kStackEdPage; i++, stackInx++){
         g_pageTableR0[i].valid = 1;
         g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
         g_pageTableR0[i].pfn = i;
+<<<<<<< Updated upstream
         remove_node(i, freeframe_list);
+=======
+        lstnode *frame = nodeinit(i);
+        remove_node(frame, freeframe_list);
+>>>>>>> Stashed changes
     }
     
     return;
