@@ -185,6 +185,7 @@ void TrapIllegal(UserContext *uctxt){
 
 //Capture TRAP_MEMORY
 void TrapMemory(UserContext *uctxt){
+    TracePrintf(1, "TrapMemory.\n");
     int rc;
     int trapCode = uctxt->code;
     unsigned int newStackAddr = (unsigned int) uctxt->addr;

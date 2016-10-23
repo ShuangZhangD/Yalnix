@@ -9,7 +9,7 @@ pte_t g_pageTableR0[MAX_PT_LEN];
 pcb_t *idleProc;
 dblist* freeFrame_list;
 
-pcb_t *InitPcb(UserContext *uctxt);
+pcb_t *InitIdleProc(UserContext *uctxt);
 
 int kernelfork(UserContext *uctxt);
 
@@ -59,6 +59,6 @@ void initFreeFrameTracking(int pmem_size);
 
 void CookDoIdle(UserContext *uctxt);
 
-void InitUserPageTable (pcb_t *proc);
+pte_t* InitUserPageTable ();
 
-void InitKernelPageTable(pcb_t *proc);
+void InitKernelPageTable();
