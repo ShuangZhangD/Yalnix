@@ -248,11 +248,16 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     TracePrintf(1, "Init pcb.\n");
     pcb_t *idleProc = InitIdleProc(uctxt);
 
+    pcb_t *initProc = InitIdleProc(uctxt);
+
     //Create first process  and load initial program to it
-    rc = LoadProgram("init", cmd_args, idleProc);
+    rc = LoadProgram("init", cmd_args, initProc);
     TracePrintf(1, "rc=%d\n", rc);
     if (rc == KILL){
+        //TODO Kill the process
     }
+
+    rc = KernelContextSwitch(MyKCS, (void *) &idleProc, (void *) &initProc);
 
     TracePrintf(1, "Exit\n");
     return;
@@ -398,16 +403,24 @@ int checkPageStatus(unsigned int addr){
 */
 // when someone calls KernelContextSwitch, it might come to here.
 KernelContext *MyKCS(KernelContext *kc_in,void *curr_pcb_p,void *next_pcb_p){
-    pcb_t *cur = (pcb_t *) curr_pcb_p;
-    pcb_t *next = (pcb_t *) next_pcb_p;
+    int numOfStack = KERNEL_STACK_MAXSIZE / PAGESIZE;
+    int kStackStPage = (KERNEL_STACK_BASE >> PAGESHIFT);
+    int kStackEdPage = (KERNEL_STACK_LIMIT >> PAGESHIFT);
+    int i, stackInx;
+
+    pcb_t *cur_p = (pcb_t *) curr_pcb_p;
+    pcb_t *next_p = (pcb_t *) next_pcb_p;
 
     //Copy the kernel context to current process's pcb
-    cur->kctxt = *kc_in;
+    cur_p->kctxt = *kc_in;
 
     //Remember to change page table entries for kernel stack
+    for (i = kStackStPage, stackInx = 0; i <= kStackEdPage; i++, stackInx++){
+        memcpy(g_pageTableR0[i], next_p->krnlStackPtb[stackInx], sizeof(pte_t));
+    }
 
     //Return a pointer to a kernel context it had earlier saved
-    return &next->kctxt;
+    return &next_p->kctxt;
 
 }
 

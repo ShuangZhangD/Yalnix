@@ -62,3 +62,5 @@ void CookDoIdle(UserContext *uctxt);
 pte_t* InitUserPageTable ();
 
 void InitKernelPageTable();
+
+KernelContext *MyKCS(KernelContext *kc_in,void *curr_pcb_p,void *next_pcb_p);
