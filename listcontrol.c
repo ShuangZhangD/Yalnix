@@ -1,4 +1,4 @@
-#include "datastructure.h"
+#include "selfdefinedstructure.h"
 #include "listcontrol.h"
 //use a doublylinkedlist to track free frame
 

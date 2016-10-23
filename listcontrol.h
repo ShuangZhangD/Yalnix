@@ -1,4 +1,4 @@
-#include "datastructure.h"
+#include "selfdefinedstructure.h"
 
 lstnode* nodeinit(int i);
 dblist* listinit();

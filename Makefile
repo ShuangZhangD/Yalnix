@@ -30,7 +30,7 @@ KERNEL_SRCS = kernel.c traphandler.c listcontrol.c pcb.c io.c lock.c pipe.c cvar
 #List the objects to be formed form the kernel source files here.  Should be the same as the prvious list, replacing ".c" with ".o"
 KERNEL_OBJS = kernel.o traphandler.o listcontrol.o pcb.o io.o lock.o pipe.o cvar.o memorymanage.o loadprogram.o 
 #List all of the header files necessary for your kernel
-KERNEL_INCS = kernel.h traphandler.h listcontrol.h pcb.h io.h lock.h pipe.h cvar.h memorymanage.h loadprogram.h datastructure.h  
+KERNEL_INCS = kernel.h traphandler.h listcontrol.h pcb.h io.h lock.h pipe.h cvar.h memorymanage.h loadprogram.h selfdefinedstructure.h  
 
 
 #List all user programs here.

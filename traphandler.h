@@ -1,3 +1,3 @@
-#include "datastructure.h"
+#include "selfdefinedstructure.h"
 
 trapvector_t *intrptTb;

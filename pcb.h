@@ -1,6 +1,6 @@
 #include "yalnix.h"
 #include "hardware.h"
-#include "datastructure.h"
+#include "selfdefinedstructure.h"
 #include "listcontrol.h"
 
 dblist* waitingqueue;

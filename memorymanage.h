@@ -1,4 +1,4 @@
-#include "datastructure.h"
+#include "selfdefinedstructure.h"
 
 void emptyregion1pagetable(pcb_t *proc);
 

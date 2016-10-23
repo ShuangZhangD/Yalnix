@@ -1,5 +1,5 @@
 #include "hardware.h"
-#include "datastructure.h"
+#include "selfdefinedstructure.h"
 
 //global variables
 unsigned int m_kernel_brk;

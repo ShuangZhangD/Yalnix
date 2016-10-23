@@ -11,7 +11,7 @@
 // ==>> #include anything you need for your kernel here
 #include "memorymanage.h"
 #include "yalnix.h"
-#include "datastructure.h"
+#include "selfdefinedstructure.h"
 
 /*
  *  Load a program into an existing address space.  The program comes from
