@@ -4,8 +4,9 @@
 extern dblist* freeframe_list;
 
 
-void terminateProcess(pcb_t *proc){
+void terminateProcess(lstnode *procnode){
     int i;
+    pcb_t* proc = (pcb_t*)procnode->content;
     proc->procState = TERMINATED;
 
     for (i = 0; i < MAX_PT_LEN; i++){
@@ -16,7 +17,6 @@ void terminateProcess(pcb_t *proc){
     }
 
     //TODO terminatedQueue(proc->pid);
-    lstnode* terminatedproc = nodeinit(proc->pid);
     terminatedproc->content = proc;
     proc->procState = TERMINATED;
     insert_tail(terminatedproc, terminatedqueue);
@@ -25,41 +25,42 @@ void terminateProcess(pcb_t *proc){
 
 }
 
-int enreadyqueue(pcb_t* proc,dblist* readyqueue)
+int enreadyqueue(lstnode* procnode,dblist* readyqueue)
 {	
+	pcb_t* proc = (pcb_t*)procnode->content;
+
 	if (proc == NULL){
 		return ERROR;
 	}
-	lstnode* readyproc = nodeinit(proc->pid);
-	readyproc->content = proc;
 	proc->procState = READY;
 	insert_tail(readyproc,readyqueue);
 	return 0;
 }
 
-void* dereadyqueue(pcb_t* proc,dblist* readyqueue)
+void* dereadyqueue(dblist* readyqueue)
 {
 	return remove_head(readyqueue)->content;
 }
 
-int enwaitingqueue(pcb_t* proc,dblist* waitingqueue)
+int enwaitingqueue(lstnode* procnode,dblist* waitingqueue)
 {
+	pcb_t* proc = (pcb_t*)procnode->content;
+
 	if (proc == NULL){
 		return ERROR;
 	}
-	lstnode* waitingproc = nodeinit(proc->pid);
-	waitingproc->content = proc;
 	proc->procState = WAITING;
 	insert_tail(waitingproc,readyqueue);
 	return 0;
 }
 
-void* dewaitingqueue(pcb_t* pcb,dblist* waitingqueue)
+void* dewaitingqueue(dblist* waitingqueue)
 {
 	return remove_head(waitingqueue)->content;
 }
 
-int GrowUserStack(pcb_t *proc, unsigned int addr){
+int GrowUserStack(lstnode *procnode, unsigned int addr){
+	pcb_t* proc = (pcb_t*)procnode->content;
 	int oldStackPage = (proc->sp >> PAGESHIFT);  
 	int newStackPage = (addr >> PAGESHIFT);
 	int i, rc;

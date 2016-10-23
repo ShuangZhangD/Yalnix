@@ -8,7 +8,8 @@
 int m_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)
 int g_pid = 1;
 
-pcb_t* currProc;
+lstnode* currProcnode;
+pcb_t* currProc =(pcb_t*) currProcnode->content;
 dblist* freeframe_list;
 extern dblist* waitingqueue;
 extern dblist* readyqueue;
@@ -100,6 +101,15 @@ int kerneldelay(UserContext *uctxt){
     else
     {
         
+        enwaitingqueue(currProcnode,waitingqueue);
+        currProc->clock = clock_ticks;
+        if (!isemptylist(waitingqueue))
+        {
+            currProcnode = dereadyqueue(readyqueue);
+        }
+        else{
+            //currProcnode = idleProc;
+        }
     }
 
     return ERROR;
@@ -378,7 +388,7 @@ pcb_t *InitIdleProc(UserContext *uctxt){
 
     proc->krnlStackPtb = (pte_t *) calloc(numOfStack ,sizeof(pte_t));
     proc->krnlStackPtbSize = numOfStack;
-
+    lstnode* procnode = listinit(proc->pid);
     //Let a userprocess have its own kernel stack
     for (i=kStackStPage, stackInx = 0; i<kStackEdPage; i++, stackInx++){
         proc->krnlStackPtb[stackInx] = g_pageTableR0[i];

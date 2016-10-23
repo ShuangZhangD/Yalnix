@@ -16,9 +16,9 @@ int removeProcessBypid(pcb_t *des, int pid);   //Remove a process from PCB by PI
 int findProcessBypid(pcb_t *des, int pid);      //Find a process by PID
 void terminateProcess(pcb_t *proc);
 int enreadyqueue(pcb_t* proc,dblist* readyqueue);
-void* dereadyqueue(pcb_t* proc,dblist* readyqueue);
+void* dereadyqueue(dblist* readyqueue);
 int enwaitingqueue(pcb_t* proc,dblist* waitingqueue);
-void* dewaitingqueue(pcb_t* pcb,dblist* waitingqueue);
+void* dewaitingqueue(dblist* waitingqueue);
 //Temp
 void terminateProcess(pcb_t *proc);
 int GrowUserStack(pcb_t *proc, unsigned int addr);
