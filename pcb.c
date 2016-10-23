@@ -4,6 +4,7 @@
 extern dblist* freeframe_list;
 readyqueue = listinit();
 waitingqueue = listinit();
+terminatedqueue = listinit();
 
 void terminateProcess(pcb_t *proc){
     int i;
@@ -17,36 +18,40 @@ void terminateProcess(pcb_t *proc){
     }
 
     //TODO terminatedQueue(proc->pid);
+    lstnode* terminatednode = nodeinit(proc->pid);
+    terminatednode->content = proc;
+    proc->procState = TERMINATED;
+    insert_tail(terminatednode, terminatedqueue);
 
     //TODO Delete process or relocate process pool
 
 }
 
-int enreadyqueue(pcb_t* pcb,dblist* readyqueue)
+int enreadyqueue(pcb_t* proc,dblist* readyqueue)
 {	
 	if (pcb == NULL){
 		return ERROR;
 	}
 	lstnode* readynode = nodeinit(pcb->id);
-	readynode->content = pcb;
-	pcb->procState = READY;
+	readynode->content = proc;
+	proc->procState = READY;
 	insert_tail(readynode,readyqueue);
 	return 0;
 }
 
-void* dereadyqueue(pcb_t* pcb,dblist* readyqueue)
+void* dereadyqueue(pcb_t* proc,dblist* readyqueue)
 {
 	return remove_head(readyqueue)->content;
 }
 
-int enwaitingqueue(pcb_t* pcb,dblist* waitingqueue)
+int enwaitingqueue(pcb_t* proc,dblist* waitingqueue)
 {
 	if (pcb == NULL){
 		return ERROR;
 	}
 	lstnode* readynode = nodeinit(pcb->id);
-	waitingnode->content = pcb;
-	pcb->procState = WAITING;
+	waitingnode->content = proc;
+	proc->procState = WAITING;
 	insert_tail(readynode,readyqueue);
 	return 0;
 }
