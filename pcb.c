@@ -2,6 +2,10 @@
 
 
 extern dblist* freeframe_list;
+readyqueue = listinit();
+waitingqueue = listinit();
+terminatedqueue = listinit();
+
 void terminateProcess(pcb_t *proc){
     int i;
     proc->procState = TERMINATED;
@@ -14,12 +18,48 @@ void terminateProcess(pcb_t *proc){
     }
 
     //TODO terminatedQueue(proc->pid);
+    lstnode* terminatednode = nodeinit(proc->pid);
+    terminatednode->content = proc;
+    proc->procState = TERMINATED;
+    insert_tail(terminatednode, terminatedqueue);
 
     //TODO Delete process or relocate process pool
 
 }
 
+int enreadyqueue(pcb_t* proc,dblist* readyqueue)
+{	
+	if (pcb == NULL){
+		return ERROR;
+	}
+	lstnode* readynode = nodeinit(pcb->id);
+	readynode->content = proc;
+	proc->procState = READY;
+	insert_tail(readynode,readyqueue);
+	return 0;
+}
 
+void* dereadyqueue(pcb_t* proc,dblist* readyqueue)
+{
+	return remove_head(readyqueue)->content;
+}
+
+int enwaitingqueue(pcb_t* proc,dblist* waitingqueue)
+{
+	if (pcb == NULL){
+		return ERROR;
+	}
+	lstnode* readynode = nodeinit(pcb->id);
+	waitingnode->content = proc;
+	proc->procState = WAITING;
+	insert_tail(readynode,readyqueue);
+	return 0;
+}
+
+void* dewaitingqueue(pcb_t* pcb,dblist* waitingqueue)
+{
+	return remove_head(waitingqueue)->content;
+}
 
 int GrowUserStack(pcb_t *proc, unsigned int addr){
 	int oldStackPage = (proc->sp >> PAGESHIFT);  
