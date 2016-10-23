@@ -37,6 +37,7 @@ typedef struct ProcessControlBlock{
     dblist *children;                        //A pointer to mulitple child processes
     unsigned int sp; //TODO temp
     unsigned int brk; //TODO temp
+    int clock;
 } pcb_t;
 
 typedef void (*trapvector_t) (UserContext*);
