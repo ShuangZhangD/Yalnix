@@ -1,0 +1,10 @@
+*.o
+TTYLOG*
+DISK
+TRACE
+etc/
+hashed page table
+include/
+lib/
+sample/
+yalnix
