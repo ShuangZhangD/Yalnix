@@ -1,10 +1,8 @@
 #include "pcb.h"
-
+#include "selfdefinedstructure.h"
 
 extern dblist* freeframe_list;
-readyqueue = listinit();
-waitingqueue = listinit();
-terminatedqueue = listinit();
+
 
 void terminateProcess(pcb_t *proc){
     int i;
@@ -32,7 +30,7 @@ int enreadyqueue(pcb_t* proc,dblist* readyqueue)
 	if (proc == NULL){
 		return ERROR;
 	}
-	lstnode* readyproc = nodeinit(pcb->id);
+	lstnode* readyproc = nodeinit(proc->pid);
 	readyproc->content = proc;
 	proc->procState = READY;
 	insert_tail(readyproc,readyqueue);
@@ -49,7 +47,7 @@ int enwaitingqueue(pcb_t* proc,dblist* waitingqueue)
 	if (proc == NULL){
 		return ERROR;
 	}
-	lstnode* waitingproc = nodeinit(pcb->id);
+	lstnode* waitingproc = nodeinit(proc->pid);
 	waitingproc->content = proc;
 	proc->procState = WAITING;
 	insert_tail(waitingproc,readyqueue);

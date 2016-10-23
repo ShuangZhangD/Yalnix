@@ -9,8 +9,10 @@ int m_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enable
 int g_pid = 1;
 
 pcb_t* currProc;
-
 dblist* freeframe_list;
+extern dblist* waitingqueue;
+extern dblist* readyqueue;
+extern dblist* terminatedqueue;
 
 
 
@@ -239,6 +241,11 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     TracePrintf(1, "Enable VM\n");
     WriteRegister(REG_VM_ENABLE,1);
     m_enableVM = 1;
+
+    //init Queue
+    waitingqueue = listinit();
+    readyqueue = listinit();
+    terminatedqueue = listinit();
 
    //====Cook DoIdle()====
     TracePrintf(1, "DoIdle\n");

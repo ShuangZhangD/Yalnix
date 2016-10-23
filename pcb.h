@@ -4,10 +4,10 @@
 #include "listcontrol.h"
 
 dblist* waitingqueue;
-dblist* blockqueue;
+dblist* readyqueue;
 dblist* terminatedqueue;
 
-enum processState {RUNNING,WAITING,BLOCKED,TERMINATED}; //define the state of a process
+enum processState {RUNNING,WAITING,READY,TERMINATED}; //define the state of a process
 
 int traverseParent(pcb_t *proc);              //Traverse through its parent
 int traverseChildren(pcb_t *proc);            //Traverse through its 
