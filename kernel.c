@@ -30,7 +30,7 @@ int kernelwait(UserContext *uctxt){
 }
 
 int kernelgetpid(){
-    return userProc->pid;
+    return currProc->pid;
 }
 
 int kernelbrk(UserContext *uctxt){
@@ -266,12 +266,6 @@ void InitKernelPageTable(pcb_t *proc) {
         g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
         g_pageTableR0[i].pfn = i;
         remove_node(i, freeframe_list);
-        //Let a userprocess have its own kernel stack
-        if (stackInx < numOfStack){
-            proc->krnlStackPtb[stackInx] = g_pageTableR0[i];
-        } else {
-            //TODO print ErrorMsg
-        }
     }
     
     return;

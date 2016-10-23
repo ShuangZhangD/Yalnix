@@ -11,8 +11,7 @@ void writepagetable(pte_t *pagetable, int startPage, int endPage, int valid, int
 		pagetable[i].valid = 1;
 		pagetable[i].prot = prot;
 		//TODO Find Available node
-        lstnode *frame = nodeinit(i);
-        remove_node(frame, freeframe_list);
+        remove_node(i, freeframe_list);
 	}
 
 	return;
