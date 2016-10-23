@@ -18,10 +18,10 @@ void terminateProcess(pcb_t *proc){
     }
 
     //TODO terminatedQueue(proc->pid);
-    lstnode* terminatednode = nodeinit(proc->pid);
-    terminatednode->content = proc;
+    lstnode* terminatedproc = nodeinit(proc->pid);
+    terminatedproc->content = proc;
     proc->procState = TERMINATED;
-    insert_tail(terminatednode, terminatedqueue);
+    insert_tail(terminatedproc, terminatedqueue);
 
     //TODO Delete process or relocate process pool
 
@@ -29,13 +29,13 @@ void terminateProcess(pcb_t *proc){
 
 int enreadyqueue(pcb_t* proc,dblist* readyqueue)
 {	
-	if (pcb == NULL){
+	if (proc == NULL){
 		return ERROR;
 	}
-	lstnode* readynode = nodeinit(pcb->id);
-	readynode->content = proc;
+	lstnode* readyproc = nodeinit(pcb->id);
+	readyproc->content = proc;
 	proc->procState = READY;
-	insert_tail(readynode,readyqueue);
+	insert_tail(readyproc,readyqueue);
 	return 0;
 }
 
@@ -46,13 +46,13 @@ void* dereadyqueue(pcb_t* proc,dblist* readyqueue)
 
 int enwaitingqueue(pcb_t* proc,dblist* waitingqueue)
 {
-	if (pcb == NULL){
+	if (proc == NULL){
 		return ERROR;
 	}
-	lstnode* readynode = nodeinit(pcb->id);
-	waitingnode->content = proc;
+	lstnode* waitingproc = nodeinit(pcb->id);
+	waitingproc->content = proc;
 	proc->procState = WAITING;
-	insert_tail(readynode,readyqueue);
+	insert_tail(waitingproc,readyqueue);
 	return 0;
 }
 
