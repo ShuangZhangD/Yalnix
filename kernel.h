@@ -9,6 +9,10 @@ pte_t g_pageTableR0[MAX_PT_LEN];
 pcb_t *idleProc;
 dblist* freeFrame_list;
 
+void printUserPageTable();
+
+void printKernelPageTable();
+
 pcb_t *InitIdleProc(UserContext *uctxt);
 
 int kernelfork(UserContext *uctxt);
