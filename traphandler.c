@@ -172,18 +172,13 @@ void TrapClock(UserContext *uctxt){
     
     */
         int rc = 0;
-        enreadyqueue(currProc,readyqueue);
         if (!isemptylist(readyqueue))
         {
-
+            enreadyqueue(currProc,readyqueue);
             rc = KernelContextSwitch(MyKCS, (void *) currProc, (void *) firstnode(readyqueue));
             currProc = dereadyqueue(readyqueue);
         }
-        else{
-            //currProc = idleProc;
-            //rc = KernelContextxtSwitch(MyKCS, (void *) currProc, (void *) idleProc);
 
-        }
 
 
     lstnode *traverse = waitingqueue->head;
