@@ -139,7 +139,7 @@ lstnode* search_node(int i,dblist* list)
 	return h;
 }
 
-void remove_node(int i, dblist* list)
+lstnode* remove_node(int i, dblist* list)
 {
 	if(isemptylist(list))
 	{
@@ -150,6 +150,7 @@ void remove_node(int i, dblist* list)
 		remove->pre->next = remove->next;
 		remove->next->pre = remove->pre;
 		list->size--;
+		return remove;
 	}
 }
 

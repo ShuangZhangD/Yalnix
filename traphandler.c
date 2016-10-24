@@ -171,8 +171,7 @@ void TrapClock(UserContext *uctxt){
             rc = KernelContextSwitch(MyKCS, (void *)current_pcb, (void *)netxt_pcb); 
     
     */
-
-
+        int rc = 0;
         enreadyqueue(currProc,readyqueue);
         if (!isemptylist(readyqueue))
         {
@@ -203,8 +202,9 @@ void TrapClock(UserContext *uctxt){
         {
             notclock = notclock->next;
         }
-        if(notclock->clock == 0)
+        if(((pcb_t*)notclock->content)->clock == 0)
         {
+           dewaitingqueue(notclock,waitingqueue);
            enreadyqueue(notclock,readyqueue); 
         }
         

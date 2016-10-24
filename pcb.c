@@ -38,7 +38,7 @@ int enreadyqueue(lstnode* procnode,dblist* readyqueue)
 
 void* dereadyqueue(dblist* readyqueue)
 {
-	return remove_head(readyqueue)->content;
+	return (void*)remove_head(readyqueue)->content;
 }
 
 int enwaitingqueue(lstnode* procnode,dblist* waitingqueue)
@@ -53,9 +53,10 @@ int enwaitingqueue(lstnode* procnode,dblist* waitingqueue)
 	return 0;
 }
 
-void* dewaitingqueue(dblist* waitingqueue)
+void* dewaitingqueue(lstnode* waitingnode,dblist* waitingqueue)
 {
-	return remove_head(waitingqueue)->content;
+	
+	return (void*)remove_node(((pcb_t*)waitingnode->content)->pid,waitingqueue)->content;
 }
 
 int GrowUserStack(lstnode *procnode, unsigned int addr){
