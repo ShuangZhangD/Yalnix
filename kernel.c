@@ -9,6 +9,7 @@ int m_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enable
 int g_pid = 1;
 
 lstnode* currProc;
+
 dblist* freeframe_list;
 extern dblist* waitingqueue;
 extern dblist* readyqueue;
@@ -33,15 +34,18 @@ int kernelwait(UserContext *uctxt){
 }
 
 int kernelgetpid(){
-    return currProc->content->pid;
+    pcb_t *proc = (pcb_t*)currProc->content;
+    return proc->pid;
 }
 
 int kernelbrk(UserContext *uctxt){
+    pcb_t *proc = (pcb_t *) currProc->content;
+
     void* addr = (void*)uctxt->regs[0];
     int i,rc;
     unsigned int newBrk = (unsigned int) addr;
-    int oldBrkPage = currProc->brk >> PAGESHIFT;
-    int sppage = (int)currProc->sp >> PAGESHIFT;
+    int oldBrkPage = proc->brk >> PAGESHIFT;
+    int sppage = (int)proc->sp >> PAGESHIFT;
     int newBrkPage = newBrk >> PAGESHIFT;
         
         if(newBrk >= sppage - 1)
@@ -80,7 +84,7 @@ int kernelbrk(UserContext *uctxt){
             if (rc) return ERROR;
         }
         //Let addr be the new kernel break
-       currProc->brk = newBrk;
+       proc->brk = newBrk;
 
 
     }
@@ -88,6 +92,7 @@ int kernelbrk(UserContext *uctxt){
 
 
 int kerneldelay(UserContext *uctxt){
+    pcb_t *proc = (pcb_t *)currProc->content;
     int clock_ticks = uctxt->regs[0];
     if (clock_ticks == 0)
     {
@@ -101,7 +106,7 @@ int kerneldelay(UserContext *uctxt){
     {
         
         enwaitingqueue(currProc,waitingqueue);
-        currProc->content->clock = clock_ticks;
+        proc->clock = clock_ticks;
         if (!isemptylist(waitingqueue))
         {
             currProc = dereadyqueue(readyqueue);
@@ -435,6 +440,9 @@ KernelContext *MyKCS(KernelContext *kc_in,void *curr_pcb_p,void *next_pcb_p){
         memcpy(g_pageTableR0[i], next_p->krnlStackPtb[stackInx], sizeof(pte_t));
     }
 
+    //Flush!! 
+    WriteRegister(REG_TLB_FLUSH,TLB_FLUSH_1);
+    
     //Return a pointer to a kernel context it had earlier saved
     return &next_p->kctxt;
 

@@ -17,9 +17,8 @@ void terminateProcess(lstnode *procnode){
     }
 
     //TODO terminatedQueue(proc->pid);
-    terminatedproc->content = proc;
     proc->procState = TERMINATED;
-    insert_tail(terminatedproc, terminatedqueue);
+    insert_tail(procnode, terminatedqueue);
 
     //TODO Delete process or relocate process pool
 
@@ -33,7 +32,7 @@ int enreadyqueue(lstnode* procnode,dblist* readyqueue)
 		return ERROR;
 	}
 	proc->procState = READY;
-	insert_tail(readyproc,readyqueue);
+	insert_tail(procnode,readyqueue);
 	return 0;
 }
 
@@ -50,7 +49,7 @@ int enwaitingqueue(lstnode* procnode,dblist* waitingqueue)
 		return ERROR;
 	}
 	proc->procState = WAITING;
-	insert_tail(waitingproc,readyqueue);
+	insert_tail(procnode,readyqueue);
 	return 0;
 }
 

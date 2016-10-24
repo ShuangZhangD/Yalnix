@@ -11,8 +11,7 @@
 #include "kernel.h"
 
 // extern dlqueue pqueue[MAX_QUEUE_SIZE];
-
-pcb_t *curProc;
+extern lstnode* currProc;
 
 //capture TRAP_CLOCK
 void TrapKernel(UserContext *uctxt){
@@ -185,6 +184,8 @@ void TrapIllegal(UserContext *uctxt){
 
 //Capture TRAP_MEMORY
 void TrapMemory(UserContext *uctxt){
+    pcb_t *proc = (pcb_t *) currProc->content;
+    
     TracePrintf(1, "TrapMemory.\n");
     int rc;
     int trapCode = uctxt->code;
@@ -192,28 +193,28 @@ void TrapMemory(UserContext *uctxt){
 
     switch(trapCode){
         case (YALNIX_MAPERR):
-             if (newStackAddr > curProc->sp){
-                 terminateProcess(curProc);
+             if (newStackAddr > proc->sp){
+                 terminateProcess(currProc);
                  return;
              }
 
-             if (newStackAddr < curProc->brk){
-                 terminateProcess(curProc);
+             if (newStackAddr < proc->brk){
+                 terminateProcess(currProc);
                  return;
              }
 
-            rc = GrowUserStack(curProc,newStackAddr);
+            rc = GrowUserStack(currProc,newStackAddr);
             if (rc){
-                terminateProcess(curProc);
+                terminateProcess(currProc);
                 return;
             }
 
         break;
         case (YALNIX_ACCERR):
-            terminateProcess(curProc);
+            terminateProcess(currProc);
         break;
         default:
-            terminateProcess(curProc);
+            terminateProcess(currProc);
         break;
     }
 

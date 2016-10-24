@@ -9,16 +9,16 @@ dblist* terminatedqueue;
 
 enum processState {RUNNING,WAITING,READY,TERMINATED}; //define the state of a process
 
-int traverseParent(pcb_t *proc);              //Traverse through its parent
-int traverseChildren(pcb_t *proc);            //Traverse through its 
-int apppendProcess(pcb_t *des, pcb_t *src);     //Add a process in PCB list
+int traverseParent(lstnode *procnode);              //Traverse through its parent
+int traverseChildren(lstnode *procnode);            //Traverse through its 
+int apppendProcess(lstnode *procnode, pcb_t *src);     //Add a process in PCB list
 int removeProcessBypid(pcb_t *des, int pid);   //Remove a process from PCB by PID
 int findProcessBypid(pcb_t *des, int pid);      //Find a process by PID
-void terminateProcess(pcb_t *proc);
-int enreadyqueue(pcb_t* proc,dblist* readyqueue);
+
+int enreadyqueue(lstnode *procnode,dblist* readyqueue);
 void* dereadyqueue(dblist* readyqueue);
-int enwaitingqueue(pcb_t* proc,dblist* waitingqueue);
+int enwaitingqueue(lstnode *procnode,dblist* waitingqueue);
 void* dewaitingqueue(dblist* waitingqueue);
 //Temp
-void terminateProcess(pcb_t *proc);
-int GrowUserStack(pcb_t *proc, unsigned int addr);
+void terminateProcess(lstnode *procnode);
+int GrowUserStack(lstnode *procnode, unsigned int addr);
