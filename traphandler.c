@@ -171,15 +171,7 @@ void TrapClock(UserContext *uctxt){
             rc = KernelContextSwitch(MyKCS, (void *)current_pcb, (void *)netxt_pcb); 
     
     */
-        int rc = 0;
-        if (!isemptylist(readyqueue))
-        {
-            enreadyqueue(currProc,readyqueue);
-            rc = KernelContextSwitch(MyKCS, (void *) currProc, (void *) firstnode(readyqueue));
-            currProc = dereadyqueue(readyqueue);
-        }
-
-
+    int rc = 0;
 
     lstnode *traverse = waitingqueue->head;
         while(traverse != NULL)
@@ -202,6 +194,17 @@ void TrapClock(UserContext *uctxt){
            dewaitingqueue(notclock,waitingqueue);
            enreadyqueue(notclock,readyqueue); 
         }
+
+        if (!isemptylist(readyqueue))
+        {
+            enreadyqueue(currProc,readyqueue);
+            rc = KernelContextSwitch(MyKCS, (void *) currProc, (void *) firstnode(readyqueue));
+            currProc = dereadyqueue(readyqueue);
+        }
+
+
+
+    
         
         
 
