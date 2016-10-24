@@ -482,7 +482,7 @@ KernelContext *MyKCS(KernelContext *kc_in,void *curr_pcb_p,void *next_pcb_p){
     int numOfStack = KERNEL_STACK_MAXSIZE / PAGESIZE;
     int kStackStPage = (KERNEL_STACK_BASE >> PAGESHIFT);
     int kStackEdPage = (KERNEL_STACK_LIMIT >> PAGESHIFT);
-    int i, stackInx;
+    int i, stackInx = 0;
 
     lstnode* curr_pcb_pnode = (lstnode*) curr_pcb_p;
     lstnode* next_pcb_pnode = (lstnode*) next_pcb_pnode;
@@ -494,8 +494,9 @@ KernelContext *MyKCS(KernelContext *kc_in,void *curr_pcb_p,void *next_pcb_p){
     cur_p->kctxt = *kc_in;
 
     //Remember to change page table entries for kernel stack
-    for (i = kStackStPage, stackInx = 0; i <= kStackEdPage; i++, stackInx++){
-        memcpy(g_pageTableR0[i], next_p->krnlStackPtb[stackInx], sizeof(pte_t));
+    for (i = kStackStPage; i <= kStackEdPage; i++){
+        g_pageTableR0[i].pfn = next_p->krnlStackPtb[stackInx].pfn;
+        stackInx++;
     }
 
     //Flush!! 
