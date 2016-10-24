@@ -94,6 +94,7 @@ int kernelbrk(UserContext *uctxt){
 int kerneldelay(UserContext *uctxt){
     pcb_t *proc = (pcb_t *)currProc->content;
     int clock_ticks = uctxt->regs[0];
+    int rc;
     if (clock_ticks == 0)
     {
         return 0;
@@ -107,12 +108,17 @@ int kerneldelay(UserContext *uctxt){
         
         enwaitingqueue(currProc,waitingqueue);
         proc->clock = clock_ticks;
-        if (!isemptylist(waitingqueue))
+        if (!isemptylist(readyqueue))
         {
+
+            rc = KernelContextSwitch(MyKCS, (void *) currProc, (void *) firstnode(readyqueue));
             currProc = dereadyqueue(readyqueue);
+
         }
         else{
             //currProc = idleProc;
+            //rc = KernelContextxtSwitch(MyKCS, (void *) currProc, (void *) idleProc);
+
         }
     }
 
@@ -392,7 +398,7 @@ pcb_t *InitIdleProc(UserContext *uctxt){
 
     proc->krnlStackPtb = (pte_t *) calloc(numOfStack ,sizeof(pte_t));
     proc->krnlStackPtbSize = numOfStack;
-    lstnode* procnode = listinit(proc->pid);
+    lstnode* procnode = nodeinit(proc->pid);
     //Let a userprocess have its own kernel stack
     for (i=kStackStPage, stackInx = 0; i<kStackEdPage; i++, stackInx++){
         proc->krnlStackPtb[stackInx] = g_pageTableR0[i];
@@ -429,8 +435,11 @@ KernelContext *MyKCS(KernelContext *kc_in,void *curr_pcb_p,void *next_pcb_p){
     int kStackEdPage = (KERNEL_STACK_LIMIT >> PAGESHIFT);
     int i, stackInx;
 
-    pcb_t *cur_p = (pcb_t *) curr_pcb_p;
-    pcb_t *next_p = (pcb_t *) next_pcb_p;
+    lstnode* curr_pcb_pnode = (lstnode*) curr_pcb_p;
+    lstnode* next_pcb_pnode = (lstnode*) next_pcb_pnode;
+
+    pcb_t *cur_p = (pcb_t *) curr_pcb_pnode->content;
+    pcb_t *next_p = (pcb_t *) next_pcb_pnode->content;
 
     //Copy the kernel context to current process's pcb
     cur_p->kctxt = *kc_in;
