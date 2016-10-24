@@ -11,7 +11,7 @@
 
 typedef struct node{
  	int id;
- 	void* content;
+ 	int content;
  	struct node *pre;
 	struct node *next;
 } lstnode;
@@ -37,7 +37,7 @@ typedef struct ProcessControlBlock{
     dblist *children;                        //A pointer to mulitple child processes
     unsigned int sp; //TODO temp
     unsigned int brk; //TODO temp
-    int clock;
+    int clock = 0;
 } pcb_t;
 
 typedef void (*trapvector_t) (UserContext*);

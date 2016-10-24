@@ -171,6 +171,46 @@ void TrapClock(UserContext *uctxt){
             rc = KernelContextSwitch(MyKCS, (void *)current_pcb, (void *)netxt_pcb); 
     
     */
+
+
+        enreadyqueue(currProc,readyqueue);
+        if (!isemptylist(readyqueue))
+        {
+
+            rc = KernelContextSwitch(MyKCS, (void *) currProc, (void *) firstnode(readyqueue));
+            currProc = dereadyqueue(readyqueue);
+        }
+        else{
+            //currProc = idleProc;
+            //rc = KernelContextxtSwitch(MyKCS, (void *) currProc, (void *) idleProc);
+
+        }
+
+
+    lstnode *traverse = waitingqueue->head;
+        while(traverse != NULL)
+        {               
+            pcb_t* proc = (pcb_t*) traverse->content;
+            if(proc->clock > 0)
+            {
+            proc->clock--;
+            }
+            traverse = traverse->next;   
+        }
+
+    lstnode *notclock = waitingqueue->head;
+        while(traverse != NULL && ((pcb_t*) traverse->content)->clock > 0)
+        {
+            notclock = notclock->next;
+        }
+        if(notclock->clock == 0)
+        {
+           enreadyqueue(notclock,readyqueue); 
+        }
+        
+        
+
+
 }
 
 //Capture TRAP_ILLEGAL

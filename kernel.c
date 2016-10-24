@@ -451,6 +451,7 @@ KernelContext *MyKCS(KernelContext *kc_in,void *curr_pcb_p,void *next_pcb_p){
 
     //Flush!! 
     WriteRegister(REG_TLB_FLUSH,TLB_FLUSH_1);
+    //todo writeuserpagetable
     
     //Return a pointer to a kernel context it had earlier saved
     return &next_p->kctxt;
