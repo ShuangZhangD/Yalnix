@@ -7,6 +7,7 @@
 //Global Variables
 int m_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)
 int g_pid = 1;
+pte_t usrPtb[MAX_PT_LEN];
 
 lstnode* currProc;
 
@@ -15,6 +16,51 @@ extern dblist* waitingqueue;
 extern dblist* readyqueue;
 extern dblist* terminatedqueue;
 
+
+
+void printUserPageTable(){
+    TracePrintf(1, "Print User Page Table.\n");
+    int i;
+    for (i = 0; i < MAX_PT_LEN; i++){
+
+        int v = usrPtb[i].valid;
+        int prot = usrPtb[i].prot;
+
+        char *read = NULL;
+        char *write = NULL;
+        char *exec = NULL;
+        if (prot & PROT_READ) read = "PROT_READ";
+        if (prot & PROT_WRITE) write = "PROT_WRITE";
+        if (prot & PROT_EXEC) exec = "PROT_EXEC";
+
+        int pfn = usrPtb[i].pfn;
+
+        TracePrintf(1, "Entry %d: valid:%d, PROT_READ=%s PROT_WRITE=%s PROT_EXEC=%s, pageFrameNumber:%d\n",i,v,read,write,exec,pfn);
+    }
+    return;
+}
+
+void printKernelPageTable(){
+    TracePrintf(1, "Print Kernel Page Table.\n");
+    int i;
+    for (i = 0; i < MAX_PT_LEN; i++){
+        int v = g_pageTableR0[i].valid;
+        int prot = g_pageTableR0[i].prot;
+
+        char *read = NULL;
+        char *write = NULL;
+        char *exec = NULL;
+        if (prot & PROT_READ) read = "PROT_READ";
+        if (prot & PROT_WRITE) write = "PROT_WRITE";
+        if (prot & PROT_EXEC) exec = "PROT_EXEC";
+
+        int pfn = g_pageTableR0[i].pfn;
+
+        TracePrintf(1, "Entry %d: valid:%d, PROT_READ=%s PROT_WRITE=%s PROT_EXEC=%s, pageFrameNumber:%d\n",i,v,read,write,exec,pfn);
+
+    }
+    return;
+}
 
 
 int kernelfork(UserContext *uctxt){
@@ -175,9 +221,10 @@ int kernelreclaim(int id){
 */
 void SetKernelData(void *_KernelDataStart, void *_KernelDataEnd){
     m_kernel_brk = (unsigned int) _KernelDataEnd;
-    TracePrintf(1, "m_kernel_brk = %x \n", m_kernel_brk);
     m_kernel_data_start = (unsigned int) _KernelDataStart;
 
+    TracePrintf(1, "KernelDataStart = %x \n", m_kernel_data_start);
+    TracePrintf(1, "KernelDataEnd = %x \n", m_kernel_brk);  
     return;
 }
 
@@ -262,6 +309,9 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     WriteRegister(REG_VM_ENABLE,1);
     m_enableVM = 1;
 
+    printUserPageTable();
+    printKernelPageTable();
+
     //init Queue
     waitingqueue = listinit();
     readyqueue = listinit();
@@ -296,16 +346,14 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
 
 pte_t* InitUserPageTable (){
     int i;
-    pte_t *usrPtb = (pte_t *) malloc(sizeof(pte_t) * MAX_PT_LEN);
+    // pte_t *usrPtb = (pte_t *) malloc(sizeof(pte_t) * MAX_PT_LEN);
+
     //Mark User Page table as Invalid;
     for (i = 0; i < MAX_PT_LEN; i++){
         usrPtb[i].valid = 0;
-        // usrPtb[i].prot = PROT_NONE;
-        // usrPtb[i].pfn = UNALLOCATED;
+        usrPtb[i].prot = PROT_NONE;
+        usrPtb[i].pfn = 0;
     }
-
-    // idleProc->usrPtb[MAX_PT_LEN - 1].pfn = nodeinit(i);
-    // remove_node(frame, freeframe_list);
 
     return usrPtb;
 }
@@ -313,12 +361,13 @@ pte_t* InitUserPageTable (){
 
 void InitKernelPageTable(pcb_t *proc) {
     
-    unsigned int kDataEdPage = m_kernel_brk >> PAGESHIFT; 
     unsigned int kDataStPage = m_kernel_data_start >> PAGESHIFT;
+    unsigned int kDataEdPage = m_kernel_brk >> PAGESHIFT; 
     unsigned int kStackStPage = KERNEL_STACK_BASE >> PAGESHIFT;
     unsigned int kStackEdPage = (KERNEL_STACK_LIMIT - 1) >> PAGESHIFT;
     int i, stackInx;
     
+    TracePrintf(1, "kDataStPage:%d, kDataEdPage:%d, kStackStPage:%d, kStackEdPage:%d\n", kDataStPage, kDataEdPage, kStackStPage, kStackEdPage);
 
     //Protect Kernel Text, Data and Heap
     for (i=0; i <= kDataEdPage; i++){
