@@ -12,6 +12,7 @@ pte_t usrPtb[MAX_PT_LEN];
 lstnode* currProc;
 
 dblist* freeframe_list;
+
 extern dblist* waitingqueue;
 extern dblist* readyqueue;
 extern dblist* terminatedqueue;
@@ -220,6 +221,7 @@ int kernelreclaim(int id){
     Kernel Initiailization functions
 */
 void SetKernelData(void *_KernelDataStart, void *_KernelDataEnd){
+    TracePrintf(1, "_KernelDataStart: %p\n", _KernelDataStart);
     m_kernel_brk = (unsigned int) _KernelDataEnd;
     m_kernel_data_start = (unsigned int) _KernelDataStart;
 
@@ -291,12 +293,22 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     //Build a structure to track free frame
     TracePrintf(1, "Init free frame list.\n");
     initFreeFrameTracking(pmem_size);
+    // int numOfFrames = (pmem_size / PAGESIZE);
+    // freeframe_list = listinit();
+
+    // for(i = 0;i<numOfFrames;i++)
+    // {
+    //     lstnode *frame = nodeinit(i);
+    //     insert_tail(frame,freeframe_list);
+    // }
+ 
+    // TracePrintf(1, "numOfFrames:%x\n", numOfFrames);
 
     //Build initial page table for Region 1 (before kernel page protection)
     TracePrintf(1, "Init user page table \n");
-    pte_t* usrPtb = InitUserPageTable();
+    InitUserPageTable();
 
-    //Build initial page table for Region 0
+    // //Build initial page table for Region 0
     TracePrintf(1, "Init kernel page table \n");
     InitKernelPageTable();
     WriteRegister(REG_PTBR0, (unsigned int) g_pageTableR0);
@@ -305,10 +317,18 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     WriteRegister(REG_PTBR1, (unsigned int) usrPtb);
     WriteRegister(REG_PTLR1, (unsigned int) MAX_PT_LEN);
 
+    // TracePrintf(1, "freeframe_list:%x\n", freeframe_list);
+    // TracePrintf(1, "Malloc before VM: %p\n", malloc(100));
+
+
     TracePrintf(1, "Enable VM\n");
     WriteRegister(REG_VM_ENABLE,1);
     m_enableVM = 1;
 
+    TracePrintf(1, "Malloc after VM: %p\n", malloc(100));
+
+    TracePrintf(1, "freeframe_list:%x\n", freeframe_list);
+    traverselist(freeframe_list);
     printUserPageTable();
     printKernelPageTable();
 
@@ -352,7 +372,7 @@ pte_t* InitUserPageTable (){
     for (i = 0; i < MAX_PT_LEN; i++){
         usrPtb[i].valid = 0;
         usrPtb[i].prot = PROT_NONE;
-        usrPtb[i].pfn = 0;
+        usrPtb[i].pfn = 0; //TODO make sure it is right
     }
 
     return usrPtb;
@@ -371,6 +391,8 @@ void InitKernelPageTable(pcb_t *proc) {
 
     //Protect Kernel Text, Data and Heap
     for (i=0; i <= kDataEdPage; i++){
+        TracePrintf(1, "Data Index: %d\n", i);
+
         if (i < kDataStPage){
             //Protect Kernel Text
             g_pageTableR0[i].valid = 1;
@@ -388,6 +410,7 @@ void InitKernelPageTable(pcb_t *proc) {
 
     //Protect Kernel Stack
     for (i=kStackStPage, stackInx = 0; i <= kStackEdPage; i++, stackInx++){
+        TracePrintf(1, "Stack Index: %d\n", i);
         g_pageTableR0[i].valid = 1;
         g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
         g_pageTableR0[i].pfn = i;
@@ -420,11 +443,20 @@ void CookDoIdle(UserContext *uctxt){
 void initFreeFrameTracking(int pmem_size){
     int i;
     int numOfFrames = (pmem_size / PAGESIZE);
-    freeframe_list = listinit();
 
+    TracePrintf(1, "freeframe_list before malloc:%x\n", freeframe_list);
+    TracePrintf(1, "random malloc address: %p\n", malloc(100));
+
+    freeframe_list = listinit();
+    TracePrintf(1, "freeframe_list:%x\n", freeframe_list);
+    TracePrintf(1, "random malloc address: %p\n", malloc(100));
+
+    TracePrintf(1, "freeframe_list size:%x\n", sizeof(lstnode)*numOfFrames);
     for(i = 0;i<numOfFrames;i++)
     {
+        // TracePrintf(1, "freeframe_list in loop:%x\n", freeframe_list);
         lstnode *frame = nodeinit(i);
+        TracePrintf(1, "listnode: %x\n", frame);
         insert_tail(frame,freeframe_list);
     }
     return;

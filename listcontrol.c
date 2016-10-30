@@ -159,13 +159,13 @@ void traverselist(dblist* list)
 	lstnode *traverse = list->head;
 	if(isemptylist(list))
 	{
-		printf("%s\n", "error");
+		TracePrintf(1, "%s\n", "Error");
 	}
 	else
 		while(traverse != NULL)
 		{
 				traverse = traverse->next;
-				printf("%s\n", traverse->id);
+				TracePrintf(1, "List Id:%d\n", traverse->id);
 		}
 
 }
