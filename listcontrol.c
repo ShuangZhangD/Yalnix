@@ -3,14 +3,6 @@
 
 //use a doublylinkedlist to track free frame
 
-lstnode* TurnPCBToNode(pcb_t *pcb){
-
-	lstnode *node = nodeinit(pcb->pid);
-	node->content = (void *) pcb;
-
-	return node;
-}
-
 
 lstnode* nodeinit(int i)
 {

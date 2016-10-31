@@ -148,7 +148,9 @@ int LoadProgram(char *name, char *args[], lstnode *proc_node)
    */
   cp2 = argbuf = (char *)malloc(size);
 // ==>> You should perhaps check that malloc returned valid space
-  //TODO check malloc return value
+  if (cp2 == NULL){
+    return KILL;
+  }
 
   for (i = 0; args[i] != NULL; i++) {
     TracePrintf(3, "saving arg %d = '%s'\n", i, args[i]);
@@ -190,7 +192,7 @@ int LoadProgram(char *name, char *args[], lstnode *proc_node)
 // ==>> Allocate "stack_npg" physical pages and map them to the top
 // ==>> of the region 1 virtual address space.
 // ==>> These pages should be marked valid, with a
-  // ==>> protection of (PROT_READ | PROT_WRITE).
+// ==>> protection of (PROT_READ | PROT_WRITE).
   writepagetable(proc->usrPtb, MAX_PT_LEN - stack_npg, MAX_PT_LEN - 1, VALID, (PROT_READ | PROT_WRITE));
   /*
    * All pages for the new address space are now in the page table.  
@@ -199,7 +201,6 @@ int LoadProgram(char *name, char *args[], lstnode *proc_node)
   WriteRegister(REG_PTBR1, (unsigned int)proc->usrPtb);
   WriteRegister(REG_PTLR1, (unsigned int) MAX_PT_LEN);
   
-  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
   /*
    * Read the text from the file into memory.
    */
@@ -237,10 +238,10 @@ int LoadProgram(char *name, char *args[], lstnode *proc_node)
 // ==>> into the TLB.  It's nice for the TLB and the page tables to remain
 // ==>> consistent.
 
-  for (i = text_pg1; i <= text_pg1+li.t_npg; i++){
+  for (i = text_pg1; i < text_pg1+li.t_npg; i++){
     proc->usrPtb[i].prot = (PROT_READ | PROT_EXEC);
   }
-  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_0);
+  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
 
   close(fd);			/* we've read it all now */
 

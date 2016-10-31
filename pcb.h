@@ -21,5 +21,9 @@ int enreadyqueue(lstnode *procnode,dblist* readyqueue);
 void* dereadyqueue(dblist* readyqueue);
 int enwaitingqueue(lstnode *procnode,dblist* waitingqueue);
 void* dewaitingqueue(lstnode* waitingnode,dblist* waitingqueue);
+
+lstnode* TurnPCBToNode(pcb_t *pcb);
+pcb_t* TurnNodeToPCB(lstnode *node);
+
 //Temp
 void terminateProcess(lstnode *procnode);

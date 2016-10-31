@@ -75,3 +75,19 @@ void* dewaitingqueue(lstnode* waitingnode,dblist* waitingqueue)
 	
 	return (void*)remove_node(((pcb_t*)waitingnode->content)->pid,waitingqueue)->content;
 }
+
+
+lstnode* TurnPCBToNode(pcb_t *pcb){
+
+    lstnode *node = nodeinit(pcb->pid);
+    node->content = (void *) pcb;
+
+    return node;
+}
+
+pcb_t* TurnNodeToPCB(lstnode *node){
+    
+    pcb_t *pcb = (pcb_t *) node->content;
+    if (!pcb) TracePrintf(1, "Turn Node To PCB Error!\n");
+    return pcb;
+}

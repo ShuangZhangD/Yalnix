@@ -10,11 +10,12 @@
 #include "traphandler.h"
 #include "kernel.h"
 
-// extern dlqueue pqueue[MAX_QUEUE_SIZE];
 extern lstnode* currProc;
+extern dblist* freeframe_list;
 
 //capture TRAP_CLOCK
 void TrapKernel(UserContext *uctxt){
+    TracePrintf(1, "TrapKernel called\n");
     int rc;
     switch(uctxt->code){
         case YALNIX_FORK:
@@ -171,7 +172,8 @@ void TrapClock(UserContext *uctxt){
        rc = KernelContextSwitch(MyKCS, (void *)current_pcb, (void *)netxt_pcb); 
 
      */
-    int rc = 0;
+    TracePrintf(1, "TrapClock called\n");
+    // int rc = 0;
     if (!isemptylist(waitingqueue)){
         lstnode *traverse = waitingqueue->head;
         while(traverse != NULL)
@@ -213,9 +215,14 @@ void TrapIllegal(UserContext *uctxt){
 
 //Capture TRAP_MEMORY
 void TrapMemory(UserContext *uctxt){
-    pcb_t *proc = (pcb_t *) currProc->content;
-
     TracePrintf(1, "TrapMemory.\n");
+    pcb_t *proc = TurnNodeToPCB(currProc);
+    
+    TracePrintf(1, "uctxt->addr:%p\n", uctxt->addr);
+    
+    // traverselist(freeframe_list);
+    printUserPageTable(currProc);
+    
     int rc;
     int trapCode = uctxt->code;
     unsigned int newStackAddr = (unsigned int) uctxt->addr;

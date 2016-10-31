@@ -38,7 +38,7 @@ void printUserPageTable(lstnode *p){
 
         int pfn = proc->usrPtb[i].pfn;
 
-        TracePrintf(1, "Entry %d: valid:%d, PROT_READ=%s PROT_WRITE=%s PROT_EXEC=%s, pageFrameNumber:%d\n",i,v,read,write,exec,pfn);
+        TracePrintf(1, "Entry %d: valid:%d, PROT=%x, PROT_READ=%s PROT_WRITE=%s PROT_EXEC=%s, pageFrameNumber:%d\n",i,v,prot,read,write,exec,pfn);
     }
     return;
 }
@@ -432,7 +432,6 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
 
     //Initialize Init Process
     lstnode *initProc = InitProc();
-    currProc = initProc;
 
     // printKernelPageTable();
     // traverselist(freeframe_list);
@@ -444,7 +443,10 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     }
 
     rc = KernelContextSwitch(MyBogusKCS, (void *) &initProc, (void *) &idleProc);
+    *uctxt = TurnNodeToPCB(initProc)->uctxt;
+    currProc = initProc;
 
+    // printUserPageTable(initProc);
 
     TracePrintf(1, "Exit\n");
     return;
@@ -521,7 +523,7 @@ void CookDoIdle(UserContext *uctxt){
     //Get the function pointer of DoIdle
     void (*idlePtr)(void) = &DoIdle;
     uctxt->pc = idlePtr;
-    uctxt->sp = (void*)(KERNEL_STACK_LIMIT  - INITIAL_STACK_FRAME_SIZE - POST_ARGV_NULL_SPACE); 
+    uctxt->sp = (void*)(VMEM_LIMIT  - INITIAL_STACK_FRAME_SIZE - POST_ARGV_NULL_SPACE); 
     return;
 }
 
@@ -611,7 +613,6 @@ int checkPageStatus(unsigned int addr){
 KernelContext *MyBogusKCS(KernelContext *kc_in,void *pcb_p,void *useless){
 
     lstnode* pcb_node = (lstnode*) pcb_p;
-
     pcb_t *proc = (pcb_t *) pcb_node->content;
 
     //Copy the kernel context to current process's pcb
