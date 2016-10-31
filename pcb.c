@@ -2,7 +2,7 @@
 #include "selfdefinedstructure.h"
 
 extern dblist* freeframe_list;
-
+extern lstnode* currProc;
 
 int switchproc()
 {
@@ -11,7 +11,7 @@ int switchproc()
         if (!isemptylist(readyqueue))
         {
 
-            rc = KernelContextSwitch(MyKCS, (void *) currProc, (void *) firstnode(readyqueue));
+            rc = KernelContextSwitch(MyTrueKCS, (void *) currProc, (void *) firstnode(readyqueue));
             currProc = dereadyqueue(readyqueue);
             return 0;
         }
@@ -74,25 +74,4 @@ void* dewaitingqueue(lstnode* waitingnode,dblist* waitingqueue)
 {
 	
 	return (void*)remove_node(((pcb_t*)waitingnode->content)->pid,waitingqueue)->content;
-}
-
-int GrowUserStack(lstnode *procnode, unsigned int addr){
-	pcb_t* proc = (pcb_t*)procnode->content;
-	int oldStackPage = (proc->sp >> PAGESHIFT);  
-	int newStackPage = (addr >> PAGESHIFT);
-	int i, rc;
-	
-	//TODO check How Many FreeFrame do we have, plus 1 for safety margin
-	rc = 0;//checkAvailFrame(newStackPage-oldStackPage+1);
-	if (rc) return -1;
-
-	for (i = oldStackPage + 1; i <= newStackPage; i++){
-		proc->usrPtb[i].valid = 1;
-		proc->usrPtb[i].prot = (PROT_READ | PROT_WRITE);
-		proc->usrPtb[i].pfn = remove_head(freeframe_list)->id; //TODO JASON's Method
-	}
-
-	proc->sp = addr;
-
-	return 0;
 }

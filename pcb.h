@@ -2,6 +2,7 @@
 #include "hardware.h"
 #include "selfdefinedstructure.h"
 #include "listcontrol.h"
+#include "kernel.h"
 
 dblist* waitingqueue;
 dblist* readyqueue;
@@ -22,4 +23,3 @@ int enwaitingqueue(lstnode *procnode,dblist* waitingqueue);
 void* dewaitingqueue(lstnode* waitingnode,dblist* waitingqueue);
 //Temp
 void terminateProcess(lstnode *procnode);
-int GrowUserStack(lstnode *procnode, unsigned int addr);

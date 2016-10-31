@@ -11,7 +11,7 @@
 
 typedef struct node{
  	int id;
- 	int content;
+ 	void* content;
  	struct node *pre;
 	struct node *next;
 } lstnode;
