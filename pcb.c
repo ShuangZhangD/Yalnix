@@ -4,6 +4,23 @@
 extern dblist* freeframe_list;
 
 
+int switchproc()
+{
+        
+        int rc;
+        if (!isemptylist(readyqueue))
+        {
+
+            rc = KernelContextSwitch(MyKCS, (void *) currProc, (void *) firstnode(readyqueue));
+            currProc = dereadyqueue(readyqueue);
+            return 0;
+        }
+        else{
+            return 1;
+        }	
+}
+
+
 void terminateProcess(lstnode *procnode){
     int i;
     pcb_t* proc = (pcb_t*)procnode->content;
@@ -36,9 +53,9 @@ int enreadyqueue(lstnode* procnode,dblist* readyqueue)
 	return 0;
 }
 
-lstnode* dereadyqueue(dblist* readyqueue)
+void* dereadyqueue(dblist* readyqueue)
 {
-	return remove_head(readyqueue)->content;
+	return (void*)remove_head(readyqueue)->content;
 }
 
 int enwaitingqueue(lstnode* procnode,dblist* waitingqueue)
@@ -53,8 +70,29 @@ int enwaitingqueue(lstnode* procnode,dblist* waitingqueue)
 	return 0;
 }
 
-lstnode* dewaitingqueue(lstnode* waitingnode,dblist* waitingqueue)
+void* dewaitingqueue(lstnode* waitingnode,dblist* waitingqueue)
 {
 	
-	return remove_node(((pcb_t*)waitingnode->content)->pid,waitingqueue)->content;
+	return (void*)remove_node(((pcb_t*)waitingnode->content)->pid,waitingqueue)->content;
+}
+
+int GrowUserStack(lstnode *procnode, unsigned int addr){
+	pcb_t* proc = (pcb_t*)procnode->content;
+	int oldStackPage = (proc->sp >> PAGESHIFT);  
+	int newStackPage = (addr >> PAGESHIFT);
+	int i, rc;
+	
+	//TODO check How Many FreeFrame do we have, plus 1 for safety margin
+	rc = 0;//checkAvailFrame(newStackPage-oldStackPage+1);
+	if (rc) return -1;
+
+	for (i = oldStackPage + 1; i <= newStackPage; i++){
+		proc->usrPtb[i].valid = 1;
+		proc->usrPtb[i].prot = (PROT_READ | PROT_WRITE);
+		proc->usrPtb[i].pfn = remove_head(freeframe_list)->id; //TODO JASON's Method
+	}
+
+	proc->sp = addr;
+
+	return 0;
 }

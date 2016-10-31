@@ -105,60 +105,59 @@ void TrapKernel(UserContext *uctxt){
             rc = kernelpipewrite(uctxt);
             break;
 
-            // case YALNIX_NOP:
-            //     rc = kernelnop(uctxt);
-            //     break;
+        // case YALNIX_NOP:
+        //     rc = kernelnop(uctxt);
+        //     break;
 
-            // case YALNIX_LOCK_INIT:
-            //     rc = kernellockinit(uctxt);
-            //     break;
+        // case YALNIX_LOCK_INIT:
+        //     rc = kernellockinit(uctxt);
+        //     break;
 
-            // case YALNIX_LOCK_ACQUIRE:
-            //     rc = kernelaquire(uctxt);
-            //     break;
+        // case YALNIX_LOCK_ACQUIRE:
+        //     rc = kernelaquire(uctxt);
+        //     break;
 
-            // case YALNIX_LOCK_RELEASE:
-            //     rc = kernelrelease(uctxt);
-            //     break;
+        // case YALNIX_LOCK_RELEASE:
+        //     rc = kernelrelease(uctxt);
+        //     break;
 
-            // case YALNIX_CVAR_INIT:
-            //     rc = kernelcvarinit(uctxt);
-            //     break;
+        // case YALNIX_CVAR_INIT:
+        //     rc = kernelcvarinit(uctxt);
+        //     break;
 
-            // case YALNIX_CVAR_SIGNAL:
-            //     rc = kernelcavrsignal(uctxt);
-            //     break;
+        // case YALNIX_CVAR_SIGNAL:
+        //     rc = kernelcavrsignal(uctxt);
+        //     break;
 
-            // case YALNIX_CVAR_BROADCAST:
-            //     rc = kernelcarbroadcast(uctxt);
-            //     break;
+        // case YALNIX_CVAR_BROADCAST:
+        //     rc = kernelcarbroadcast(uctxt);
+        //     break;
 
-            // case YALNIX_CVAR_WAIT:
-            //     rc = kernelcvarwait(uctxt);
-            //     break;
+        // case YALNIX_CVAR_WAIT:
+        //     rc = kernelcvarwait(uctxt);
+        //     break;
 
-            // case YALNIX_RECLAIM:
-            //     rc = kernelreclaim(uctxt);
-            //     break;
+        // case YALNIX_RECLAIM:
+        //     rc = kernelreclaim(uctxt);
+        //     break;
 
-            // case YALNIX_CUSTOM_0:
-            //     rc = kernelcustom0(uctxt);
-            //     break;
-            // case YALNIX_CUSTOM_1:
-            //     rc = kernelcustom1(uctxt);
-            //     break;
-            // case YALNIX_CUSTOM_2:
-            //     rc = kernelcustom2(uctxt);
-            //     break;
+        // case YALNIX_CUSTOM_0:
+        //     rc = kernelcustom0(uctxt);
+        //     break;
+        // case YALNIX_CUSTOM_1:
+        //     rc = kernelcustom1(uctxt);
+        //     break;
+        // case YALNIX_CUSTOM_2:
+        //     rc = kernelcustom2(uctxt);
+        //     break;
 
-            // case YALNIX_BOOT:
-            //     rc = kernelboot(uctxt);
-            //     break;
+        // case YALNIX_BOOT:
+        //     rc = kernelboot(uctxt);
+        //     break;
 
         default:
             break;
     }
-
     //Put the return code at the first register.
     uctxt->regs[0] = rc;
 }
@@ -167,59 +166,53 @@ void TrapKernel(UserContext *uctxt){
 //TODO: Implement round-robin process scheduling with CPU quantum per process of 1 clock tick.
 void TrapClock(UserContext *uctxt){
     /*
-       int rc = 0;
-       IF(pqueue.size != 0)
-       rc = KernelContextSwitch(MyKCS, (void *)current_pcb, (void *)netxt_pcb); 
-
-     */
+        int rc = 0;
+        IF(pqueue.size != 0)
+            rc = KernelContextSwitch(MyKCS, (void *)current_pcb, (void *)netxt_pcb); 
+    
+    */
     int rc = 0;
-    if (!isemptylist(waitingqueue)){
 
-        lstnode *traverse = waitingqueue->head;
+    lstnode *traverse = waitingqueue->head;
         while(traverse != NULL)
         {               
             pcb_t* proc = (pcb_t*) traverse->content;
             if(proc->clock > 0)
             {
-                proc->clock--;
+            proc->clock--;
             }
             traverse = traverse->next;   
         }
 
-        lstnode *notclock = waitingqueue->head;
+    lstnode *notclock = waitingqueue->head;
         while(traverse != NULL && ((pcb_t*) traverse->content)->clock > 0)
         {
             notclock = notclock->next;
         }
         if(((pcb_t*)notclock->content)->clock == 0)
         {
-            dewaitingqueue(notclock,waitingqueue);
-            enreadyqueue(notclock,readyqueue); 
+           dewaitingqueue(notclock,waitingqueue);
+           enreadyqueue(notclock,readyqueue); 
         }
-    }
-    
-    if (!isemptylist(readyqueue))
-    {
-        enreadyqueue(currProc,readyqueue);
-        rc = KernelContextSwitch(MyTrueKCS, (void *) currProc, (void *) firstnode(readyqueue));
-        currProc = dereadyqueue(readyqueue);
-    }
+
+        switchproc();
+
 
 }
 
 //Capture TRAP_ILLEGAL
 void TrapIllegal(UserContext *uctxt){
     /*
-       Abort current process
-
-       Rearrange quque 
-     */
+        Abort current process
+        
+        Rearrange quque 
+    */
 }
 
 //Capture TRAP_MEMORY
 void TrapMemory(UserContext *uctxt){
     pcb_t *proc = (pcb_t *) currProc->content;
-
+    
     TracePrintf(1, "TrapMemory.\n");
     int rc;
     int trapCode = uctxt->code;
@@ -227,15 +220,15 @@ void TrapMemory(UserContext *uctxt){
 
     switch(trapCode){
         case (YALNIX_MAPERR):
-            if (newStackAddr > proc->sp){
-                terminateProcess(currProc);
-                return;
-            }
+             if (newStackAddr > proc->sp){
+                 terminateProcess(currProc);
+                 return;
+             }
 
-            if (newStackAddr < proc->brk){
-                terminateProcess(currProc);
-                return;
-            }
+             if (newStackAddr < proc->brk){
+                 terminateProcess(currProc);
+                 return;
+             }
 
             rc = GrowUserStack(currProc,newStackAddr);
             if (rc){
@@ -243,78 +236,79 @@ void TrapMemory(UserContext *uctxt){
                 return;
             }
 
-            break;
+        break;
         case (YALNIX_ACCERR):
             terminateProcess(currProc);
-            break;
+        break;
         default:
             terminateProcess(currProc);
-            break;
+        break;
     }
 
     return;
 
     /*
-       IF  [current break of heap] < uctxt->addr < [allocated memory for the stack](uctxt->ebp)
-       keep going 
-       ELSE 
-       not Allocate    
-
-       IF at least on page  
-       Allocate memory for stack
-       ELSE
-       Abort current process
-
-       Rearrange queue 
-     */
+        IF  [current break of heap] < uctxt->addr < [allocated memory for the stack](uctxt->ebp)
+            keep going 
+        ELSE 
+            not Allocate    
+            
+        IF at least on page  
+            Allocate memory for stack
+        ELSE
+            Abort current process
+        
+            Rearrange queue 
+    */
 }
 
 //Capture TRAP_MATH
 void TrapMath(UserContext *uctxt){
     /*
-       Abort current process
-       Rearrange queue
-     */  
+        Abort current process
+        Rearrange queue
+    */  
 }
 
 //Capture TRAP_TTY_RECEIVE
 void TrapTtyReceive(UserContext *uctxt){
     /*
-    //Get the input string using TtyReceive
-
-    char[] = str;
-    tty_id = uctxt->code; 
-    whlile (TtyReceive(int tty_id, void *buf, int len) != 0{
-    str+=buf;
-    }
-
-    //Buffer for kernelttyread
-    kernelttyread(str);
-     */
+        //Get the input string using TtyReceive
+        
+        char[] = str;
+        tty_id = uctxt->code; 
+        whlile (TtyReceive(int tty_id, void *buf, int len) != 0{
+            str+=buf;
+        }
+        
+        //Buffer for kernelttyread
+        kernelttyread(str);
+    */
 }
 
 //Capture TRAP_TTY_TRANSMIT
 void TrapTtyTransmit(UserContext *uctxt){
     /*
-       tty_id = uctxt->code;
+        tty_id = uctxt->code;
+        
+        //Complete blocked process 
+        kernelttywrite(int tty_id, void *buf, int len);
 
-    //Complete blocked process 
-    kernelttywrite(int tty_id, void *buf, int len);
-
-     */
+    */
 }
 
 //Capture TRAP_DISK
 void TrapDisk(UserContext *uctxt){
     /*
-       DO SOMETHING......(Not specified in manual)
-     */
+        DO SOMETHING......(Not specified in manual)
+    */
 }
 
 void InitInterruptTable(){
 
     //Allocate memory to interupt vector table 
     intrptTb = (trapvector_t *) malloc(TRAP_VECTOR_SIZE * sizeof(trapvector_t));
+    TracePrintf(1, "intrptTB ptr: %p\n", intrptTb);
 
     //Fill interrupt vector table
     intrptTb[TRAP_KERNEL] = &TrapKernel; 
