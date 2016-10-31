@@ -175,7 +175,7 @@ void traverselist(dblist* list)
 		TracePrintf(1, "%s\n", "Error");
 	}
 	else
-		while(traverse != NULL)
+		while(traverse->next != NULL)
 		{
 				traverse = traverse->next;
 				TracePrintf(1, "List Id:%d\n", traverse->id);

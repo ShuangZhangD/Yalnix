@@ -433,6 +433,10 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     //Initialize Init Process
     lstnode *initProc = InitProc();
 
+
+
+    printKernelPageTable();
+    traverselist(freeframe_list);
     //Create first process  and load initial program to it
     rc = LoadProgram("init", cmd_args, initProc);
     TracePrintf(1, "rc=%d\n", rc);
@@ -476,11 +480,8 @@ void InitKernelPageTable(pcb_t *proc) {
     unsigned int kStackEdPage = (KERNEL_STACK_LIMIT - 1) >> PAGESHIFT;
     int i, stackInx;
     
-    TracePrintf(1, "kDataStPage:%d, kDataEdPage:%d, kStackStPage:%d, kStackEdPage:%d\n", kDataStPage, kDataEdPage, kStackStPage, kStackEdPage);
-
     //Protect Kernel Text, Data and Heap
     for (i=0; i <= kDataEdPage; i++){
-        TracePrintf(1, "Data Index: %d\n", i);
 
         if (i < kDataStPage){
             //Protect Kernel Text
@@ -499,13 +500,11 @@ void InitKernelPageTable(pcb_t *proc) {
 
     //Protect Kernel Stack
     for (i=kStackStPage, stackInx = 0; i <= kStackEdPage; i++, stackInx++){
-        TracePrintf(1, "Stack Index: %d\n", i);
         g_pageTableR0[i].valid = 1;
         g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
         g_pageTableR0[i].pfn = i;
         remove_node(i, freeframe_list);
     }
-    
     return;
 
 }
@@ -533,19 +532,11 @@ void initFreeFrameTracking(int pmem_size){
     int i;
     int numOfFrames = (pmem_size / PAGESIZE);
 
-    TracePrintf(1, "freeframe_list before malloc:%x\n", freeframe_list);
-    TracePrintf(1, "random malloc address: %p\n", malloc(100));
-
     freeframe_list = listinit();
-    TracePrintf(1, "freeframe_list:%x\n", freeframe_list);
-    TracePrintf(1, "random malloc address: %p\n", malloc(100));
 
-    TracePrintf(1, "freeframe_list size:%x\n", sizeof(lstnode)*numOfFrames);
     for(i = 0;i<numOfFrames;i++)
     {
-        // TracePrintf(1, "freeframe_list in loop:%x\n", freeframe_list);
         lstnode *frame = nodeinit(i);
-        TracePrintf(1, "listnode: %x\n", frame);
         insert_tail(frame,freeframe_list);
     }
     return;

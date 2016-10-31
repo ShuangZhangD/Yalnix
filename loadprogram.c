@@ -12,6 +12,7 @@
 #include "memorymanage.h"
 #include "yalnix.h"
 #include "selfdefinedstructure.h"
+#include "kernel.h"
 
 /*
  *  Load a program into an existing address space.  The program comes from
@@ -177,7 +178,6 @@ int LoadProgram(char *name, char *args[], lstnode *proc_node)
 // ==>> the "text_pg1" page in region 1 address space.  
 // ==>> These pages should be marked valid, with a protection of 
 // ==>> (PROT_READ | PROT_WRITE).
-  TracePrintf(1, "text_pg1 %d\n", text_pg1);
   writepagetable(proc->usrPtb, text_pg1, text_pg1+li.t_npg - 1, VALID, (PROT_READ | PROT_WRITE));
 // ==>> Allocate "data_npg" physical pages and map them starting at
 // ==>> the  "data_pg1" in region 1 address space.  
@@ -196,6 +196,9 @@ int LoadProgram(char *name, char *args[], lstnode *proc_node)
    * All pages for the new address space are now in the page table.  
    * But they are not yet in the TLB, remember!
    */
+  WriteRegister(REG_PTBR1, (unsigned int)proc->usrPtb);
+  WriteRegister(REG_PTLR1, (unsigned int) MAX_PT_LEN);
+  
   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
   /*
    * Read the text from the file into memory.
@@ -203,7 +206,9 @@ int LoadProgram(char *name, char *args[], lstnode *proc_node)
   lseek(fd, li.t_faddr, SEEK_SET);
   segment_size = li.t_npg << PAGESHIFT;
 
-  TracePrintf(1, "read:%d\n",proc->usrPtb[text_pg1].pfn);
+  printUserPageTable(proc_node);
+  TracePrintf(1, "read:%d\n",proc->usrPtb[text_pg1].valid);
+  TracePrintf(1, "vaddr:%p\n",li.t_vaddr);
   if (read(fd, (void *) li.t_vaddr, segment_size) != segment_size) {
     close(fd);
 // ==>> KILL is not defined anywhere: it is an error code distinct

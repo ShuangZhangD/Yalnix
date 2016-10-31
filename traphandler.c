@@ -308,7 +308,6 @@ void InitInterruptTable(){
 
     //Allocate memory to interupt vector table 
     intrptTb = (trapvector_t *) malloc(TRAP_VECTOR_SIZE * sizeof(trapvector_t));
-    TracePrintf(1, "intrptTB ptr: %p\n", intrptTb);
 
     //Fill interrupt vector table
     intrptTb[TRAP_KERNEL] = &TrapKernel; 

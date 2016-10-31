@@ -10,9 +10,14 @@ void writepagetable(pte_t *pagetable, int startPage, int endPage, int valid, int
 	for (i=startPage; i<=endPage; i++){
 		pagetable[i].valid = valid;
 		pagetable[i].prot = prot;
+		
+		// TracePrintf(1, "====================\n");
+		// traverselist(freeframe_list);
 
         lstnode *first = remove_head(freeframe_list);
-        pagetable[i].pfn = first->id; 
+        pagetable[i].pfn = first->id;
+        // TracePrintf(1, "pfn=:%d\n", first->id);
+        // TracePrintf(1, "====================\n"); 
 	}
 
 	return;
