@@ -11,7 +11,7 @@
 
 typedef struct node{
  	int id;
- 	void *content;
+ 	int content;
  	struct node *pre;
 	struct node *next;
 } lstnode;
@@ -33,11 +33,13 @@ typedef struct ProcessControlBlock{
     pte_t *usrPtb;               //PageTable for Userland
     pte_t *krnlStackPtb;                         //Pointer to Kernel Page Table
     int krnlStackPtbSize;
-    pte_t *parent;                            //A pointer to parent process
+    lstnode *parent;                            //A pointer to parent process
     dblist *children;                        //A pointer to mulitple child processes
+    dblist* terminatedchild;
     unsigned int sp; //TODO temp
     unsigned int brk; //TODO temp
     int clock;
+    int exitstatus;
 } pcb_t;
 
 typedef void (*trapvector_t) (UserContext*);
