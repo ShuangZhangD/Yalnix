@@ -205,10 +205,6 @@ int LoadProgram(char *name, char *args[], lstnode *proc_node)
    */
   lseek(fd, li.t_faddr, SEEK_SET);
   segment_size = li.t_npg << PAGESHIFT;
-
-  printUserPageTable(proc_node);
-  TracePrintf(1, "read:%d\n",proc->usrPtb[text_pg1].valid);
-  TracePrintf(1, "vaddr:%p\n",li.t_vaddr);
   if (read(fd, (void *) li.t_vaddr, segment_size) != segment_size) {
     close(fd);
 // ==>> KILL is not defined anywhere: it is an error code distinct

@@ -427,16 +427,15 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     idleProc->usrPtb = idlePageTable;
 
    //====Cook DoIdle()====
-    TracePrintf(1, "DoIdle\n");
+    TracePrintf(1, "Cook DoIdle\n");
     CookDoIdle(uctxt);
 
     //Initialize Init Process
     lstnode *initProc = InitProc();
+    currProc = initProc;
 
-
-
-    printKernelPageTable();
-    traverselist(freeframe_list);
+    // printKernelPageTable();
+    // traverselist(freeframe_list);
     //Create first process  and load initial program to it
     rc = LoadProgram("init", cmd_args, initProc);
     TracePrintf(1, "rc=%d\n", rc);
@@ -444,9 +443,8 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
         //TODO Kill the process
     }
 
-    rc = KernelContextSwitch(MyBogusKCS, (void *) &idleProc, (void *) &initProc);
+    rc = KernelContextSwitch(MyBogusKCS, (void *) &initProc, (void *) &idleProc);
 
-    currProc = initProc;
 
     TracePrintf(1, "Exit\n");
     return;
