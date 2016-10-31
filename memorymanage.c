@@ -8,10 +8,11 @@ extern dblist* freeframe_list;
 void writepagetable(pte_t *pagetable, int startPage, int endPage, int valid, int prot){
  	int i;
 	for (i=startPage; i<=endPage; i++){
-		pagetable[i].valid = 1;
+		pagetable[i].valid = valid;
 		pagetable[i].prot = prot;
-		//TODO Find Available node
-        remove_node(i, freeframe_list);
+
+        lstnode *first = remove_head(freeframe_list);
+        pagetable[i].pfn = first->id; 
 	}
 
 	return;
@@ -23,10 +24,34 @@ void emptyregion1pagetable(pcb_t *proc){
 	for (i=0; i<MAX_PT_LEN;i++){
 		if (1 == proc->usrPtb[i].valid){
 			proc->usrPtb[i].valid = 0;
-			int pageFrameNum = proc->usrPtb[i].pfn;
+			int usedFrame = proc->usrPtb[i].pfn;
 
-
-			//TODO Deallocate
+            lstnode *freeFrame = remove_node(usedFrame, freeframe_list);
+            insert_tail(freeFrame, freeframe_list);
 		}
 	}
+
+	return;
+}
+
+int GrowUserStack(lstnode *procnode, unsigned int addr){
+	pcb_t* proc = (pcb_t*)procnode->content;
+	int oldStackPage = (proc->sp >> PAGESHIFT);  
+	int newStackPage = (addr >> PAGESHIFT);
+	int i;
+	
+	//TODO check How Many FreeFrame do we have, plus 1 for safety margin
+	if (freeframe_list->size < newStackPage-oldStackPage+1){
+		return -1;
+	}
+
+	for (i = oldStackPage + 1; i <= newStackPage; i++){
+		proc->usrPtb[i].valid = 1;
+		proc->usrPtb[i].prot = (PROT_READ | PROT_WRITE);
+		proc->usrPtb[i].pfn = remove_head(freeframe_list)->id;
+	}
+
+	proc->sp = addr;
+
+	return 0;
 }

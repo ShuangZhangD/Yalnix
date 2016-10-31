@@ -1,6 +1,16 @@
 #include "selfdefinedstructure.h"
 #include "listcontrol.h"
+
 //use a doublylinkedlist to track free frame
+
+lstnode* TurnPCBToNode(pcb_t *pcb){
+
+	lstnode *node = nodeinit(pcb->pid);
+	node->content = (void *) pcb;
+
+	return node;
+}
+
 
 lstnode* nodeinit(int i)
 {
@@ -14,14 +24,17 @@ lstnode* nodeinit(int i)
 dblist* listinit()
 {
 	
-	lstnode* n = (lstnode *)malloc(sizeof(lstnode));
 	dblist* list = (dblist* )malloc(sizeof(dblist));
-	n->id = 0;
-	n->pre = NULL;
-	n->next = NULL;
-	list->head = n;
+
+	list->head = (lstnode *)malloc(sizeof(lstnode));
+	list->head->id = -1;
+	list->head->pre = NULL;
+	list->head->next = NULL;
+	list->tail = (lstnode *)malloc(sizeof(lstnode));
+	list->tail->id = -1;
+	list->tail->pre = NULL;
+	list->tail->next = NULL;
 	list->size = 0;
-	list->tail = n;
 	return list;
 }
 

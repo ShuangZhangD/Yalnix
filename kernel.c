@@ -7,7 +7,6 @@
 //Global Variables
 int m_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)
 int g_pid = 1;
-pte_t usrPtb[MAX_PT_LEN];
 
 lstnode* currProc;
 
@@ -19,13 +18,15 @@ extern dblist* terminatedqueue;
 
 
 
-void printUserPageTable(){
+void printUserPageTable(lstnode *p){
     TracePrintf(1, "Print User Page Table.\n");
+    pcb_t *proc = (pcb_t *) p->content;
+
     int i;
     for (i = 0; i < MAX_PT_LEN; i++){
 
-        int v = usrPtb[i].valid;
-        int prot = usrPtb[i].prot;
+        int v = proc->usrPtb[i].valid;
+        int prot = proc->usrPtb[i].prot;
 
         char *read = NULL;
         char *write = NULL;
@@ -34,7 +35,7 @@ void printUserPageTable(){
         if (prot & PROT_WRITE) write = "PROT_WRITE";
         if (prot & PROT_EXEC) exec = "PROT_EXEC";
 
-        int pfn = usrPtb[i].pfn;
+        int pfn = proc->usrPtb[i].pfn;
 
         TracePrintf(1, "Entry %d: valid:%d, PROT_READ=%s PROT_WRITE=%s PROT_EXEC=%s, pageFrameNumber:%d\n",i,v,read,write,exec,pfn);
     }
@@ -117,14 +118,17 @@ int kernelbrk(UserContext *uctxt){
 
         }else if (newBrk < m_kernel_brk){
 
-            g_pageTableR0[oldBrkPage].valid = 0;
 
-            //TODO REMAP
+            //REMAP
             for(i = newBrkPage;i <= oldBrkPage;i++){
-                lstnode *frame = nodeinit(i);
-                insert_tail(frame,freeframe_list);
+                g_pageTableR0[i].valid = 0;
+
+                //Add this frame back to free frame tracker
+                int usedFrame = g_pageTableR0[i].pfn;
+                lstnode *freeFrame = remove_node(usedFrame, freeframe_list);
+                insert_tail(freeFrame, freeframe_list);
             }
-            //Add this frame back to free frame tracker
+            
 
             //FLUSH!!!
             WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
@@ -158,7 +162,7 @@ int kerneldelay(UserContext *uctxt){
         if (!isemptylist(readyqueue))
         {
 
-            rc = KernelContextSwitch(MyKCS, (void *) currProc, (void *) firstnode(readyqueue));
+            rc = KernelContextSwitch(MyTrueKCS, (void *) currProc, (void *) firstnode(readyqueue));
             currProc = dereadyqueue(readyqueue);
 
         }
@@ -261,14 +265,13 @@ int SetKernelBrk(void *addr){
 
         }else if (newBrk < m_kernel_brk){
 
-            g_pageTableR0[oldBrkPage].valid = 0;
-
-            //TODO REMAP
+            //Remap
             for(i = newBrkPage;i <= oldBrkPage;i++){
+                g_pageTableR0[i].valid = 0;
+
                 lstnode *frame = nodeinit(i);
                 insert_tail(frame,freeframe_list);
             }
-            //Add this frame back to free frame tracker
 
             //FLUSH!!!
             WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_0);
@@ -293,20 +296,11 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     //Build a structure to track free frame
     TracePrintf(1, "Init free frame list.\n");
     initFreeFrameTracking(pmem_size);
-    // int numOfFrames = (pmem_size / PAGESIZE);
-    // freeframe_list = listinit();
 
-    // for(i = 0;i<numOfFrames;i++)
-    // {
-    //     lstnode *frame = nodeinit(i);
-    //     insert_tail(frame,freeframe_list);
-    // }
- 
-    // TracePrintf(1, "numOfFrames:%x\n", numOfFrames);
 
     //Build initial page table for Region 1 (before kernel page protection)
     TracePrintf(1, "Init user page table \n");
-    InitUserPageTable();
+    pte_t *idlePageTable = InitUserPageTable();
 
     // //Build initial page table for Region 0
     TracePrintf(1, "Init kernel page table \n");
@@ -314,38 +308,35 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     WriteRegister(REG_PTBR0, (unsigned int) g_pageTableR0);
     WriteRegister(REG_PTLR0, (unsigned int) MAX_PT_LEN);
 
-    WriteRegister(REG_PTBR1, (unsigned int) usrPtb);
+    // TracePrintf(1, "==============\n");
+    // traverselist(freeframe_list);
+    // TracePrintf(1, "==============\n");
+
+    WriteRegister(REG_PTBR1, (unsigned int) idlePageTable);
     WriteRegister(REG_PTLR1, (unsigned int) MAX_PT_LEN);
-
-    // TracePrintf(1, "freeframe_list:%x\n", freeframe_list);
-    // TracePrintf(1, "Malloc before VM: %p\n", malloc(100));
-
 
     TracePrintf(1, "Enable VM\n");
     WriteRegister(REG_VM_ENABLE,1);
     m_enableVM = 1;
-
-    TracePrintf(1, "Malloc after VM: %p\n", malloc(100));
-
-    TracePrintf(1, "freeframe_list:%x\n", freeframe_list);
-    traverselist(freeframe_list);
-    printUserPageTable();
-    printKernelPageTable();
 
     //init Queue
     waitingqueue = listinit();
     readyqueue = listinit();
     terminatedqueue = listinit();
 
-   //====Cook DoIdle()====
-    TracePrintf(1, "DoIdle\n");
-    // CookDoIdle(uctxt);
-
-    //Initialize New Process    
+    //Initialize Idle Process    
     TracePrintf(1, "Init pcb.\n");
     pcb_t *idleProc = InitIdleProc(uctxt);
+    idleProc->usrPtb = idlePageTable;
 
-    pcb_t *initProc = InitIdleProc(uctxt);
+   //====Cook DoIdle()====
+    TracePrintf(1, "DoIdle\n");
+    CookDoIdle(uctxt);
+
+    //Initialize Init Process
+    lstnode *initProc = InitProc();
+    // printUserPageTable(initProc);
+    printKernelPageTable();
 
     //Create first process  and load initial program to it
     rc = LoadProgram("init", cmd_args, initProc);
@@ -354,7 +345,9 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
         //TODO Kill the process
     }
 
-    rc = KernelContextSwitch(MyKCS, (void *) &idleProc, (void *) &initProc);
+
+    rc = KernelContextSwitch(MyBogusKCS, (void *) initProc, (void *) TurnPCBToNode(idleProc));
+    currProc = initProc;
 
     TracePrintf(1, "Exit\n");
     return;
@@ -363,16 +356,16 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
 //  =========================================================================
 
 
-
 pte_t* InitUserPageTable (){
     int i;
-    // pte_t *usrPtb = (pte_t *) malloc(sizeof(pte_t) * MAX_PT_LEN);
+    
+    pte_t *usrPtb = (pte_t *) malloc(sizeof(pte_t) * MAX_PT_LEN);
 
     //Mark User Page table as Invalid;
     for (i = 0; i < MAX_PT_LEN; i++){
         usrPtb[i].valid = 0;
         usrPtb[i].prot = PROT_NONE;
-        usrPtb[i].pfn = 0; //TODO make sure it is right
+        usrPtb[i].pfn = UNALLOCATED; //TODO make sure it is right
     }
 
     return usrPtb;
@@ -387,11 +380,10 @@ void InitKernelPageTable(pcb_t *proc) {
     unsigned int kStackEdPage = (KERNEL_STACK_LIMIT - 1) >> PAGESHIFT;
     int i, stackInx;
     
-    TracePrintf(1, "kDataStPage:%d, kDataEdPage:%d, kStackStPage:%d, kStackEdPage:%d\n", kDataStPage, kDataEdPage, kStackStPage, kStackEdPage);
+    // TracePrintf(1, "kDataStPage:%d, kDataEdPage:%d, kStackStPage:%d, kStackEdPage:%d\n", kDataStPage, kDataEdPage, kStackStPage, kStackEdPage);
 
     //Protect Kernel Text, Data and Heap
     for (i=0; i <= kDataEdPage; i++){
-        TracePrintf(1, "Data Index: %d\n", i);
 
         if (i < kDataStPage){
             //Protect Kernel Text
@@ -410,7 +402,6 @@ void InitKernelPageTable(pcb_t *proc) {
 
     //Protect Kernel Stack
     for (i=kStackStPage, stackInx = 0; i <= kStackEdPage; i++, stackInx++){
-        TracePrintf(1, "Stack Index: %d\n", i);
         g_pageTableR0[i].valid = 1;
         g_pageTableR0[i].prot = (PROT_READ | PROT_WRITE);
         g_pageTableR0[i].pfn = i;
@@ -444,32 +435,53 @@ void initFreeFrameTracking(int pmem_size){
     int i;
     int numOfFrames = (pmem_size / PAGESIZE);
 
-    TracePrintf(1, "freeframe_list before malloc:%x\n", freeframe_list);
-    TracePrintf(1, "random malloc address: %p\n", malloc(100));
-
     freeframe_list = listinit();
-    TracePrintf(1, "freeframe_list:%x\n", freeframe_list);
-    TracePrintf(1, "random malloc address: %p\n", malloc(100));
-
-    TracePrintf(1, "freeframe_list size:%x\n", sizeof(lstnode)*numOfFrames);
-    for(i = 0;i<numOfFrames;i++)
-    {
-        // TracePrintf(1, "freeframe_list in loop:%x\n", freeframe_list);
+  
+    for(i = 0;i<numOfFrames;i++){
         lstnode *frame = nodeinit(i);
-        TracePrintf(1, "listnode: %x\n", frame);
         insert_tail(frame,freeframe_list);
+        
+        TracePrintf(1, "==============\n");
+        traverselist(freeframe_list);
+        TracePrintf(1, "==============\n");  
     }
+    
     return;
 }
 
+
+lstnode *InitProc(){
+    int i, stackInx;
+    int numOfStack = KERNEL_STACK_MAXSIZE / PAGESIZE;
+    unsigned int kStackStPage = KERNEL_STACK_BASE >> PAGESHIFT;
+    unsigned int kStackEdPage = KERNEL_STACK_LIMIT >> PAGESHIFT;
+    
+    //Initialize Process
+    pcb_t *proc = (pcb_t *) malloc (sizeof(pcb_t));
+    proc->procState = RUNNING;
+    proc->pid = g_pid;
+
+    proc->krnlStackPtb = (pte_t *) calloc(numOfStack ,sizeof(pte_t));
+    proc->krnlStackPtbSize = numOfStack;
+
+    proc->usrPtb = InitUserPageTable();
+
+    proc->krnlStackPtb = (pte_t *) calloc(numOfStack ,sizeof(pte_t));
+    proc->krnlStackPtbSize = numOfStack;
+
+    //Let a userprocess have its own kernel stack
+    for (i=kStackStPage, stackInx = 0; i<kStackEdPage; i++, stackInx++){
+        proc->krnlStackPtb[stackInx] = g_pageTableR0[i];
+    }
+
+    return TurnPCBToNode(proc);
+}
 
 pcb_t *InitIdleProc(UserContext *uctxt){
     int i, stackInx;
     int numOfStack = KERNEL_STACK_MAXSIZE / PAGESIZE;
     unsigned int kStackStPage = KERNEL_STACK_BASE >> PAGESHIFT;
     unsigned int kStackEdPage = KERNEL_STACK_LIMIT >> PAGESHIFT;
-
-    //Initialize Queue TODO Jason Please finish this! At least finish running queue!
     
     //Initialize Process
     pcb_t *proc = (pcb_t *) malloc (sizeof(pcb_t));
@@ -479,7 +491,7 @@ pcb_t *InitIdleProc(UserContext *uctxt){
 
     proc->krnlStackPtb = (pte_t *) calloc(numOfStack ,sizeof(pte_t));
     proc->krnlStackPtbSize = numOfStack;
-    lstnode* procnode = nodeinit(proc->pid);
+
     //Let a userprocess have its own kernel stack
     for (i=kStackStPage, stackInx = 0; i<kStackEdPage; i++, stackInx++){
         proc->krnlStackPtb[stackInx] = g_pageTableR0[i];
@@ -492,12 +504,12 @@ pcb_t *InitIdleProc(UserContext *uctxt){
 int checkPageStatus(unsigned int addr){
     unsigned int i, pageAddr = (addr >> PAGESHIFT),rc = 0;
 
-    //make sure addresses from [addr] to [VMEM_BASE] are valid
+    //make sure addresses from [VMEM_BASE] to [addr] (but not including) are valid
     for (i = (VMEM_BASE >> PAGESHIFT); i < pageAddr; i++){
         if (0 == g_pageTableR0[i].valid) return -1;
     }
 
-    //check no virtual memory in Region 0 out of range are valid
+    //check no virtual memory in Region 0 out of range (other than kernel stack) are valid
     for (i = pageAddr; i < MAX_PT_LEN; i++){
         if (1 == g_pageTableR0[i].valid) return -1;
     }
@@ -509,8 +521,22 @@ int checkPageStatus(unsigned int addr){
 /*
     Context Switch
 */
+
 // when someone calls KernelContextSwitch, it might come to here.
-KernelContext *MyKCS(KernelContext *kc_in,void *curr_pcb_p,void *next_pcb_p){
+KernelContext *MyBogusKCS(KernelContext *kc_in,void *pcb_p,void *useless){
+
+    lstnode* pcb_node = (lstnode*) pcb_p;
+
+    pcb_t *proc = (pcb_t *) pcb_node->content;
+
+    //Copy the kernel context to current process's pcb
+    proc->kctxt = *kc_in;
+    return kc_in;
+}
+
+
+// when someone calls KernelContextSwitch, it might come to here.
+KernelContext *MyTrueKCS(KernelContext *kc_in,void *curr_pcb_p,void *next_pcb_p){
     int numOfStack = KERNEL_STACK_MAXSIZE / PAGESIZE;
     int kStackStPage = (KERNEL_STACK_BASE >> PAGESHIFT);
     int kStackEdPage = (KERNEL_STACK_LIMIT >> PAGESHIFT);
@@ -530,11 +556,19 @@ KernelContext *MyKCS(KernelContext *kc_in,void *curr_pcb_p,void *next_pcb_p){
         g_pageTableR0[i].pfn = next_p->krnlStackPtb[stackInx].pfn;
         stackInx++;
     }
-
-    //Flush!! 
-    WriteRegister(REG_TLB_FLUSH,TLB_FLUSH_1);
-    //todo writeuserpagetable
     
+    //Write Page table of current process into register
+    WriteRegister(REG_PTBR1, (unsigned int) cur_p->usrPtb);
+    WriteRegister(REG_PTLR1, (unsigned int) MAX_PT_LEN);
+
+    //Flush All TLB because 1. Kernel Stack Mapping has changed 2. User Page Table has been written into register
+    WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_ALL);
+
+    //Turn Next Process to be the current one
+    enreadyqueue(currProc,readyqueue);
+    currProc = next_pcb_pnode; 
+    dereadyqueue(readyqueue);
+
     //Return a pointer to a kernel context it had earlier saved
     return &next_p->kctxt;
 

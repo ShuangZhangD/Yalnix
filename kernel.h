@@ -9,11 +9,13 @@ pte_t g_pageTableR0[MAX_PT_LEN];
 pcb_t *idleProc;
 dblist* freeFrame_list;
 
-void printUserPageTable();
+void printUserPageTable(lstnode *p);
 
 void printKernelPageTable();
 
 pcb_t *InitIdleProc(UserContext *uctxt);
+
+lstnode *InitProc();
 
 int kernelfork(UserContext *uctxt);
 
@@ -67,4 +69,6 @@ pte_t* InitUserPageTable ();
 
 void InitKernelPageTable();
 
-KernelContext *MyKCS(KernelContext *kc_in,void *curr_pcb_p,void *next_pcb_p);
+KernelContext *MyBogusKCS(KernelContext *kc_in,void *pcb_p,void *useless);
+
+KernelContext *MyTrueKCS(KernelContext *kc_in,void *curr_pcb_p,void *next_pcb_p);

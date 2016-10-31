@@ -20,7 +20,7 @@
  *  to the process or PCB structure for the process into which the program
  *  is to be loaded. 
  */
-int LoadProgram(char *name, char *args[], pcb_t *proc) 
+int LoadProgram(char *name, char *args[], lstnode *proc_node) 
 // ==>> Declare the argument "proc" to be a pointer to your PCB or
 // ==>> process descriptor data structure.  We assume you have a member
 // ==>> of this structure used to hold the cpu context 
@@ -62,6 +62,9 @@ int LoadProgram(char *name, char *args[], pcb_t *proc)
     return ERROR;
   }
 
+  //Turn Node into process
+  pcb_t *proc = (pcb_t *) proc_node->content;
+
   /*
    * Figure out in what region 1 page the different program sections
    * start and end
@@ -81,7 +84,7 @@ int LoadProgram(char *name, char *args[], pcb_t *proc)
   }
   argcount = i;
 
- TracePrintf(2, "LoadProgram: argsize %d, argcount %d\n", size, argcount);
+  TracePrintf(2, "LoadProgram: argsize %d, argcount %d\n", size, argcount);
   
   /*
    *  The arguments will get copied starting at "cp", and the argv
@@ -95,9 +98,9 @@ int LoadProgram(char *name, char *args[], pcb_t *proc)
   cp = ((char *)VMEM_1_LIMIT) - size;
 
   cpp = (char **)
-    (((int)cp - 
-      ((argcount + 3 + POST_ARGV_NULL_SPACE) *sizeof (void *))) 
-     & ~7);
+  (((int)cp - 
+    ((argcount + 3 + POST_ARGV_NULL_SPACE) *sizeof (void *))) 
+  & ~7);
 
   /*
    * Compute the new stack pointer, leaving INITIAL_STACK_FRAME_SIZE bytes
@@ -108,15 +111,15 @@ int LoadProgram(char *name, char *args[], pcb_t *proc)
 
 
   TracePrintf(1, "prog_size %d, text %d data %d bss %d pages\n",
-	      li.t_npg + data_npg, li.t_npg, li.id_npg, li.ud_npg);
+   li.t_npg + data_npg, li.t_npg, li.id_npg, li.ud_npg);
 
 
   /* 
    * Compute how many pages we need for the stack */
   stack_npg = (VMEM_1_LIMIT - DOWN_TO_PAGE(cp2)) >> PAGESHIFT;
 
- TracePrintf(1, "LoadProgram: heap_size %d, stack_size %d\n",
-	      li.t_npg + data_npg, stack_npg);
+  TracePrintf(1, "LoadProgram: heap_size %d, stack_size %d\n",
+   li.t_npg + data_npg, stack_npg);
 
 
   /* leave at least one page between heap and stack */
@@ -174,30 +177,33 @@ int LoadProgram(char *name, char *args[], pcb_t *proc)
 // ==>> the "text_pg1" page in region 1 address space.  
 // ==>> These pages should be marked valid, with a protection of 
 // ==>> (PROT_READ | PROT_WRITE).
-  writepagetable(proc->usrPtb, text_pg1, text_pg1+li.t_npg, VALID, (PROT_READ | PROT_WRITE));
+  TracePrintf(1, "text_pg1 %d\n", text_pg1);
+  writepagetable(proc->usrPtb, text_pg1, text_pg1+li.t_npg - 1, VALID, (PROT_READ | PROT_WRITE));
 // ==>> Allocate "data_npg" physical pages and map them starting at
 // ==>> the  "data_pg1" in region 1 address space.  
 // ==>> These pages should be marked valid, with a protection of 
 // ==>> (PROT_READ | PROT_WRITE).
-  writepagetable(proc->usrPtb, data_pg1, data_pg1+data_npg, VALID, (PROT_READ | PROT_WRITE));
+  writepagetable(proc->usrPtb, data_pg1, data_pg1 + data_npg - 1, VALID, (PROT_READ | PROT_WRITE));
   /*
    * Allocate memory for the user stack too.
    */
 // ==>> Allocate "stack_npg" physical pages and map them to the top
 // ==>> of the region 1 virtual address space.
 // ==>> These pages should be marked valid, with a
-// ==>> protection of (PROT_READ | PROT_WRITE).
-  writepagetable(proc->usrPtb, MAX_PT_LEN - 1 - stack_npg, MAX_PT_LEN - 1, VALID, (PROT_READ | PROT_WRITE));
+  // ==>> protection of (PROT_READ | PROT_WRITE).
+  writepagetable(proc->usrPtb, MAX_PT_LEN - stack_npg, MAX_PT_LEN - 1, VALID, (PROT_READ | PROT_WRITE));
   /*
    * All pages for the new address space are now in the page table.  
    * But they are not yet in the TLB, remember!
    */
-   WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
+  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
   /*
    * Read the text from the file into memory.
    */
   lseek(fd, li.t_faddr, SEEK_SET);
   segment_size = li.t_npg << PAGESHIFT;
+
+  TracePrintf(1, "read:%d\n",proc->usrPtb[text_pg1].pfn);
   if (read(fd, (void *) li.t_vaddr, segment_size) != segment_size) {
     close(fd);
 // ==>> KILL is not defined anywhere: it is an error code distinct
@@ -261,15 +267,15 @@ int LoadProgram(char *name, char *args[], pcb_t *proc)
   *cpp++ = (char *)argcount;		/* the first value at cpp is argc */
   cp2 = argbuf;
   for (i = 0; i < argcount; i++) {      /* copy each argument and set argv */
-    *cpp++ = cp;
-    strcpy(cp, cp2);
-    cp += strlen(cp) + 1;
-    cp2 += strlen(cp2) + 1;
-  }
-  free(argbuf);
+  *cpp++ = cp;
+  strcpy(cp, cp2);
+  cp += strlen(cp) + 1;
+  cp2 += strlen(cp2) + 1;
+}
+free(argbuf);
   *cpp++ = NULL;			/* the last argv is a NULL pointer */
   *cpp++ = NULL;			/* a NULL pointer for an empty envp */
 
-  return SUCCESS;
+return SUCCESS;
 }
 
