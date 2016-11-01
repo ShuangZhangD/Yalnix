@@ -337,14 +337,15 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
 
     //Initialize Idle Process    
     TracePrintf(1, "Init pcb.\n");
-    pcb_t *idleProc = InitIdleProc(uctxt);
-    idleProc->usrPtb = idlePageTable;
+    pcb_t *idlePcb = InitIdleProc(uctxt);
+    idlePcb->usrPtb = idlePageTable;
+    lstnode *idleProc = TurnPCBToNode(idlePcb);
 
     //====Cook DoIdle()====
     TracePrintf(1, "Cook DoIdle\n");
     CookDoIdle(uctxt);
     
-    enreadyqueue(TurnPCBToNode(idleProc), readyqueue);
+    enreadyqueue(idleProc, readyqueue);
 
     //Initialize Init Process
     lstnode *initProc = InitProc();
@@ -356,7 +357,7 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
         terminateProcess(initProc);
     }
 
-    rc = KernelContextSwitch(MyBogusKCS, (void *)initProc, NULL);
+    rc = KernelContextSwitch(MyBogusKCS, (void *)initProc, (void *)idleProc);
     if (rc) {
         TracePrintf(1, "Context Switch in KernelStart goes wrong.\n");
     }
@@ -469,6 +470,9 @@ lstnode *InitProc(){
     //Let a userprocess have its own kernel stack
     for (i=g_kStackStPage, stackInx = 0; i<=g_kStackEdPage; i++, stackInx++){
         proc->krnlStackPtb[stackInx] = g_pageTableR0[i];
+
+        // lstnode *first = remove_head(freeframe_list);
+        // proc->krnlStackPtb[stackInx].pfn = first->id;
     }
 
     return TurnPCBToNode(proc);
@@ -490,6 +494,9 @@ pcb_t *InitIdleProc(UserContext *uctxt){
     //Let a userprocess have its own kernel stack
     for (i=g_kStackStPage, stackInx = 0; i<=g_kStackEdPage; i++, stackInx++){
         proc->krnlStackPtb[stackInx] = g_pageTableR0[i];
+        
+        lstnode *first = remove_head(freeframe_list);
+        proc->krnlStackPtb[stackInx].pfn = first->id;
     }
 
     return proc;
@@ -513,15 +520,18 @@ int checkPageStatus(unsigned int addr){
 }
 
 
-KernelContext *MyBogusKCS(KernelContext *kc_in,void *curNode,void *uselessNode){
+KernelContext *MyBogusKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
 
 
-    lstnode* pcb_node = (lstnode*) curNode;
-
-    pcb_t *proc = TurnNodeToPCB(pcb_node);
-
+    lstnode* cur_node = (lstnode*) curNode;
+    lstnode* nxt_node = (lstnode*) nxtNode;
+    pcb_t *cur_pcb = TurnNodeToPCB(cur_node);
+    pcb_t *nxt_pcb = TurnNodeToPCB(nxt_node);
+    
     //Copy the kernel context to current process's pcb
-    proc->kctxt = *kc_in;
+    cur_pcb->kctxt = *kc_in;
+    nxt_pcb->kctxt = *kc_in;
+
     return kc_in;
 }
 

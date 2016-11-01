@@ -11,7 +11,7 @@ int switchproc()
         if (!isemptylist(readyqueue))
         {
             rc = KernelContextSwitch(MyTrueKCS, (void *) currProc, (void *) firstnode(readyqueue));
-            currProc = dereadyqueue(readyqueue);
+            // currProc = dereadyqueue(readyqueue);
             return 0;
         }
         else{

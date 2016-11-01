@@ -65,6 +65,6 @@ pte_t* InitUserPageTable ();
 
 void InitKernelPageTable();
 
-KernelContext *MyBogusKCS(KernelContext *kc_in,void *curNode,void *uselessNode);
+KernelContext *MyBogusKCS(KernelContext *kc_in,void *curNode,void *nxtNode);
 
 KernelContext *MyTrueKCS(KernelContext *kc_in,void *curr_pcb_p,void *next_pcb_p);
