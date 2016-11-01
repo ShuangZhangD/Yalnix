@@ -220,26 +220,23 @@ void TrapMemory(UserContext *uctxt){
     
     TracePrintf(1, "uctxt->addr:%p\n", uctxt->addr);
     
-    // traverselist(freeframe_list);
-    printUserPageTable(currProc);
-    
     int rc;
     int trapCode = uctxt->code;
-    unsigned int newStackAddr = (unsigned int) uctxt->addr;
+    unsigned int newStackPage = ((unsigned int) uctxt->addr) >> PAGESHIFT;
 
     switch(trapCode){
         case (YALNIX_MAPERR):
-            if (newStackAddr > proc->sp){
+            if (newStackPage > proc->stack_limit){
                 terminateProcess(currProc);
                 return;
             }
 
-            if (newStackAddr < proc->brk){
+            if (newStackPage < proc->brk){
                 terminateProcess(currProc);
                 return;
             }
 
-            rc = GrowUserStack(currProc,newStackAddr);
+            rc = GrowUserStack(currProc,newStackPage);
             if (rc){
                 terminateProcess(currProc);
                 return;

@@ -34,7 +34,7 @@ lstnode* firstnode(dblist* list)
 {
 	if(isemptylist(list))
 	{
-		printf("%s\n", "error");
+		TracePrintf(1, "%s\n", "error\n");
 		return NULL;
 	}
 	else{
@@ -44,10 +44,11 @@ lstnode* firstnode(dblist* list)
 
 int isemptylist(dblist* list)
 {
-	if (list->size == 0 && list->head->next == NULL)
-		{
-			return 1;
-		}
+	// if (list->size == 0 && list->head->next == NULL)
+	if (list->size == 0 || list->head->next == NULL) //TODO Discuss with Jason
+	{
+		return 1;
+	}
 	return 0;
 }
 
@@ -159,21 +160,6 @@ lstnode* remove_node(int i, dblist* list)
 	}
 }
 
-void traverselist(dblist* list)
-{
-	lstnode *traverse = list->head;
-	if(isemptylist(list))
-	{
-		TracePrintf(1, "%s\n", "Error");
-	}
-	else
-		while(traverse->next != NULL)
-		{
-				traverse = traverse->next;
-				TracePrintf(1, "List Id:%d\n", traverse->id);
-		}
-
-}
 
 
 

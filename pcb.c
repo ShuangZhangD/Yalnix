@@ -10,7 +10,6 @@ int switchproc()
         int rc;
         if (!isemptylist(readyqueue))
         {
-
             rc = KernelContextSwitch(MyTrueKCS, (void *) currProc, (void *) firstnode(readyqueue));
             currProc = dereadyqueue(readyqueue);
             return 0;
@@ -43,13 +42,15 @@ void terminateProcess(lstnode *procnode){
 
 int enreadyqueue(lstnode* procnode,dblist* readyqueue)
 {	
-	pcb_t* proc = (pcb_t*)procnode->content;
+    TracePrintf(1, "Enter enreadyqueue\n");    
+	pcb_t* proc = TurnNodeToPCB(procnode);;
 
 	if (proc == NULL){
 		return ERROR;
 	}
 	proc->procState = READY;
 	insert_tail(procnode,readyqueue);
+
 	return 0;
 }
 
