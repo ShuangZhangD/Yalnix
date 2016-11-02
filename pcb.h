@@ -17,10 +17,10 @@ int apppendProcess(lstnode *procnode, pcb_t *src);     //Add a process in PCB li
 int removeProcessBypid(pcb_t *des, int pid);   //Remove a process from PCB by PID
 int findProcessBypid(pcb_t *des, int pid);      //Find a process by PID
 
-int enreadyqueue(lstnode *procnode,dblist* readyqueue);
-void* dereadyqueue(dblist* readyqueue);
-int enwaitingqueue(lstnode *procnode,dblist* waitingqueue);
-void* dewaitingqueue(lstnode* waitingnode,dblist* waitingqueue);
+int enreadyqueue(lstnode *procnode,dblist* queue);
+void* dereadyqueue(dblist* queue);
+int enwaitingqueue(lstnode *procnode,dblist* queue);
+void* dewaitingqueue(lstnode* waitingnode,dblist* queue);
 
 lstnode* TurnPCBToNode(pcb_t *pcb);
 pcb_t* TurnNodeToPCB(lstnode *node);

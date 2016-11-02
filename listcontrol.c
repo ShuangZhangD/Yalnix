@@ -44,8 +44,8 @@ lstnode* firstnode(dblist* list)
 
 int isemptylist(dblist* list)
 {
-	// if (list->size == 0 && list->head->next == NULL)
-	if (list->size == 0 || list->head->next == NULL) //TODO Discuss with Jason
+	TracePrintf(1, "list->size:%d\n", list->size);
+	if (list->size == 0)
 	{
 		return 1;
 	}
@@ -55,7 +55,8 @@ int isemptylist(dblist* list)
 void insert_tail(lstnode* node, dblist* list)
 {
 	if (isemptylist(list))
-	{
+	{	
+		TracePrintf(1, "node:%p\n", TurnNodeToPCB(node));
 		node->next = list->tail;
 		node->pre = list->head;
 		list->head->next = node;

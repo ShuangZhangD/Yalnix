@@ -8,6 +8,7 @@
 #define KILL (-2)
 #define UNALLOCATED (-1)
 #define SUCCESS 0
+#define SAFETY_MARGIN_PAGE (KERNEL_STACK_LIMIT-KERNEL_STACK_MAXSIZE-PAGESIZE) >> PAGESHIFT
 
 typedef struct node{
  	int id;

@@ -175,10 +175,11 @@ void TrapClock(UserContext *uctxt){
     TracePrintf(1, "TrapClock called\n");
     // int rc = 0;
     if (!isemptylist(waitingqueue)){
-        lstnode *traverse = waitingqueue->head;
+        traverselist(waitingqueue);
+        lstnode *traverse = waitingqueue->head->next;
         while(traverse != NULL)
         {               
-            pcb_t* proc = (pcb_t*) traverse->content;
+            pcb_t* proc = TurnNodeToPCB(traverse);
             if(proc->clock > 0)
             {
                 proc->clock--;
@@ -215,7 +216,7 @@ void TrapIllegal(UserContext *uctxt){
 
 //Capture TRAP_MEMORY
 void TrapMemory(UserContext *uctxt){
-    TracePrintf(1, "TrapMemory.\n");
+    TracePrintf(1, "TrapMemory\n");
     pcb_t *proc = TurnNodeToPCB(currProc);
     
     TracePrintf(1, "uctxt->addr:%p\n", uctxt->addr);
@@ -241,7 +242,7 @@ void TrapMemory(UserContext *uctxt){
                 terminateProcess(currProc);
                 return;
             }
-
+            WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
             break;
         case (YALNIX_ACCERR):
             terminateProcess(currProc);

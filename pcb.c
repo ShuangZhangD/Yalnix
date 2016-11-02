@@ -8,8 +8,8 @@ int switchproc()
 {
         
         int rc;
-        if (!isemptylist(readyqueue))
-        {
+        if (!isemptylist(readyqueue)){
+
             rc = KernelContextSwitch(MyTrueKCS, (void *) currProc, (void *) firstnode(readyqueue));
             // currProc = dereadyqueue(readyqueue);
             return 0;
@@ -40,41 +40,42 @@ void terminateProcess(lstnode *procnode){
 
 }
 
-int enreadyqueue(lstnode* procnode,dblist* readyqueue)
+int enreadyqueue(lstnode* procnode,dblist* queue)
 {	
     TracePrintf(1, "Enter enreadyqueue\n");    
-	pcb_t* proc = TurnNodeToPCB(procnode);;
+	pcb_t* proc = TurnNodeToPCB(procnode);
 
 	if (proc == NULL){
 		return ERROR;
 	}
 	proc->procState = READY;
-	insert_tail(procnode,readyqueue);
+	insert_tail(procnode,queue);
 
 	return 0;
 }
 
-void* dereadyqueue(dblist* readyqueue)
+void* dereadyqueue(dblist* queue)
 {
-	return (void*)remove_head(readyqueue)->content;
+	return (void*)remove_head(queue)->content;
 }
 
-int enwaitingqueue(lstnode* procnode,dblist* waitingqueue)
+int enwaitingqueue(lstnode* procnode,dblist* queue)
 {
-	pcb_t* proc = (pcb_t*)procnode->content;
+    TracePrintf(1, "Enter enwaitingqueue\n");    
+	pcb_t* proc = TurnNodeToPCB(procnode);
 
 	if (proc == NULL){
 		return ERROR;
 	}
 	proc->procState = WAITING;
-	insert_tail(procnode,readyqueue);
+	insert_tail(procnode, queue);
 	return 0;
 }
 
-void* dewaitingqueue(lstnode* waitingnode,dblist* waitingqueue)
+void* dewaitingqueue(lstnode* waitingnode,dblist* queue)
 {
 	
-	return (void*)remove_node(((pcb_t*)waitingnode->content)->pid,waitingqueue)->content;
+	return (void*)remove_node(((pcb_t*)waitingnode->content)->pid,queue)->content;
 }
 
 
