@@ -223,60 +223,8 @@ void TrapIllegal(UserContext *uctxt){
      */
 }
 
-//Capture TRAP_MEMORY
-void TrapMemory(UserContext *uctxt){
-    TracePrintf(1,"TrapMemory\n");
-    pcb_t *proc = TurnNodeToPCB(currProc);
-    
-    TracePrintf(1, "uctxt->addr:%p\n", uctxt->addr);
-    
-    int rc;
-    int trapCode = uctxt->code;
-    unsigned int newStackPage = ((unsigned int) uctxt->addr) >> PAGESHIFT;
 
-    switch(trapCode){
-        case (YALNIX_MAPERR):
-            if (newStackPage > proc->stack_limit_page){
-                terminateProcess(currProc);
-                return;
-            }
 
-            if (newStackPage < proc->brk_page){
-                terminateProcess(currProc);
-                return;
-            }
-
-            rc = GrowUserStack(currProc,newStackPage);
-            if (rc){
-                terminateProcess(currProc);
-                return;
-            }
-            WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
-            break;
-        case (YALNIX_ACCERR):
-            terminateProcess(currProc);
-            break;
-        default:
-            terminateProcess(currProc);
-            break;
-    }
-
-    return;
-
-    /*
-       IF  [current break of heap] < uctxt->addr < [allocated memory for the stack](uctxt->ebp)
-       keep going 
-       ELSE 
-       not Allocate    
-
-       IF at least on page  
-       Allocate memory for stack
-       ELSE
-       Abort current process
-
-       Rearrange queue 
-     */
-}
 
 //Capture TRAP_MATH
 void TrapMath(UserContext *uctxt){

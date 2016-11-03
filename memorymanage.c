@@ -3,6 +3,103 @@
 #include "listcontrol.h"
 
 extern dblist* freeframe_list;
+extern lstnode* currProc;
+
+
+int kernelbrk(UserContext *uctxt){
+    int i,rc;
+    pcb_t *proc = TurnNodeToPCB(currProc);
+
+    unsigned int newBrk = (unsigned int) uctxt->regs[0];
+    int oldBrkPage = proc->brk_page;
+    int stacklimitpage = proc->stack_limit_page;
+    int dataPage = proc->data_page;
+    int newBrkPage = newBrk >> PAGESHIFT;
+
+    TracePrintf(1,"oldBrkPage:%d, stacklimitpage:%d, dataPage:%d, newBrkPage:%d\n", oldBrkPage, stacklimitpage, dataPage, newBrkPage);
+
+    if(newBrkPage >= stacklimitpage - 1){
+        return ERROR;
+    } else if (newBrkPage > oldBrkPage){
+        
+        writepagetable(proc->usrPtb, oldBrkPage, newBrkPage, VALID, (PROT_READ | PROT_WRITE));
+        //Flush Tlb!
+        WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
+
+    } else if (newBrkPage < oldBrkPage){
+        
+        if (newBrkPage < dataPage) return ERROR;
+        //Remap  Add this frame back to free frame tracker
+        ummap(proc->usrPtb, newBrkPage, oldBrkPage, INVALID, PROT_NONE);
+        
+        //FLUSH!!!
+        WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
+
+    }else {
+        //Do nothing
+    }
+
+    //Let addr be the new kernel break
+    proc->brk_page = newBrkPage;
+
+    return SUCCESS;
+}
+
+//Capture TRAP_MEMORY
+void TrapMemory(UserContext *uctxt){
+    TracePrintf(1,"TrapMemory\n");
+    pcb_t *proc = TurnNodeToPCB(currProc);
+    
+    TracePrintf(1, "uctxt->addr:%p\n", uctxt->addr);
+    
+    int rc;
+    int trapCode = uctxt->code;
+    unsigned int newStackPage = ((unsigned int) uctxt->addr) >> PAGESHIFT;
+
+    switch(trapCode){
+        case (YALNIX_MAPERR):
+            if (newStackPage > proc->stack_limit_page){
+                terminateProcess(currProc);
+                return;
+            }
+
+            if (newStackPage < proc->brk_page){
+                terminateProcess(currProc);
+                return;
+            }
+
+            rc = GrowUserStack(currProc,newStackPage);
+            if (rc){
+                terminateProcess(currProc);
+                return;
+            }
+            WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
+            break;
+        case (YALNIX_ACCERR):
+            terminateProcess(currProc);
+            break;
+        default:
+            terminateProcess(currProc);
+            break;
+    }
+
+    return;
+
+    /*
+       IF  [current break of heap] < uctxt->addr < [allocated memory for the stack](uctxt->ebp)
+       keep going 
+       ELSE 
+       not Allocate    
+
+       IF at least on page  
+       Allocate memory for stack
+       ELSE
+       Abort current process
+
+       Rearrange queue 
+     */
+}
+
 
 //TODO return code
 void writepagetable(pte_t *pagetable, int startPage, int endPage, int valid, int prot){

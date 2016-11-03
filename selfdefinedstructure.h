@@ -10,6 +10,8 @@
 #define SUCCESS 0
 #define SAFETY_MARGIN_PAGE (KERNEL_STACK_LIMIT-KERNEL_STACK_MAXSIZE-PAGESIZE) >> PAGESHIFT
 
+enum processState {RUNNING, WAITING,READY,TERMINATED}; //define the state of a process
+
 typedef struct node{
  	int id;
  	void* content;

@@ -13,18 +13,6 @@ pcb_t *InitIdleProc(UserContext *uctxt);
 
 lstnode *InitProc();
 
-int kernelfork(UserContext *uctxt);
-
-int kernelexec(UserContext *uctxt);
-
-int kernelexit(UserContext *uctxt);
-
-int kernelwait(UserContext *uctxt);
-
-int kernelgetpid();
-
-int kernelbrk(UserContext *uctxt);
-
 int kerneldelay(UserContext *uctxt);
 
 int kernelregister(UserContext *uctxt);
