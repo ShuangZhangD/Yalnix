@@ -23,6 +23,7 @@ int kerneldelay(UserContext *uctxt){
     TracePrintf(1, "Enter KernelDelay\n");
 
     pcb_t *proc = TurnNodeToPCB(currProc);
+    proc->uctxt = *uctxt;
     int clock_ticks = uctxt->regs[0];
     int rc;
     if (clock_ticks == 0){
@@ -307,10 +308,11 @@ lstnode *InitProc(){
 
     //Initialize Process
     pcb_t *proc = (pcb_t *) malloc (sizeof(pcb_t));
-    proc->procState = RUNNING;
-    proc->pid = g_pid;
+    proc->procState = READY;
+    proc->pid = g_pid++;
 
     proc->usrPtb = InitUserPageTable();
+    // proc->uctxt = *uctxt;
 
     proc->krnlStackPtb = (pte_t *) calloc(g_pageNumOfStack ,sizeof(pte_t));
     proc->krnlStackPtbSize = g_pageNumOfStack;
@@ -318,6 +320,9 @@ lstnode *InitProc(){
     //Let a userprocess have its own kernel stack
     for (i=g_kStackStPage, stackInx = 0; i<=g_kStackEdPage; i++, stackInx++){
         proc->krnlStackPtb[stackInx] = g_pageTableR0[i];
+
+        lstnode *first = remove_head(freeframe_list);
+        proc->krnlStackPtb[stackInx].pfn = first->id;
     }
 
     return TurnPCBToNode(proc);
@@ -328,20 +333,19 @@ pcb_t *InitIdleProc(UserContext *uctxt){
 
     //Initialize Process
     pcb_t *proc = (pcb_t *) malloc (sizeof(pcb_t));
-    proc->procState = RUNNING;
+    proc->procState = READY;
     proc->pid = g_pid++;
     proc->uctxt = *uctxt;
 
     proc->krnlStackPtb = (pte_t *) calloc(g_pageNumOfStack ,sizeof(pte_t));
     proc->krnlStackPtbSize = g_pageNumOfStack;
 
-    lstnode* procnode = nodeinit(proc->pid);
     //Let a userprocess have its own kernel stack
     for (i=g_kStackStPage, stackInx = 0; i<=g_kStackEdPage; i++, stackInx++){
         proc->krnlStackPtb[stackInx] = g_pageTableR0[i];
         
-        lstnode *first = remove_head(freeframe_list);
-        proc->krnlStackPtb[stackInx].pfn = first->id;
+        // lstnode *first = remove_head(freeframe_list);
+        // proc->krnlStackPtb[stackInx].pfn = first->id;
     }
 
     return proc;
@@ -427,7 +431,6 @@ KernelContext *MyTrueKCS(KernelContext *kc_in,void *curr,void *next){
         g_pageTableR0[i] = next_p->krnlStackPtb[stackInx];
         stackInx++;
     }
-
 
     CopyKernelStack(next_p->krnlStackPtb);
     

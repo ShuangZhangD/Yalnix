@@ -18,6 +18,7 @@ int kernelwait(UserContext *uctxt);
 
 int kernelgetpid();
 
+void CopyUserProcess (pte_t* parentPtb, pte_t* childPtb);
 
 int switchproc();
 // int traverseParent(lstnode *procnode);              //Traverse through its parent

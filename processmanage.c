@@ -12,57 +12,55 @@ extern int g_pageNumOfStack;
     SYSCALL
 */
 int kernelfork(UserContext *uctxt){
-    lstnode* child; //= initProc(currProc); //TODO Replace new initproc
-    pcb_t* childproc = (pcb_t*) child->content;
-    pcb_t* parentproc = (pcb_t*)currProc->content;
+    int rc;
+    /*
+        1. Initialize Empty Child Process (including initialize user page table, allocate free frame to it)
+    */
+    lstnode* childProc = InitProc(); //Empty Process
+    lstnode* parentProc = currProc;
 
-    childproc->parent = currProc;
+    pcb_t* childPcb = TurnNodeToPCB(childProc);
+    pcb_t* parentPcb = TurnNodeToPCB(parentProc);
 
-    int i, stackInx;
+    //  2. Record the current user context
+    parentPcb->uctxt = *uctxt;
+    childPcb->uctxt = *uctxt;
 
-    //Initialize Process
-    pcb_t *proc = (pcb_t *) malloc (sizeof(pcb_t));
-    proc->pid = g_pid++;
-
-    proc->krnlStackPtb = (pte_t *) calloc(g_pageNumOfStack ,sizeof(pte_t));
-    proc->krnlStackPtbSize = g_pageNumOfStack;
-
-    proc->usrPtb = InitUserPageTable();
-
-    // pte_t *usrPtb = (pte_t *) malloc(sizeof(pte_t) * MAX_PT_LEN);
-
-    //Mark User Page table as Invalid;
-    for (i = 0; i < MAX_PT_LEN; i++){
-        childproc->usrPtb[i].valid = 0;
-        childproc->usrPtb[i].prot = PROT_NONE;
-        childproc->usrPtb[i].pfn = 0; //TODO make sure it is right
+    // 3.  Copy the current kernel context and content of kernel stack from parent to child 
+    rc = KernelContextSwitch(MyCloneKCS, (void*) parentProc, (void*)childProc);
+    if (rc){
+        TracePrintf(1,"MyCloneKCS in kernelfork failed.\n");
+        return ERROR;
     }
 
+    //4. Duplicate the content of the frames used by parent to the free frames of a child
+    CopyUserProcess(parentPcb->usrPtb, childPcb->usrPtb);
 
-    memcpy();
+    //5. Put child into parent's children queue
+    if (parentPcb->children == NULL){
+        parentPcb->children = listinit();
+    } 
+    insert_tail(childProc,parentPcb->children);
 
-    proc->krnlStackPtb = (pte_t *) calloc(g_pageNumOfStack ,sizeof(pte_t));
-    proc->krnlStackPtbSize = g_pageNumOfStack;
+    //6. Assign the address of the parent process to the child 
+    childPcb->parent = parentProc;
 
-    //Let a userprocess have its own kernel stack
-    for (i=g_kStackStPage, stackInx = 0; i<=g_kStackEdPage; i++, stackInx++){
-        proc->krnlStackPtb[stackInx] = g_pageTableR0[i];
+    //7. Put child proc into readyqueue
+    enreadyqueue(childProc,readyqueue);
+
+    //8. Doing KernelContext Switch here, so the parent process will start from here
+    rc = KernelContextSwitch(MyTrueKCS, (void*)parentProc, (void*)childProc);
+    if (rc){
+        TracePrintf(1,"MyTrueKCS in kernelfork failed.\n");
+        return ERROR;
     }
 
-
-    // return TurnPCBToNode(proc);
-    return 0; // TODO
-
-    insert_tail(child,proc->children);
-
-    enreadyqueue(currProc,waitingqueue);
-
-    if(currProc == child)
-    {
+    //9. if current process is childprocess, return 0, otherwise return pid
+    if(currProc == childProc) {
         return 0;
     }
     else{
-        return childproc->pid;
+        return childPcb->pid;
     }
 
     return ERROR;
@@ -143,9 +141,35 @@ int kernelgetpid(){
 }
 
 /*
-    SYSCALL
+    SYSCALL END
 */
 
+void CopyUserProcess (pte_t* parentPtb, pte_t* childPtb){
+    int i;
+    //Use a safety margin page as a buffer of copying memory
+    g_pageTableR0[SAFETY_MARGIN_PAGE].valid = 1;
+    g_pageTableR0[SAFETY_MARGIN_PAGE].prot = (PROT_READ | PROT_WRITE);
+
+    for (i = 0; i < MAX_PT_LEN-1; i++){
+        if (VALID == parentPtb[i].valid){
+            g_pageTableR0[SAFETY_MARGIN_PAGE].pfn = childPtb[i].pfn;
+
+            WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_0);
+
+            unsigned int desAddr = SAFETY_MARGIN_PAGE << PAGESHIFT;
+            unsigned int srcAddr = (parentPtb[i].pfn) << PAGESHIFT;
+
+            memcpy((void *)desAddr, (void *)srcAddr, PAGESIZE);
+        }
+    }
+  
+    //Restore the buffer.
+    g_pageTableR0[SAFETY_MARGIN_PAGE].valid = 0;
+    g_pageTableR0[SAFETY_MARGIN_PAGE].prot = PROT_NONE;
+    g_pageTableR0[SAFETY_MARGIN_PAGE].pfn = UNALLOCATED;
+
+    return;
+}
 
 int switchproc()
 {
@@ -163,7 +187,6 @@ int switchproc()
 
 
 
-
 void terminateProcess(lstnode *procnode){
     int i, rc;
     pcb_t* proc = TurnNodeToPCB(procnode);
@@ -173,18 +196,6 @@ void terminateProcess(lstnode *procnode){
     switchproc();
     
     ummap(proc->usrPtb, 0, MAX_PT_LEN-1, INVALID, PROT_NONE);
-
-    // for (i = 0; i < MAX_PT_LEN; i++){
-    //     if (proc->usrPtb[i].valid){
-    //         proc->usrPtb[i].valid = 0;
-    //         int frameId = proc->usrPtb[i].pfn;
-	   //  	lstnode* node = remove_node(frameId , freeframe_list);   
-    //         if (NULL == node){
-    //             TracePrintf(1, "terminateProcess failed!\n");
-    //             return;
-    //         }
-	   //  }
-    // }
 
     // Insert a node to terminated queue
     proc->procState = TERMINATED;
@@ -223,6 +234,7 @@ int enwaitingqueue(lstnode* procnode,dblist* queue)
 	}
 	proc->procState = WAITING;
 	insert_tail(procnode, queue);
+
     TracePrintf(1, "Exit enwaitingqueue\n"); 
 	return 0;
 }
