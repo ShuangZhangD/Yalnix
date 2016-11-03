@@ -53,6 +53,8 @@ pte_t* InitUserPageTable ();
 
 void InitKernelPageTable();
 
+void CopyKernelStack (pte_t* pageTable);
+
 KernelContext *MyCloneKCS(KernelContext *kc_in,void *curNode,void *nxtNode);
 
 KernelContext *MyTrueKCS(KernelContext *kc_in,void *curr_pcb_p,void *next_pcb_p);

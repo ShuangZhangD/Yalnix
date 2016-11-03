@@ -364,14 +364,7 @@ int checkPageStatus(unsigned int addr){
     return 0;
 }
 
-
-KernelContext *MyCloneKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
-    TracePrintf(1, "Enter MyCloneKCS\n");
-    lstnode* cur_node = (lstnode*) curNode;
-    lstnode* nxt_node = (lstnode*) nxtNode;
-    pcb_t *cur_pcb = TurnNodeToPCB(cur_node);
-    pcb_t *nxt_pcb = TurnNodeToPCB(nxt_node);
-    
+void CopyKernelStack (pte_t* pageTable){
     int i, kernelSize = g_pageNumOfStack;
 
     //Use a safety margin page as a buffer of copying memory
@@ -379,7 +372,7 @@ KernelContext *MyCloneKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
     g_pageTableR0[SAFETY_MARGIN_PAGE].prot = (PROT_READ | PROT_WRITE);
 
     for (i = 0; i < kernelSize; i++){
-        g_pageTableR0[SAFETY_MARGIN_PAGE].pfn = nxt_pcb->krnlStackPtb[i].pfn;
+        g_pageTableR0[SAFETY_MARGIN_PAGE].pfn = pageTable[i].pfn;
 
         WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_0);
 
@@ -388,11 +381,23 @@ KernelContext *MyCloneKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
 
         memcpy((void *)desAddr, (void *)srcAddr, PAGESIZE);
     }
-
+  
     //Restore the buffer.
     g_pageTableR0[SAFETY_MARGIN_PAGE].valid = 0;
     g_pageTableR0[SAFETY_MARGIN_PAGE].prot = PROT_NONE;
     g_pageTableR0[SAFETY_MARGIN_PAGE].pfn = UNALLOCATED;
+
+    return;
+}
+
+KernelContext *MyCloneKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
+    TracePrintf(1, "Enter MyCloneKCS\n");
+    lstnode* cur_node = (lstnode*) curNode;
+    lstnode* nxt_node = (lstnode*) nxtNode;
+    pcb_t *cur_pcb = TurnNodeToPCB(cur_node);
+    pcb_t *nxt_pcb = TurnNodeToPCB(nxt_node);
+    
+    CopyKernelStack(nxt_pcb->krnlStackPtb);
 
     //Copy the kernel context to current process's pcb
     cur_pcb->kctxt = *kc_in;
@@ -406,7 +411,7 @@ KernelContext *MyCloneKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
 KernelContext *MyTrueKCS(KernelContext *kc_in,void *curr,void *next){
     TracePrintf(1,"Enter MyTrueKCS\n");
 
-    int i, stackInx = 0;
+    int i ,stackInx = 0;
 
     lstnode* curr_pcb_node = (lstnode*) curr;
     lstnode* next_pcb_node = (lstnode*) next;
@@ -420,36 +425,11 @@ KernelContext *MyTrueKCS(KernelContext *kc_in,void *curr,void *next){
     //Remember to change page table entries for kernel stack
     for (i = g_kStackStPage; i <= g_kStackEdPage; i++){
         g_pageTableR0[i] = next_p->krnlStackPtb[stackInx];
-        // TracePrintf(1, "next_p->krnlStackPtb[stackInx].pfn:%d\n",next_p->krnlStackPtb[stackInx].pfn);
-        // TracePrintf(1, "g_pageTableR0[i].pfn:%d\n",g_pageTableR0[i].pfn);
         stackInx++;
     }
 
-    //=============================================
-    // Use a safety margin page as a buffer of copying memory
-    g_pageTableR0[SAFETY_MARGIN_PAGE].valid = 1;
-    g_pageTableR0[SAFETY_MARGIN_PAGE].prot = (PROT_READ | PROT_WRITE);
 
-    for (i = 0; i < g_pageNumOfStack; i++){
-        g_pageTableR0[SAFETY_MARGIN_PAGE].pfn = next_p->krnlStackPtb[i].pfn;
-
-        WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_0);
-
-        unsigned int desAddr = SAFETY_MARGIN_PAGE << PAGESHIFT;
-        unsigned int srcAddr = (g_kStackStPage + i) << PAGESHIFT;
-
-        memcpy((void *)desAddr, (void *)srcAddr, PAGESIZE);
-    }
-
-    //Restore the buffer.
-    g_pageTableR0[SAFETY_MARGIN_PAGE].valid = 0;
-    g_pageTableR0[SAFETY_MARGIN_PAGE].prot = PROT_NONE;
-    g_pageTableR0[SAFETY_MARGIN_PAGE].pfn = UNALLOCATED;
-
-    //Write Page table of current process into register
-    WriteRegister(REG_PTBR1, (unsigned int) next_p->usrPtb);
-    WriteRegister(REG_PTLR1, (unsigned int) MAX_PT_LEN);
-    //=============================================
+    CopyKernelStack(next_p->krnlStackPtb);
     
     //Flush All TLB because 1. Kernel Stack Mapping has changed 2. User Page Table has been written into register
     WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_ALL);
