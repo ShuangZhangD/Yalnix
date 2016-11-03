@@ -155,30 +155,36 @@ int kernelbrk(UserContext *uctxt){
     pcb_t *proc = TurnNodeToPCB(currProc);
 
     unsigned int newBrk = (unsigned int) uctxt->regs[0];
-    int oldBrkPage = proc->brk;
-    int stacklimitpage = proc->stack_limit;
+    int oldBrkPage = proc->brk_page;
+    int stacklimitpage = proc->stack_limit_page;
+    int dataPage = proc->data_page;
     int newBrkPage = newBrk >> PAGESHIFT;
+
+    TracePrintf(1,"oldBrkPage:%d, stacklimitpage:%d, dataPage:%d, newBrkPage:%d\n", oldBrkPage, stacklimitpage, dataPage, newBrkPage);
 
     if(newBrkPage >= stacklimitpage - 1){
         return ERROR;
-    }
-
-    if (newBrkPage > oldBrkPage){
+    } else if (newBrkPage > oldBrkPage){
+        
         writepagetable(proc->usrPtb, oldBrkPage, newBrkPage, VALID, (PROT_READ | PROT_WRITE));
         //Flush Tlb!
         WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
 
-    }else if (newBrk < m_kernel_brk){
+    } else if (newBrkPage < oldBrkPage){
+        
+        if (newBrkPage < dataPage) return ERROR;
         //Remap  Add this frame back to free frame tracker
         ummap(proc->usrPtb, newBrkPage, oldBrkPage, INVALID, PROT_NONE);
+        
         //FLUSH!!!
         WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
+
     }else {
         //Do nothing
     }
 
     //Let addr be the new kernel break
-    proc->brk = newBrkPage;
+    proc->brk_page = newBrkPage;
 
     return SUCCESS;
 }
@@ -356,7 +362,11 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     lstnode *initProc = InitProc();
 
     //Create first process  and load initial program to it
-    rc = LoadProgram("init", cmd_args, initProc);
+    if (NULL == cmd_args[0]){
+        rc = LoadProgram("init", cmd_args, initProc);
+    } else {
+        rc = LoadProgram(cmd_args[0], cmd_args, initProc); 
+    }
     TracePrintf(1, "rc=%d\n", rc);
     if (rc == KILL){
         terminateProcess(initProc);

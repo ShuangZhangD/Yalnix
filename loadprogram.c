@@ -186,7 +186,8 @@ int LoadProgram(char *name, char *args[], lstnode *proc_node)
 // ==>> These pages should be marked valid, with a protection of 
 // ==>> (PROT_READ | PROT_WRITE).
   writepagetable(proc->usrPtb, data_pg1, data_pg1 + data_npg - 1, VALID, (PROT_READ | PROT_WRITE));
-  proc->brk = data_pg1 + data_npg - 1;
+  proc->brk_page = data_pg1 + data_npg - 1;
+  proc->data_page = data_pg1 + data_npg - 1;
   /*
    * Allocate memory for the user stack too.
    */
@@ -195,7 +196,7 @@ int LoadProgram(char *name, char *args[], lstnode *proc_node)
 // ==>> These pages should be marked valid, with a
 // ==>> protection of (PROT_READ | PROT_WRITE).
   writepagetable(proc->usrPtb, MAX_PT_LEN - stack_npg, MAX_PT_LEN - 1, VALID, (PROT_READ | PROT_WRITE));
-  proc->stack_limit = MAX_PT_LEN - stack_npg;
+  proc->stack_limit_page = MAX_PT_LEN - stack_npg;
   /*
    * All pages for the new address space are now in the page table.  
    * But they are not yet in the TLB, remember!

@@ -225,7 +225,7 @@ void TrapIllegal(UserContext *uctxt){
 
 //Capture TRAP_MEMORY
 void TrapMemory(UserContext *uctxt){
-    TracePrintf(1, "TrapMemory\n");
+    TracePrintf(1,"TrapMemory\n");
     pcb_t *proc = TurnNodeToPCB(currProc);
     
     TracePrintf(1, "uctxt->addr:%p\n", uctxt->addr);
@@ -236,12 +236,12 @@ void TrapMemory(UserContext *uctxt){
 
     switch(trapCode){
         case (YALNIX_MAPERR):
-            if (newStackPage > proc->stack_limit){
+            if (newStackPage > proc->stack_limit_page){
                 terminateProcess(currProc);
                 return;
             }
 
-            if (newStackPage < proc->brk){
+            if (newStackPage < proc->brk_page){
                 terminateProcess(currProc);
                 return;
             }

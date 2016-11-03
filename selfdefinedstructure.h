@@ -37,8 +37,9 @@ typedef struct ProcessControlBlock{
     lstnode *parent;                            //A pointer to parent process
     dblist *children;                        //A pointer to mulitple child processes
     dblist* terminatedchild;
-    int stack_limit;
-    int brk; 
+    int stack_limit_page;
+    int brk_page; 
+    int data_page;
     int clock;
     int exitstatus;
 } pcb_t;

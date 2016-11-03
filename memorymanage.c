@@ -55,7 +55,7 @@ void emptyregion1pagetable(pcb_t *proc){
 int GrowUserStack(lstnode *procnode, int addrPage){
 	pcb_t *proc = TurnNodeToPCB(procnode);
 
-	int oldStackPage = proc->stack_limit;  
+	int oldStackPage = proc->stack_limit_page;  
 	int newStackPage = addrPage;
 	int i;
 	
@@ -65,7 +65,7 @@ int GrowUserStack(lstnode *procnode, int addrPage){
 	}
 
 	writepagetable(proc->usrPtb, oldStackPage, newStackPage, VALID, (PROT_READ | PROT_WRITE));
-	proc->stack_limit = newStackPage;
+	proc->stack_limit_page = newStackPage;
 
 	return 0;
 }

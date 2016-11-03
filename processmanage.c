@@ -6,7 +6,7 @@ extern lstnode* currProc;
 
 int switchproc()
 {
-        TracePrintf(2,"Enter switchproc.\n");
+        TracePrintf(1,"Enter switchproc.\n");
         int rc;
         lstnode *fstnode = firstnode(readyqueue);
         if (!isemptylist(readyqueue)){
@@ -20,18 +20,28 @@ int switchproc()
 
 
 void terminateProcess(lstnode *procnode){
-    int i;
-    pcb_t* proc = (pcb_t*)procnode->content;
+    int i, rc;
+    pcb_t* proc = TurnNodeToPCB(procnode);
     proc->procState = TERMINATED;
 
-    for (i = 0; i < MAX_PT_LEN; i++){
-        if (proc->usrPtb[i].valid){
-            proc->usrPtb[i].valid = 0;
-	    	remove_node(i , freeframe_list);   
-	    }
-    }
+    dereadyqueue(readyqueue);
+    switchproc();
+    
+    ummap(proc->usrPtb, 0, MAX_PT_LEN-1, INVALID, PROT_NONE);
 
-    //TODO terminatedQueue(proc->pid);
+    // for (i = 0; i < MAX_PT_LEN; i++){
+    //     if (proc->usrPtb[i].valid){
+    //         proc->usrPtb[i].valid = 0;
+    //         int frameId = proc->usrPtb[i].pfn;
+	   //  	lstnode* node = remove_node(frameId , freeframe_list);   
+    //         if (NULL == node){
+    //             TracePrintf(1, "terminateProcess failed!\n");
+    //             return;
+    //         }
+	   //  }
+    // }
+
+    // Insert a node to terminated queue
     proc->procState = TERMINATED;
     insert_tail(procnode, terminatedqueue);
 

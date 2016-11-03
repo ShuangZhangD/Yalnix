@@ -134,9 +134,10 @@ lstnode* remove_head(dblist* list)
 
 lstnode* search_node(int i,dblist* list)
 {
-	lstnode *h = list->head;
+	lstnode *h = NULL;
 	if (!isemptylist(list))
-	{
+	{ 
+		h = list->head;
 		while (h != NULL && h->id != i)
 		{
 			h = h->next;
@@ -149,10 +150,14 @@ lstnode* remove_node(int i, dblist* list)
 {
 	if(isemptylist(list))
 	{
-		printf("%s\n", "error");
+		TracePrintf(1, "No node to remove!\n");
 	}
 	else{
 		lstnode *remove = search_node(i,list);
+		if (NULL == remove){
+			TracePrintf(1, "Cannot find node in list!\n");
+			return NULL;
+		}
 		remove->pre->next = remove->next;
 		remove->next->pre = remove->pre;
 		list->size--;
