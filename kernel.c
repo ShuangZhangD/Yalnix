@@ -1,7 +1,7 @@
 #include "kernel.h"
 #include "yalnix.h"
 #include "listcontrol.h"
-#include "pcb.h"
+#include "processmanage.h"
 #include "loadprogram.h"
 
 //Global Variables
@@ -198,6 +198,11 @@ int kerneldelay(UserContext *uctxt){
         return ERROR;
     }
     else{
+        lstnode *node = dereadyqueue(readyqueue);
+        if (node != currProc){
+            TracePrintf(1,"The first node of readyqueue should be the current process!\n");
+            return ERROR;
+        }
         enwaitingqueue(currProc,waitingqueue);
         proc->clock = clock_ticks;
         rc = switchproc();
@@ -347,8 +352,6 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     idlePcb->uctxt = *uctxt;
     lstnode *idleProc = TurnPCBToNode(idlePcb);
     
-    enreadyqueue(idleProc, readyqueue);
-
     //Initialize Init Process
     lstnode *initProc = InitProc();
 
@@ -359,6 +362,9 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
         terminateProcess(initProc);
     }
 
+    enreadyqueue(initProc, readyqueue);
+    enreadyqueue(idleProc, readyqueue);
+
     currProc = initProc;
 
     rc = KernelContextSwitch(MyCloneKCS, (void *)initProc, (void *)idleProc);
@@ -367,7 +373,7 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     }
 
     *uctxt = TurnNodeToPCB(currProc)->uctxt;
-    TracePrintf(1, "Exit KernelStart\n");
+    TracePrintf(1,"Exit KernelStart.\n");
     return;
 }
 
@@ -560,7 +566,7 @@ KernelContext *MyCloneKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
 
 // when someone calls KernelContextSwitch, it might come to here.
 KernelContext *MyTrueKCS(KernelContext *kc_in,void *curr,void *next){
-    TracePrintf(1, "Enter MyTrueKCS\n");
+    TracePrintf(1,"Enter MyTrueKCS\n");
 
     int i, stackInx = 0;
 
@@ -611,11 +617,13 @@ KernelContext *MyTrueKCS(KernelContext *kc_in,void *curr,void *next){
     WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_ALL);
 
     //Turn Next Process to be the current one
+    if (READY == cur_p->procState){
+        enreadyqueue(curr_pcb_node ,readyqueue);
+    }
     currProc = next_pcb_node; 
 
-    TracePrintf(1, "currProc->pc:%p\n", TurnNodeToPCB(currProc)->uctxt.pc);
     //Return a pointer to a kernel context it had earlier saved
     return &(next_p->kctxt);
-
+    TracePrintf(1,"Exit MyTrueKCS\n");
 }
 

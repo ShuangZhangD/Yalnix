@@ -6,7 +6,7 @@
 #include "cvar.h"
 #include "pipe.h"
 #include "io.h"
-#include "pcb.h"
+#include "processmanage.h"
 #include "traphandler.h"
 #include "kernel.h"
 
@@ -175,34 +175,43 @@ void TrapClock(UserContext *uctxt){
     TracePrintf(1, "TrapClock called\n");
     // int rc = 0;
     if (!isemptylist(waitingqueue)){
-        traverselist(waitingqueue);
+
         lstnode *traverse = waitingqueue->head->next;
-        while(traverse != NULL)
-        {               
+        while(traverse != NULL && traverse->id != -1) {               
             pcb_t* proc = TurnNodeToPCB(traverse);
-            if(proc->clock > 0)
-            {
+            if(proc->clock > 0){
                 proc->clock--;
+                TracePrintf(1, "proc->clock:%d\n", proc->clock);
             }
+            if(proc->clock == 0){
+                lstnode* traverseNode = dewaitingqueue(traverse,waitingqueue);
+                enreadyqueue(traverseNode,readyqueue);
+            }
+
             traverse = traverse->next;   
         }
 
-        lstnode *notclock = waitingqueue->head;
-        while(traverse != NULL && ((pcb_t*) traverse->content)->clock > 0)
-        {
-            notclock = notclock->next;
-        }
-    
-        if(((pcb_t*)notclock->content)->clock == 0)
-        {
-            dewaitingqueue(notclock,waitingqueue);
-            enreadyqueue(notclock,readyqueue); 
-        }
+        // lstnode *notclock = waitingqueue->head->next;
+        // while(notclock != NULL && notclock->id != -1){
+
+        //     pcb_t* proc = TurnNodeToPCB(notclock);
+        //     if(proc->clock == 0){
+        //         TracePrintf(1, "notclock->clock:%d\n", proc->clock);
+        //         lstnode* notclockNode = dewaitingqueue(notclock,waitingqueue);
+        //         enreadyqueue(notclockNode,readyqueue);
+        //     }
+        //     notclock = notclock->next;
+        // }
+        
     }
-
-    switchproc();
-
-
+    if (readyqueue->size  > 1){
+        lstnode * node = dereadyqueue(readyqueue);
+        if (node != currProc){
+            TracePrintf(1, "The first node of readyqueue should be the current process!\n");
+            return;
+        }
+        switchproc();
+    }
 }
 
 //Capture TRAP_ILLEGAL

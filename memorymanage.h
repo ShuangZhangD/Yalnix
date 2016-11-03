@@ -1,5 +1,5 @@
 #include "selfdefinedstructure.h"
-#include "pcb.h"
+#include "processmanage.h"
 
 void emptyregion1pagetable(pcb_t *proc);
 

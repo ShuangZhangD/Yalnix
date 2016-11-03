@@ -1,5 +1,5 @@
 #include "selfdefinedstructure.h"
-#include "pcb.h"
+#include "processmanage.h"
 
 void printUserPageTable(lstnode *p);
 void printKernelPageTable();
