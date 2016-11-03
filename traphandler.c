@@ -210,7 +210,8 @@ void TrapClock(UserContext *uctxt){
             TracePrintf(1, "The first node of readyqueue should be the current process!\n");
             return;
         }
-        switchproc();
+        lstnode *fstnode = firstnode(readyqueue);
+        switchproc(node, fstnode);
     }
 }
 

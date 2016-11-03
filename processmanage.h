@@ -20,7 +20,7 @@ int kernelgetpid();
 
 void CopyUserProcess (pte_t* parentPtb, pte_t* childPtb);
 
-int switchproc();
+int switchproc(lstnode* switchOut, lstnode* switchIn);
 // int traverseParent(lstnode *procnode);              //Traverse through its parent
 // int traverseChildren(lstnode *procnode);            //Traverse through its 
 // int apppendProcess(lstnode *procnode, pcb_t *src);     //Add a process in PCB list

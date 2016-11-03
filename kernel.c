@@ -40,7 +40,9 @@ int kerneldelay(UserContext *uctxt){
         }
         enwaitingqueue(currProc,waitingqueue);
         proc->clock = clock_ticks;
-        rc = switchproc();
+
+        lstnode *fstnode = firstnode(readyqueue);
+        rc = switchproc(node, fstnode);
         if (rc) {
             return ERROR;
         }
@@ -443,8 +445,8 @@ KernelContext *MyTrueKCS(KernelContext *kc_in,void *curr,void *next){
     }
     currProc = next_pcb_node; 
 
+    TracePrintf(1,"Exit MyTrueKCS\n");
     //Return a pointer to a kernel context it had earlier saved
     return &(next_p->kctxt);
-    TracePrintf(1,"Exit MyTrueKCS\n");
 }
 

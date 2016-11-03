@@ -111,7 +111,7 @@ int kernelexit(UserContext *uctxt){
 
 
     proc->exitstatus = status;
-    switchproc();
+    // switchproc();
 
 }
 
@@ -131,7 +131,7 @@ int kernelwait(UserContext *uctxt){
     }
     else{
         enwaitingqueue(currProc,waitingqueue);
-        switchproc();
+        // switchproc();
     }
 
 }
@@ -171,13 +171,12 @@ void CopyUserProcess (pte_t* parentPtb, pte_t* childPtb){
     return;
 }
 
-int switchproc()
+int switchproc(lstnode* switchOut, lstnode* switchIn)
 {
         TracePrintf(1,"Enter switchproc.\n");
         int rc;
-        lstnode *fstnode = firstnode(readyqueue);
         if (!isemptylist(readyqueue)){
-            rc = KernelContextSwitch(MyTrueKCS, (void *) currProc, (void *) fstnode);
+            rc = KernelContextSwitch(MyTrueKCS, (void *) switchOut, (void *) switchIn);
             return 0;
         }
         else{
@@ -192,9 +191,15 @@ void terminateProcess(lstnode *procnode){
     pcb_t* proc = TurnNodeToPCB(procnode);
     proc->procState = TERMINATED;
 
-    dereadyqueue(readyqueue);
-    switchproc();
-    
+    lstnode* node = dereadyqueue(readyqueue);
+    if (procnode!=node){
+            TracePrintf(1, "The first node of readyqueue should be the current process!\n");
+            return;
+    }
+
+    lstnode *fstnode = firstnode(readyqueue);
+    switchproc(node, fstnode);
+
     ummap(proc->usrPtb, 0, MAX_PT_LEN-1, INVALID, PROT_NONE);
 
     // Insert a node to terminated queue
