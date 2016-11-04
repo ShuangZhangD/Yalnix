@@ -214,6 +214,7 @@ int switchproc(lstnode* switchOut, lstnode* switchIn)
         int rc;
         if (!isemptylist(readyqueue)){
             rc = KernelContextSwitch(MyTrueKCS, (void *) switchOut, (void *) switchIn);
+            if (rc) TracePrintf(1,"KernelContextSwitch in switchproc failed!\n");
             return 0;
         }
         else{
@@ -278,7 +279,8 @@ int enwaitingqueue(lstnode* procnode,dblist* queue)
 
 lstnode* dewaitingqueue(lstnode* waitingnode,dblist* queue)
 {
-	
+    TracePrintf(1,"Enter dewaitingqueue\n");
+    TracePrintf(1,"Exit dewaitingqueue\n");   	
 	return remove_node(TurnNodeToPCB(waitingnode)->pid,queue);
 }
 

@@ -201,7 +201,7 @@ int LoadProgram(char *name, char *args[], lstnode *proc_node)
    * All pages for the new address space are now in the page table.  
    * But they are not yet in the TLB, remember!
    */
-  WriteRegister(REG_PTBR1, (unsigned int)proc->usrPtb);
+  WriteRegister(REG_PTBR1, (unsigned int) proc->usrPtb);
   WriteRegister(REG_PTLR1, (unsigned int) MAX_PT_LEN);
   
   /*

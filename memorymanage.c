@@ -48,7 +48,12 @@ int kernelbrk(UserContext *uctxt){
 //Capture TRAP_MEMORY
 void TrapMemory(UserContext *uctxt){
     TracePrintf(1,"TrapMemory\n");
+
+    printUserPageTable(currProc);
+    printKernelPageTable();
+
     pcb_t *proc = TurnNodeToPCB(currProc);
+    proc->uctxt = *uctxt;
     
     TracePrintf(1, "uctxt->addr:%p\n", uctxt->addr);
     
@@ -137,8 +142,8 @@ void ummap(pte_t *pagetable, int startPage, int endPage, int valid, int prot){
 void emptyregion1pagetable(pcb_t *proc){
 	int i;
 	for (i=0; i<MAX_PT_LEN;i++){
-		if (1 == proc->usrPtb[i].valid){
-			proc->usrPtb[i].valid = 0;
+		if (VALID == proc->usrPtb[i].valid){
+			proc->usrPtb[i].valid = INVALID;
 			int usedFrame = proc->usrPtb[i].pfn;
 
 			lstnode *frame = nodeinit(usedFrame);

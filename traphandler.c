@@ -16,6 +16,7 @@ extern dblist* freeframe_list;
 //capture TRAP_CLOCK
 void TrapKernel(UserContext *uctxt){
     TracePrintf(1, "TrapKernel called\n");
+    TurnNodeToPCB(currProc)->uctxt = *uctxt;
     int rc;
     switch(uctxt->code){
         case YALNIX_FORK:
@@ -166,13 +167,8 @@ void TrapKernel(UserContext *uctxt){
 //Capture TRAP_CLOCK
 //TODO: Implement round-robin process scheduling with CPU quantum per process of 1 clock tick.
 void TrapClock(UserContext *uctxt){
-    /*
-       int rc = 0;
-       IF(pqueue.size != 0)
-       rc = KernelContextSwitch(MyKCS, (void *)current_pcb, (void *)netxt_pcb); 
-
-     */
     TracePrintf(1, "TrapClock called\n");
+
     // int rc = 0;
     if (!isemptylist(waitingqueue)){
 
@@ -205,7 +201,7 @@ void TrapClock(UserContext *uctxt){
         
     }
     if (readyqueue->size  > 1){
-        lstnode * node = dereadyqueue(readyqueue);
+        lstnode *node = dereadyqueue(readyqueue);
         if (node != currProc){
             TracePrintf(1, "The first node of readyqueue should be the current process!\n");
             return;

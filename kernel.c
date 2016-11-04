@@ -139,7 +139,7 @@ int SetKernelBrk(void *addr){
 
 
 void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
-    int i, rc;
+    int i, rc, stackInx = 0;
     //Initialize interrupt vector table and REG_VECTOR_BASE
     TracePrintf(1, "Init interrupt table.\n");
     InitInterruptTable();
@@ -178,6 +178,8 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     idlePcb->usrPtb[MAX_PT_LEN-1].prot = (PROT_WRITE | PROT_READ);
     idlePcb->usrPtb[MAX_PT_LEN-1].pfn = remove_head(freeframe_list)->id;
 
+    WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
+
     //====Cook DoIdle()====
     TracePrintf(1, "Cook DoIdle\n");
     CookDoIdle(uctxt);
@@ -194,7 +196,7 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     } else {
         rc = LoadProgram(cmd_args[0], cmd_args, initProc); 
     }
-    TracePrintf(1, "rc=%d\n", rc);
+
     if (rc == KILL){
         terminateProcess(initProc);
         return;
@@ -205,7 +207,9 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
 
     currProc = initProc;
 
-    rc = KernelContextSwitch(MyCloneKCS, (void *)initProc, (void *)idleProc);
+    TracePrintf(1,"idle:%p, init:%p\n", idlePcb->usrPtb, TurnNodeToPCB(initProc)->usrPtb);
+    rc = KernelContextSwitch(MyCloneKCS, (void *)idleProc, (void *)initProc);
+
     if (rc) {
         TracePrintf(1, "Context Switch in KernelStart goes wrong.\n");
     }
@@ -226,7 +230,7 @@ pte_t* InitUserPageTable (){
     for (i = 0; i < MAX_PT_LEN; i++){
         usrPtb[i].valid = 0;
         usrPtb[i].prot = PROT_NONE;
-        usrPtb[i].pfn = UNALLOCATED; //TODO make sure it is right
+        usrPtb[i].pfn = UNALLOCATED;
     }
 
 
@@ -284,6 +288,7 @@ void CookDoIdle(UserContext *uctxt){
     void (*idlePtr)(void) = &DoIdle;
     uctxt->pc = idlePtr;
     uctxt->sp = (void*) (VMEM_1_LIMIT - INITIAL_STACK_FRAME_SIZE - POST_ARGV_NULL_SPACE); 
+    uctxt->addr = uctxt->sp; 
     return;
 }
 
@@ -318,7 +323,8 @@ lstnode *InitProc(){
 
     //Let a userprocess have its own kernel stack
     for (i=g_kStackStPage, stackInx = 0; i<=g_kStackEdPage; i++, stackInx++){
-        proc->krnlStackPtb[stackInx] = g_pageTableR0[i];
+        proc->krnlStackPtb[stackInx].prot = g_pageTableR0[i].prot;
+        proc->krnlStackPtb[stackInx].valid = g_pageTableR0[i].valid;
 
         lstnode *first = remove_head(freeframe_list);
         proc->krnlStackPtb[stackInx].pfn = first->id;
@@ -341,10 +347,9 @@ pcb_t *InitIdleProc(UserContext *uctxt){
 
     //Let a userprocess have its own kernel stack
     for (i=g_kStackStPage, stackInx = 0; i<=g_kStackEdPage; i++, stackInx++){
-        proc->krnlStackPtb[stackInx] = g_pageTableR0[i];
-        
-        // lstnode *first = remove_head(freeframe_list);
-        // proc->krnlStackPtb[stackInx].pfn = first->id;
+        proc->krnlStackPtb[stackInx].pfn = g_pageTableR0[i].pfn;
+        proc->krnlStackPtb[stackInx].prot = g_pageTableR0[i].prot;
+        proc->krnlStackPtb[stackInx].valid = g_pageTableR0[i].valid;
     }
 
     return proc;
@@ -373,7 +378,7 @@ void CopyKernelStack (pte_t* pageTable){
     int i, kernelSize = g_pageNumOfStack;
 
     //Use a safety margin page as a buffer of copying memory
-    g_pageTableR0[SAFETY_MARGIN_PAGE].valid = 1;
+    g_pageTableR0[SAFETY_MARGIN_PAGE].valid = VALID;
     g_pageTableR0[SAFETY_MARGIN_PAGE].prot = (PROT_READ | PROT_WRITE);
 
     for (i = 0; i < kernelSize; i++){
@@ -397,12 +402,23 @@ void CopyKernelStack (pte_t* pageTable){
 
 KernelContext *MyCloneKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
     TracePrintf(1, "Enter MyCloneKCS\n");
+
+    int i, stackInx = 0;
+
     lstnode* cur_node = (lstnode*) curNode;
     lstnode* nxt_node = (lstnode*) nxtNode;
     pcb_t *cur_pcb = TurnNodeToPCB(cur_node);
     pcb_t *nxt_pcb = TurnNodeToPCB(nxt_node);
-    
+
     CopyKernelStack(nxt_pcb->krnlStackPtb);
+    //Remember to change page table entries for kernel stack
+    for (i = g_kStackStPage; i <= g_kStackEdPage; i++){
+        g_pageTableR0[i].pfn = nxt_pcb->krnlStackPtb[stackInx].pfn;
+        stackInx++;
+    }
+
+    //Flush All TLB because 1. Kernel Stack Mapping has changed
+    WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_0);
 
     //Copy the kernel context to current process's pcb
     cur_pcb->kctxt = *kc_in;
@@ -427,14 +443,16 @@ KernelContext *MyTrueKCS(KernelContext *kc_in,void *curr,void *next){
     //Copy the kernel context to current process's pcb
     cur_p->kctxt = *kc_in;
 
+
     //Remember to change page table entries for kernel stack
     for (i = g_kStackStPage; i <= g_kStackEdPage; i++){
-        g_pageTableR0[i] = next_p->krnlStackPtb[stackInx];
+        g_pageTableR0[i].pfn = next_p->krnlStackPtb[stackInx].pfn;
         stackInx++;
     }
 
-    CopyKernelStack(next_p->krnlStackPtb);
-    
+    WriteRegister(REG_PTBR1, (unsigned int) next_p->usrPtb);
+    WriteRegister(REG_PTLR1, (unsigned int) MAX_PT_LEN);
+
     //Flush All TLB because 1. Kernel Stack Mapping has changed 2. User Page Table has been written into register
     WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_ALL);
 
