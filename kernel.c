@@ -10,14 +10,11 @@ int g_pid = 1;
 int const g_pageNumOfStack = KERNEL_STACK_MAXSIZE / PAGESIZE;
 int const g_kStackStPage = KERNEL_STACK_BASE >> PAGESHIFT;
 int const g_kStackEdPage = (KERNEL_STACK_LIMIT - 1) >> PAGESHIFT;
-
 lstnode* currProc;
 dblist* freeframe_list;
 
 extern dblist* waitingqueue;
 extern dblist* readyqueue;
-extern dblist* terminatedqueue;
-
 
 int kerneldelay(UserContext *uctxt){
     TracePrintf(1, "Enter KernelDelay\n");
@@ -100,7 +97,9 @@ int kernelreclaim(int id){
 void SetKernelData(void *_KernelDataStart, void *_KernelDataEnd){
     TracePrintf(1, "_KernelDataStart: %p\n", _KernelDataStart);
     m_kernel_brk = (unsigned int) _KernelDataEnd;
+    m_kernel_data_end = (unsigned int) _KernelDataEnd;
     m_kernel_data_start = (unsigned int) _KernelDataStart;
+
 
     TracePrintf(1, "KernelDataStart = %x \n", m_kernel_data_start);
     TracePrintf(1, "KernelDataEnd = %x \n", m_kernel_brk);  
@@ -125,7 +124,6 @@ int SetKernelBrk(void *addr){
             WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_0);
 
         }else if (newBrk < m_kernel_brk){
-
             //Remap  Add this frame back to free frame tracker
             ummap(g_pageTableR0, newBrkPage, oldBrkPage, INVALID, PROT_NONE);
             //FLUSH!!!
@@ -134,7 +132,6 @@ int SetKernelBrk(void *addr){
     }
 
     //Let addr be the new kernel break
-
     m_kernel_brk = newBrk;
     TracePrintf(1, "New Brk! m_kernel_brk = %x\n", m_kernel_brk);
     return 0;
@@ -172,7 +169,6 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     //init Queue
     waitingqueue = listinit();
     readyqueue = listinit();
-    terminatedqueue = listinit();
 
     //Initialize Idle Process    
     TracePrintf(1, "Init pcb.\n");
@@ -201,6 +197,7 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     TracePrintf(1, "rc=%d\n", rc);
     if (rc == KILL){
         terminateProcess(initProc);
+        return;
     }
 
     enreadyqueue(initProc, readyqueue);
@@ -366,6 +363,8 @@ int checkPageStatus(unsigned int addr){
     for (i = pageAddr; i <= SAFETY_MARGIN_PAGE; i++){
         if (1 == g_pageTableR0[i].valid) return -1;
     }
+
+    if (addr < m_kernel_data_end) return -1;
 
     return 0;
 }

@@ -32,30 +32,32 @@ int kernelfork(UserContext *uctxt){
         TracePrintf(1,"MyCloneKCS in kernelfork failed.\n");
         return ERROR;
     }
+    //4. Copy the page table of parent to the child
+    memcpy((void*) childPcb->usrPtb, (void*) parentPcb->usrPtb, sizeof(pte_t)*MAX_PT_LEN);
 
-    //4. Duplicate the content of the frames used by parent to the free frames of a child
+    //5. Duplicate the content of the frames used by parent to the free frames of a child
     CopyUserProcess(parentPcb->usrPtb, childPcb->usrPtb);
 
-    //5. Put child into parent's children queue
+    //6. Put child into parent's children queue
     if (parentPcb->children == NULL){
         parentPcb->children = listinit();
     } 
     insert_tail(childProc,parentPcb->children);
 
-    //6. Assign the address of the parent process to the child 
+    //7. Assign the address of the parent process to the child 
     childPcb->parent = parentProc;
 
-    //7. Put child proc into readyqueue
+    //8. Put child proc into readyqueue
     enreadyqueue(childProc,readyqueue);
 
-    //8. Doing KernelContext Switch here, so the parent process will start from here
-    rc = KernelContextSwitch(MyTrueKCS, (void*)parentProc, (void*)childProc);
+    //9. Doing KernelContext Switch here, so the parent process will start from here
+    rc = switchproc(parentProc, childProc);
     if (rc){
         TracePrintf(1,"MyTrueKCS in kernelfork failed.\n");
         return ERROR;
     }
 
-    //9. if current process is childprocess, return 0, otherwise return pid
+    //10. if current process is childprocess, return 0, otherwise return pid
     if(currProc == childProc) {
         return 0;
     }
@@ -67,71 +69,106 @@ int kernelfork(UserContext *uctxt){
 }
 
 int kernelexec(UserContext *uctxt){
-    pcb_t *proc = (pcb_t*)currProc->content;
+    lstnode* loadProc = currProc;
+    pcb_t* loadPcb = TurnNodeToPCB(loadProc);
+
     char* name = (char*) uctxt->regs[0];
     char** args = (char**) uctxt->regs[1];
-    int rc = LoadProgram(name,args,currProc);
-    //todo
-    if (rc == 0)
-    {
-        return 0;
-    }
-    if (rc == ERROR)
-    {
+    int rc = LoadProgram(name,args,loadProc);
+    
+    *uctxt = loadPcb->uctxt;
+
+    if (rc == ERROR) {
+        return ERROR;
+    } else if (rc == KILL){
+        terminateProcess(loadProc);
         return ERROR;
     }
+    return SUCCESS;
 }
 
 int kernelexit(UserContext *uctxt){
-    pcb_t *proc = (pcb_t*)currProc->content;
+    
     int status = uctxt->regs[0];
+    pcb_t* currPcb = TurnNodeToPCB(currProc);
+    currPcb->exitstatus = status;
 
-    if(proc->pid == 2)
-    {
+    // If the initProcess Exit, halt the program
+    if(currPcb->pid == 2) {
+        terminateProcess(currProc);
         Halt();
+        return ERROR;
     }
 
-    lstnode* traverse = proc->children->head;
-    while(traverse != NULL)
-    {               
-        pcb_t* proc = (pcb_t*) traverse->content;
-        proc->parent = NULL;
+    //When the orphans later exit, you need not save or report their exit status since there is no longer anybody to care.
+    if (NULL != currPcb->parent){
+        pcb_t* currParent = TurnNodeToPCB(currPcb->parent);
+        if (NULL == currParent->terminatedchild){
+            currParent->terminatedchild = listinit();
+        } 
+        
+        currPcb->procState = TERMINATED;
+        free(currPcb->usrPtb);
+        free(currPcb->krnlStackPtb); 
+        free(currPcb->parent);        
+        free(currPcb->children);
+        free(currPcb->terminatedchild);
+
+        pcb_t* copyPcb = (pcb_t*) malloc(sizeof(currPcb));
+        memcpy(copyPcb, currPcb, sizeof(currProc));
+
+        insert_tail(TurnPCBToNode(copyPcb),currParent->terminatedchild);
+    } 
+    // If it has children, they should run normally but without a parent
+    lstnode* traverse = currPcb->children->head;
+    while(traverse != NULL && traverse->id != -1) {
+        pcb_t* proc = TurnNodeToPCB(traverse);
+        proc->parent = NULL;             
         traverse = traverse->next;   
     }
+    terminateProcess(currProc);
+    return ERROR;
+    
+    // 
+    // if(proc->parent != NULL){
+    //     pcb_t* pcb = (pcb_t *) proc->parent->content;
+    //     pcb->terminatedchild = listinit();
+    //     remove_node(proc->pid, proc->children);
+    //     insert_tail(currProc,pcb->terminatedchild);
+    //     dewaitingqueue(proc->parent,waitingqueue);
+    //     enreadyqueue(proc->parent,readyqueue); 
+    // }
 
-    if(proc->parent != NULL)
-    {
-        pcb_t* pcb = (pcb_t *) proc->parent->content;
-        pcb->terminatedchild = listinit();
-        remove_node(proc->pid, proc->children);
-        insert_tail(currProc,pcb->terminatedchild);
-        dewaitingqueue(proc->parent,waitingqueue);
-        enreadyqueue(proc->parent,readyqueue); 
-    }
 
-
-    proc->exitstatus = status;
     // switchproc();
 
 }
 
 int kernelwait(UserContext *uctxt){
-    pcb_t *proc = (pcb_t*)currProc->content;
 
-    if (isemptylist(proc->children) && isemptylist(proc->terminatedchild))
-    {
+    pcb_t *proc = TurnNodeToPCB(currProc);
+
+    if (isemptylist(proc->children) && isemptylist(proc->terminatedchild)){
         return ERROR;
     }
-    if (!isemptylist(proc->terminatedchild))
-    {
+
+    if (!isemptylist(proc->terminatedchild)){
         lstnode* remove = remove_head(proc->terminatedchild);
-        pcb_t* removeproc = (pcb_t*) remove->content;
+        pcb_t* removeproc = TurnNodeToPCB(remove);
         uctxt->regs[0] = removeproc->exitstatus;
+        free(remove);
         return removeproc->pid;
     }
     else{
+        //TODO Block Queue
+        lstnode *node = dereadyqueue(readyqueue);
+        if (node != currProc){
+            TracePrintf(1,"The first node of readyqueue should be the current process!\n");
+            return ERROR;
+        }
         enwaitingqueue(currProc,waitingqueue);
-        // switchproc();
+        lstnode *fstnode = firstnode(readyqueue);
+        switchproc(node, fstnode);
     }
 
 }
@@ -184,15 +221,13 @@ int switchproc(lstnode* switchOut, lstnode* switchIn)
         }	
 }
 
-
-
 void terminateProcess(lstnode *procnode){
     int i, rc;
     pcb_t* proc = TurnNodeToPCB(procnode);
     proc->procState = TERMINATED;
 
     lstnode* node = dereadyqueue(readyqueue);
-    if (procnode!=node){
+    if (procnode!=node || currProc != node){
             TracePrintf(1, "The first node of readyqueue should be the current process!\n");
             return;
     }
@@ -200,14 +235,11 @@ void terminateProcess(lstnode *procnode){
     lstnode *fstnode = firstnode(readyqueue);
     switchproc(node, fstnode);
 
-    ummap(proc->usrPtb, 0, MAX_PT_LEN-1, INVALID, PROT_NONE);
-
-    // Insert a node to terminated queue
-    proc->procState = TERMINATED;
-    insert_tail(procnode, terminatedqueue);
+    emptyregion1pagetable(proc->usrPtb);
+    free(procnode);                      
 
     //TODO Delete process or relocate process pool
-
+    return;
 }
 
 int enreadyqueue(lstnode* procnode,dblist* queue)

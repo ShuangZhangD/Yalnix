@@ -4,6 +4,8 @@
 //global variables
 unsigned int m_kernel_brk;
 unsigned int m_kernel_data_start;
+unsigned int m_kernel_data_end;
+
 pte_t g_pageTableR0[MAX_PT_LEN];
 
 pcb_t *idleProc;

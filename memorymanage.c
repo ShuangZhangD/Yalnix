@@ -121,11 +121,11 @@ void writepagetable(pte_t *pagetable, int startPage, int endPage, int valid, int
 void ummap(pte_t *pagetable, int startPage, int endPage, int valid, int prot){
 	int i;
 	for (i=startPage; i<=endPage; i++){
-
-		int pageNumber = pagetable[i].pfn;
-		lstnode *frame = nodeinit(pageNumber);
-        insert_tail(frame,freeframe_list);
-
+        if (VALID == pagetable->valid){
+		    int pageNumber = pagetable[i].pfn;
+		    lstnode *frame = nodeinit(pageNumber);
+            insert_tail(frame,freeframe_list);
+        }
 		pagetable[i].valid = valid;
 		pagetable[i].prot = prot;
 		pagetable[i].pfn = UNALLOCATED;
