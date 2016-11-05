@@ -110,7 +110,7 @@ int kernelexit(UserContext *uctxt){
     terminateProcess(currProc);
 
     // If it has children, they should run normally but without a parent
-    lstnode* traverse = currPcb->children->head;
+    lstnode* traverse = currPcb->children->head->next;
     while(traverse != NULL && traverse->id != -1) {
         pcb_t* proc = TurnNodeToPCB(traverse);
         proc->parent = NULL;             
@@ -123,14 +123,16 @@ int kernelexit(UserContext *uctxt){
     // if(proc->parent != NULL){
     //     pcb_t* pcb = (pcb_t *) proc->parent->content;
     //     pcb->terminatedchild = listinit();
-    //     remove_node(proc->pid, proc->children);
-    //     insert_tail(currProc,pcb->terminatedchild);
-    //     dewaitingqueue(proc->parent,waitingqueue);
-    //     enreadyqueue(proc->parent,readyqueue); 
-    // }
+    
+    if (NULL != currPcb->parent && NULL != search_node(TurnNodeToPCB(currPcb->parent)->pid,blockqueue))
+    {
+    deblockqueue(currPcb->parent,blockqueue);
+    enreadyqueue(currPcb->parent,readyqueue);    
+    }
+    //switchnext();
 
 
-    // switchproc();
+
 
 }
 
@@ -156,11 +158,41 @@ int kernelwait(UserContext *uctxt){
             TracePrintf(1,"The first node of readyqueue should be the current process!\n");
             return ERROR;
         }
-        enwaitingqueue(currProc,waitingqueue);
+        enblockqueue(currProc,blockqueue);
         lstnode *fstnode = firstnode(readyqueue);
         switchproc(node, fstnode);
     }
 
+}
+
+int kerneldelay(UserContext *uctxt){
+    TracePrintf(1, "Enter KernelDelay\n");
+
+    pcb_t *proc = TurnNodeToPCB(currProc);
+    proc->uctxt = *uctxt;
+    int clock_ticks = uctxt->regs[0];
+    int rc;
+    if (clock_ticks == 0){
+        return 0;
+    }
+    else if(clock_ticks <= 0){
+        return ERROR;
+    }
+    else{
+        lstnode *node = dereadyqueue(readyqueue);
+        if (node != currProc){
+            TracePrintf(1,"The first node of readyqueue should be the current process!\n");
+            return ERROR;
+        }
+        enwaitingqueue(currProc,waitingqueue);
+        proc->clock = clock_ticks;
+
+        lstnode *fstnode = firstnode(readyqueue);
+        rc = switchproc(node, fstnode);
+        if (rc) {
+            return ERROR;
+        }
+    }
 }
 
 int kernelgetpid(){
@@ -288,6 +320,13 @@ int switchproc(lstnode* switchOut, lstnode* switchIn)
         return rc;
 }
 
+int switchnext()
+{
+    lstnode *node = dereadyqueue(readyqueue);
+    lstnode *fstnode = firstnode(readyqueue);
+    switchproc(node, fstnode);
+}
+
 void terminateProcess(lstnode *procnode){
     int i, rc;
     pcb_t* proc = TurnNodeToPCB(procnode);
@@ -347,6 +386,27 @@ lstnode* dewaitingqueue(lstnode* waitingnode,dblist* queue)
 	return remove_node(TurnNodeToPCB(waitingnode)->pid,queue);
 }
 
+int enblockqueue(lstnode* procnode,dblist* queue)
+{
+    TracePrintf(1, "Enter enwaitingqueue\n");    
+    pcb_t* proc = TurnNodeToPCB(procnode);
+
+    if (proc == NULL){
+        return ERROR;
+    }
+    proc->procState = WAITING;
+    insert_tail(procnode, queue);
+
+    TracePrintf(1, "Exit enwaitingqueue\n"); 
+    return 0;
+}
+
+lstnode* deblockqueue(lstnode* waitingnode,dblist* queue)
+{
+    TracePrintf(1,"Enter dewaitingqueue\n");
+    TracePrintf(1,"Exit dewaitingqueue\n");     
+    return remove_node(TurnNodeToPCB(waitingnode)->pid,queue);
+}
 
 lstnode* TurnPCBToNode(pcb_t *pcb){
 

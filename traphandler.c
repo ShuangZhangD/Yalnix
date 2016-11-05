@@ -9,6 +9,8 @@
 #include "processmanage.h"
 #include "traphandler.h"
 #include "kernel.h"
+#include "listcontrol.h"
+
 
 extern lstnode* currProc;
 extern dblist* freeframe_list;
@@ -172,6 +174,8 @@ void TrapIllegal(UserContext *uctxt){
 
        Rearrange quque 
      */
+    kernelexit(uctxt);
+
 }
 
 
@@ -180,8 +184,11 @@ void TrapMath(UserContext *uctxt){
     /*
        Abort current process
        Rearrange queue
-     */  
+     */ 
+    kernelexit(uctxt);
+
 }
+
 
 //Capture TRAP_DISK
 void TrapDisk(UserContext *uctxt){
