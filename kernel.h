@@ -15,7 +15,6 @@ pcb_t *InitIdleProc(UserContext *uctxt);
 
 lstnode *InitProc();
 
-
 int kernelregister(UserContext *uctxt);
 
 int kernelsend(UserContext *uctxt);
@@ -58,4 +57,6 @@ void CopyKernelStack (pte_t* pageTable);
 
 KernelContext *MyCloneKCS(KernelContext *kc_in,void *curNode,void *nxtNode);
 
-KernelContext *MyTrueKCS(KernelContext *kc_in,void *curr_pcb_p,void *next_pcb_p);
+KernelContext *MyTrueKCS(KernelContext *kc_in,void *curNode,void *nxtNode);
+
+KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode);

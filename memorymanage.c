@@ -140,17 +140,7 @@ void ummap(pte_t *pagetable, int startPage, int endPage, int valid, int prot){
 }
 
 void emptyregion1pagetable(pcb_t *proc){
-	int i;
-	for (i=0; i<MAX_PT_LEN;i++){
-		if (VALID == proc->usrPtb[i].valid){
-			proc->usrPtb[i].valid = INVALID;
-			int usedFrame = proc->usrPtb[i].pfn;
-
-			lstnode *frame = nodeinit(usedFrame);
-    	    insert_tail(frame,freeframe_list);	
-		}	
-	}
-
+    ummap(proc->usrPtb, 0, MAX_PT_LEN-1, INVALID, PROT_NONE);
 	return;
 }
 

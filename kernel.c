@@ -16,8 +16,6 @@ dblist* freeframe_list;
 extern dblist* waitingqueue;
 extern dblist* readyqueue;
 
-
-
 int kernelregister(UserContext *uctxt){
     return ERROR;
 }
@@ -365,7 +363,7 @@ void CopyKernelStack (pte_t* pageTable){
     }
   
     //Restore the buffer.
-    g_pageTableR0[SAFETY_MARGIN_PAGE].valid = 0;
+    g_pageTableR0[SAFETY_MARGIN_PAGE].valid = INVALID;
     g_pageTableR0[SAFETY_MARGIN_PAGE].prot = PROT_NONE;
     g_pageTableR0[SAFETY_MARGIN_PAGE].pfn = UNALLOCATED;
 
@@ -401,13 +399,13 @@ KernelContext *MyCloneKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
 
 
 // when someone calls KernelContextSwitch, it might come to here.
-KernelContext *MyTrueKCS(KernelContext *kc_in,void *curr,void *next){
+KernelContext *MyTrueKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
     TracePrintf(1,"Enter MyTrueKCS\n");
 
     int i ,stackInx = 0;
 
-    lstnode* curr_pcb_node = (lstnode*) curr;
-    lstnode* next_pcb_node = (lstnode*) next;
+    lstnode* curr_pcb_node = (lstnode*) curNode;
+    lstnode* next_pcb_node = (lstnode*) nxtNode;
     
     pcb_t *cur_p = TurnNodeToPCB(curr_pcb_node);
     pcb_t *next_p = TurnNodeToPCB(next_pcb_node);
@@ -439,3 +437,42 @@ KernelContext *MyTrueKCS(KernelContext *kc_in,void *curr,void *next){
     return &(next_p->kctxt);
 }
 
+KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode){
+
+    lstnode* term_pcb_node = (lstnode*) termNode;
+    lstnode* next_pcb_node = (lstnode*) nxtNode;
+    
+    pcb_t *term_p = TurnNodeToPCB(term_pcb_node);
+    pcb_t *next_p = TurnNodeToPCB(next_pcb_node);
+
+
+    emptyregion1pagetable(term_p->usrPtb);
+
+    //When the orphans later exit, you need not save or report their exit status since there is no longer anybody to care.
+    if (NULL != term_p->parent){
+        pcb_t* currParent = TurnNodeToPCB(term_p->parent);
+        if (NULL == currParent->terminatedchild){
+            currParent->terminatedchild = listinit();
+        } 
+        
+        free(term_p->usrPtb);
+        free(term_p->krnlStackPtb); 
+        free(term_p->parent);        
+        free(term_p->children);
+        free(term_p->terminatedchild);
+
+        pcb_t* copyPcb = (pcb_t*) malloc(sizeof(currPcb));
+        memcpy(copyPcb, currPcb, sizeof(currProc));
+
+        insert_tail(TurnPCBToNode(copyPcb),currParent->terminatedchild);
+
+    } 
+
+    free(term_pcb_node);
+
+    TracePrintf(1,"Exit MyTerminateKCS\n");
+
+    //Return a pointer to a kernel context it had earlier saved
+    return &(next_p->kctxt);
+
+}

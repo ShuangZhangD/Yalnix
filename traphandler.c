@@ -166,52 +166,6 @@ void TrapKernel(UserContext *uctxt){
     uctxt->regs[0] = rc;
 }
 
-//Capture TRAP_CLOCK
-//TODO: Implement round-robin process scheduling with CPU quantum per process of 1 clock tick.
-void TrapClock(UserContext *uctxt){
-    TracePrintf(1, "TrapClock called\n");
-
-    // int rc = 0;
-    if (!isemptylist(waitingqueue)){
-
-        lstnode *traverse = waitingqueue->head->next;
-        while(traverse != NULL && traverse->id != -1) {               
-            pcb_t* proc = TurnNodeToPCB(traverse);
-            if(proc->clock > 0){
-                proc->clock--;
-                TracePrintf(1, "proc->clock:%d\n", proc->clock);
-            }
-            if(proc->clock == 0){
-                lstnode* traverseNode = dewaitingqueue(traverse,waitingqueue);
-                enreadyqueue(traverseNode,readyqueue);
-            }
-
-            traverse = traverse->next;   
-        }
-
-        // lstnode *notclock = waitingqueue->head->next;
-        // while(notclock != NULL && notclock->id != -1){
-
-        //     pcb_t* proc = TurnNodeToPCB(notclock);
-        //     if(proc->clock == 0){
-        //         TracePrintf(1, "notclock->clock:%d\n", proc->clock);
-        //         lstnode* notclockNode = dewaitingqueue(notclock,waitingqueue);
-        //         enreadyqueue(notclockNode,readyqueue);
-        //     }
-        //     notclock = notclock->next;
-        // }
-        
-    }
-    if (readyqueue->size  > 1){
-        lstnode *node = dereadyqueue(readyqueue);
-        if (node != currProc){
-            TracePrintf(1, "The first node of readyqueue should be the current process!\n");
-            return;
-        }
-        lstnode *fstnode = firstnode(readyqueue);
-        switchproc(node, fstnode);
-    }
-}
 
 //Capture TRAP_ILLEGAL
 void TrapIllegal(UserContext *uctxt){
@@ -225,8 +179,6 @@ void TrapIllegal(UserContext *uctxt){
 }
 
 
-
-
 //Capture TRAP_MATH
 void TrapMath(UserContext *uctxt){
     /*
@@ -237,42 +189,6 @@ void TrapMath(UserContext *uctxt){
 
 }
 
-//Capture TRAP_TTY_RECEIVE
-//trapttyreceive happens when user complete a input line ending with newline (’\n’) or return (’\r’)
-//ttyreceive copies the new line from terminal tty_id to buf
-void TrapTtyReceive(UserContext *uctxt){
-    /*
-    //Get the input string using TtyReceive
-
-    char[] = str;
-    tty_id = uctxt->code; 
-    whlile (TtyReceive(int tty_id, void *buf, int len) != 0{
-    str+=buf;
-    }
-
-    //Buffer for kernelttyread
-    kernelttyread(str);
-    */
-    int tty_id = uctxt->code;
-
-    TtyReceive(tty_id, Tty[tty_id]->receivebuf, TERMINAL_MAX_LINE);
-}
-
-//Capture TRAP_TTY_TRANSMIT
-//trapttytransmit happens when ttytransmit completes transmission from buf to terminal tty_id
-void TrapTtyTransmit(UserContext *uctxt){
-    /*
-       tty_id = uctxt->code;
-
-    //Complete blocked process 
-    kernelttywrite(int tty_id, void *buf, int len);
-
-    */
-    int tty_id = uctxt->code;
-
-
-
-}
 
 //Capture TRAP_DISK
 void TrapDisk(UserContext *uctxt){
