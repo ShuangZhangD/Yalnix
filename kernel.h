@@ -15,7 +15,6 @@ pcb_t *InitIdleProc(UserContext *uctxt);
 
 lstnode *InitProc();
 
-int kerneldelay(UserContext *uctxt);
 
 int kernelregister(UserContext *uctxt);
 

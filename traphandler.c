@@ -9,6 +9,8 @@
 #include "processmanage.h"
 #include "traphandler.h"
 #include "kernel.h"
+#include "listcontrol.h"
+
 
 extern lstnode* currProc;
 extern dblist* freeframe_list;
@@ -218,6 +220,8 @@ void TrapIllegal(UserContext *uctxt){
 
        Rearrange quque 
      */
+    kernelexit(uctxt);
+
 }
 
 
@@ -228,10 +232,14 @@ void TrapMath(UserContext *uctxt){
     /*
        Abort current process
        Rearrange queue
-     */  
+     */ 
+    kernelexit(uctxt);
+
 }
 
 //Capture TRAP_TTY_RECEIVE
+//trapttyreceive happens when user complete a input line ending with newline (’\n’) or return (’\r’)
+//ttyreceive copies the new line from terminal tty_id to buf
 void TrapTtyReceive(UserContext *uctxt){
     /*
     //Get the input string using TtyReceive
@@ -244,10 +252,14 @@ void TrapTtyReceive(UserContext *uctxt){
 
     //Buffer for kernelttyread
     kernelttyread(str);
-     */
+    */
+    int tty_id = uctxt->code;
+
+    TtyReceive(tty_id, Tty[tty_id]->receivebuf, TERMINAL_MAX_LINE);
 }
 
 //Capture TRAP_TTY_TRANSMIT
+//trapttytransmit happens when ttytransmit completes transmission from buf to terminal tty_id
 void TrapTtyTransmit(UserContext *uctxt){
     /*
        tty_id = uctxt->code;
@@ -255,7 +267,11 @@ void TrapTtyTransmit(UserContext *uctxt){
     //Complete blocked process 
     kernelttywrite(int tty_id, void *buf, int len);
 
-     */
+    */
+    int tty_id = uctxt->code;
+
+
+
 }
 
 //Capture TRAP_DISK

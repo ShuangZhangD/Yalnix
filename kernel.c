@@ -16,35 +16,7 @@ dblist* freeframe_list;
 extern dblist* waitingqueue;
 extern dblist* readyqueue;
 
-int kerneldelay(UserContext *uctxt){
-    TracePrintf(1, "Enter KernelDelay\n");
 
-    pcb_t *proc = TurnNodeToPCB(currProc);
-    proc->uctxt = *uctxt;
-    int clock_ticks = uctxt->regs[0];
-    int rc;
-    if (clock_ticks == 0){
-        return 0;
-    }
-    else if(clock_ticks <= 0){
-        return ERROR;
-    }
-    else{
-        lstnode *node = dereadyqueue(readyqueue);
-        if (node != currProc){
-            TracePrintf(1,"The first node of readyqueue should be the current process!\n");
-            return ERROR;
-        }
-        enwaitingqueue(currProc,waitingqueue);
-        proc->clock = clock_ticks;
-
-        lstnode *fstnode = firstnode(readyqueue);
-        rc = switchproc(node, fstnode);
-        if (rc) {
-            return ERROR;
-        }
-    }
-}
 
 int kernelregister(UserContext *uctxt){
     return ERROR;

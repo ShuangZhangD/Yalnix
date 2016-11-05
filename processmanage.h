@@ -6,7 +6,10 @@
 
 dblist* waitingqueue;
 dblist* readyqueue;
+dblist* blockqueue;
 dblist* terminatedqueue;
+
+int kerneldelay(UserContext *uctxt);
 
 int kernelfork(UserContext *uctxt);
 
@@ -21,6 +24,9 @@ int kernelgetpid();
 void CopyUserProcess (pte_t* parentPtb, pte_t* childPtb);
 
 int switchproc(lstnode* switchOut, lstnode* switchIn);
+
+int switchnext();
+
 // int traverseParent(lstnode *procnode);              //Traverse through its parent
 // int traverseChildren(lstnode *procnode);            //Traverse through its 
 // int apppendProcess(lstnode *procnode, pcb_t *src);     //Add a process in PCB list
@@ -31,6 +37,10 @@ int enreadyqueue(lstnode *procnode,dblist* queue);
 lstnode* dereadyqueue(dblist* queue);
 int enwaitingqueue(lstnode *procnode,dblist* queue);
 lstnode* dewaitingqueue(lstnode* waitingnode,dblist* queue);
+
+int enblockqueue(lstnode* procnode,dblist* queue);
+lstnode* deblockqueue(lstnode* waitingnode,dblist* queue);
+
 
 lstnode* TurnPCBToNode(pcb_t *pcb);
 pcb_t* TurnNodeToPCB(lstnode *node);
