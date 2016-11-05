@@ -26,14 +26,21 @@ int kernelfork(UserContext *uctxt){
     parentPcb->uctxt = *uctxt;
     childPcb->uctxt = *uctxt;
 
+    int childPid = childPcb->pid;
+    pte_t *childPtb = childPcb->usrPtb;
+    pte_t *childKernelPtb = childPcb->krnlStackPtb;
+
+    memcpy((void*) childPcb, (void*) parentPcb, sizeof(parentPcb));
+    childPcb->pid = childPid;
+    childPcb->usrPtb = childPtb;
+    childPcb->krnlStackPtb = childKernelPtb;
+
     // 3.  Copy the current kernel context and content of kernel stack from parent to child 
     rc = KernelContextSwitch(MyCloneKCS, (void*) parentProc, (void*)childProc);
     if (rc){
         TracePrintf(1,"MyCloneKCS in kernelfork failed.\n");
         return ERROR;
     }
-    //4. Copy the page table of parent to the child
-    memcpy((void*) childPcb->usrPtb, (void*) parentPcb->usrPtb, sizeof(pte_t)*MAX_PT_LEN);
 
     //5. Duplicate the content of the frames used by parent to the free frames of a child
     CopyUserProcess(parentPcb->usrPtb, childPcb->usrPtb);
@@ -236,8 +243,12 @@ void CopyUserProcess (pte_t* parentPtb, pte_t* childPtb){
     g_pageTableR0[SAFETY_MARGIN_PAGE].prot = (PROT_READ | PROT_WRITE);
 
     for (i = 0; i < MAX_PT_LEN-1; i++){
-        memcpy( (void*)&childPtb[i], (void*)&parentPtb[i], sizeof(pte_t));
         if (VALID == parentPtb[i].valid){
+            if (0 == (PROT_WRITE & parentPtb[i].prot)){
+                childPtb[i].prot = PROT_WRITE;
+            }
+            
+
             g_pageTableR0[SAFETY_MARGIN_PAGE].pfn = childPtb[i].pfn;
 
             WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_0);
