@@ -447,6 +447,27 @@ KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode)
 
 
     emptyregion1pagetable(term_p->usrPtb);
+
+    //When the orphans later exit, you need not save or report their exit status since there is no longer anybody to care.
+    if (NULL != term_p->parent){
+        pcb_t* currParent = TurnNodeToPCB(term_p->parent);
+        if (NULL == currParent->terminatedchild){
+            currParent->terminatedchild = listinit();
+        } 
+        
+        free(term_p->usrPtb);
+        free(term_p->krnlStackPtb); 
+        free(term_p->parent);        
+        free(term_p->children);
+        free(term_p->terminatedchild);
+
+        pcb_t* copyPcb = (pcb_t*) malloc(sizeof(currPcb));
+        memcpy(copyPcb, currPcb, sizeof(currProc));
+
+        insert_tail(TurnPCBToNode(copyPcb),currParent->terminatedchild);
+
+    } 
+
     free(term_pcb_node);
 
     TracePrintf(1,"Exit MyTerminateKCS\n");

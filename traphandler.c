@@ -175,7 +175,6 @@ void TrapIllegal(UserContext *uctxt){
 }
 
 
-
 //Capture TRAP_MATH
 void TrapMath(UserContext *uctxt){
     /*

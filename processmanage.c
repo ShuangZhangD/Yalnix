@@ -95,30 +95,13 @@ int kernelexit(UserContext *uctxt){
 
     // If the initProcess Exit, halt the program
     if(currPcb->pid == 2) {
-        terminateProcess(currProc);
+        free(currProc);
         Halt();
         return ERROR;
     }
 
-    //When the orphans later exit, you need not save or report their exit status since there is no longer anybody to care.
-    if (NULL != currPcb->parent){
-        pcb_t* currParent = TurnNodeToPCB(currPcb->parent);
-        if (NULL == currParent->terminatedchild){
-            currParent->terminatedchild = listinit();
-        } 
-        
-        currPcb->procState = TERMINATED;
-        free(currPcb->usrPtb);
-        free(currPcb->krnlStackPtb); 
-        free(currPcb->parent);        
-        free(currPcb->children);
-        free(currPcb->terminatedchild);
+    terminateProcess(currProc);
 
-        pcb_t* copyPcb = (pcb_t*) malloc(sizeof(currPcb));
-        memcpy(copyPcb, currPcb, sizeof(currProc));
-
-        insert_tail(TurnPCBToNode(copyPcb),currParent->terminatedchild);
-    } 
     // If it has children, they should run normally but without a parent
     lstnode* traverse = currPcb->children->head;
     while(traverse != NULL && traverse->id != -1) {
@@ -129,7 +112,7 @@ int kernelexit(UserContext *uctxt){
     terminateProcess(currProc);
     return ERROR;
     
-    // 
+
     // if(proc->parent != NULL){
     //     pcb_t* pcb = (pcb_t *) proc->parent->content;
     //     pcb->terminatedchild = listinit();
