@@ -34,11 +34,11 @@ KERNEL_INCS = kernel.h traphandler.h listcontrol.h processmanage.h io.h lock.h p
 
 
 #List all user programs here.
-USER_APPS = init testbrk bigstack
+USER_APPS = init testbrk bigstack testfork
 #List all user program source files here.  SHould be the same as the previous list, with ".c" added to each file
-USER_SRCS = init.c testbrk.c bigstack.c
+USER_SRCS = init.c testbrk.c bigstack.c testfork.c
 #List the objects to be formed form the user  source files here.  Should be the same as the prvious list, replacing ".c" with ".o"
-USER_OBJS = init.o testbrk.o bigstack.o
+USER_OBJS = init.o testbrk.o bigstack.o testfork.o
 #List all of the header files necessary for your user programs
 USER_INCS = 
 

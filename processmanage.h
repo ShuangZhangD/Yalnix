@@ -18,6 +18,10 @@ int kernelwait(UserContext *uctxt);
 
 int kernelgetpid();
 
+int kerneldelay(UserContext *uctxt);
+
+void TrapClock(UserContext *uctxt);
+
 void CopyUserProcess (pte_t* parentPtb, pte_t* childPtb);
 
 int switchproc(lstnode* switchOut, lstnode* switchIn);
@@ -35,5 +39,4 @@ lstnode* dewaitingqueue(lstnode* waitingnode,dblist* queue);
 lstnode* TurnPCBToNode(pcb_t *pcb);
 pcb_t* TurnNodeToPCB(lstnode *node);
 
-//Temp
 void terminateProcess(lstnode *procnode);

@@ -177,6 +177,71 @@ int kernelgetpid(){
     return TurnNodeToPCB(currProc)->pid;
 }
 
+//Capture TRAP_CLOCK
+//TODO: Implement round-robin process scheduling with CPU quantum per process of 1 clock tick.
+void TrapClock(UserContext *uctxt){
+    TracePrintf(1, "TrapClock called\n");
+
+    // int rc = 0;
+    if (!isemptylist(waitingqueue)){
+
+        lstnode *traverse = waitingqueue->head->next;
+        while(traverse != NULL && traverse->id != -1) {               
+            pcb_t* proc = TurnNodeToPCB(traverse);
+            if(proc->clock > 0){
+                proc->clock--;
+                TracePrintf(1, "proc->clock:%d\n", proc->clock);
+            }
+            if(proc->clock == 0){
+                lstnode* traverseNode = dewaitingqueue(traverse,waitingqueue);
+                enreadyqueue(traverseNode,readyqueue);
+            }
+
+            traverse = traverse->next;   
+        }
+        
+    }
+    if (readyqueue->size  > 1){
+        lstnode *node = dereadyqueue(readyqueue);
+        if (node != currProc){
+            TracePrintf(1, "The first node of readyqueue should be the current process!\n");
+            return;
+        }
+        lstnode *fstnode = firstnode(readyqueue);
+        switchproc(node, fstnode);
+    }
+}
+
+int kerneldelay(UserContext *uctxt){
+    TracePrintf(1, "Enter KernelDelay\n");
+
+    pcb_t *proc = TurnNodeToPCB(currProc);
+    proc->uctxt = *uctxt;
+    int clock_ticks = uctxt->regs[0];
+    int rc;
+    if (clock_ticks == 0){
+        return 0;
+    }
+    else if(clock_ticks <= 0){
+        return ERROR;
+    }
+    else{
+        lstnode *node = dereadyqueue(readyqueue);
+        if (node != currProc){
+            TracePrintf(1,"The first node of readyqueue should be the current process!\n");
+            return ERROR;
+        }
+        enwaitingqueue(currProc,waitingqueue);
+        proc->clock = clock_ticks;
+
+        lstnode *fstnode = firstnode(readyqueue);
+        rc = switchproc(node, fstnode);
+        if (rc) {
+            return ERROR;
+        }
+    }
+}
+
 /*
     SYSCALL END
 */
@@ -184,24 +249,25 @@ int kernelgetpid(){
 void CopyUserProcess (pte_t* parentPtb, pte_t* childPtb){
     int i;
     //Use a safety margin page as a buffer of copying memory
-    g_pageTableR0[SAFETY_MARGIN_PAGE].valid = 1;
+    g_pageTableR0[SAFETY_MARGIN_PAGE].valid = VALID;
     g_pageTableR0[SAFETY_MARGIN_PAGE].prot = (PROT_READ | PROT_WRITE);
 
     for (i = 0; i < MAX_PT_LEN-1; i++){
+        memcpy( (void*)&childPtb[i], (void*)&parentPtb[i], sizeof(pte_t));
         if (VALID == parentPtb[i].valid){
             g_pageTableR0[SAFETY_MARGIN_PAGE].pfn = childPtb[i].pfn;
 
             WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_0);
 
             unsigned int desAddr = SAFETY_MARGIN_PAGE << PAGESHIFT;
-            unsigned int srcAddr = (parentPtb[i].pfn) << PAGESHIFT;
+            unsigned int srcAddr = i << PAGESHIFT;
 
             memcpy((void *)desAddr, (void *)srcAddr, PAGESIZE);
         }
     }
   
     //Restore the buffer.
-    g_pageTableR0[SAFETY_MARGIN_PAGE].valid = 0;
+    g_pageTableR0[SAFETY_MARGIN_PAGE].valid = INVALID;
     g_pageTableR0[SAFETY_MARGIN_PAGE].prot = PROT_NONE;
     g_pageTableR0[SAFETY_MARGIN_PAGE].pfn = UNALLOCATED;
 
@@ -211,15 +277,21 @@ void CopyUserProcess (pte_t* parentPtb, pte_t* childPtb){
 int switchproc(lstnode* switchOut, lstnode* switchIn)
 {
         TracePrintf(1,"Enter switchproc.\n");
-        int rc;
-        if (!isemptylist(readyqueue)){
+        int rc = 0;
+        
+        if (TERMINATED ==  TurnNodeToPCB(switchOut)->procState){
+            rc = KernelContextSwitch(MyTerminateKCS, (void *) switchOut, (void *) switchIn);
+            if (rc) TracePrintf(1,"MyTerminateKCS in switchproc failed!\n");  
+
+        } else if (!isemptylist(readyqueue)){
             rc = KernelContextSwitch(MyTrueKCS, (void *) switchOut, (void *) switchIn);
-            if (rc) TracePrintf(1,"KernelContextSwitch in switchproc failed!\n");
-            return 0;
+            if (rc) TracePrintf(1,"MyTrueKCS in switchproc failed!\n");
         }
         else{
-            return 1;
+            rc =  1;
         }	
+
+        return rc;
 }
 
 void terminateProcess(lstnode *procnode){
@@ -234,10 +306,7 @@ void terminateProcess(lstnode *procnode){
     }
 
     lstnode *fstnode = firstnode(readyqueue);
-    switchproc(node, fstnode);
-
-    emptyregion1pagetable(proc->usrPtb);
-    free(procnode);                      
+    switchproc(procnode, fstnode);
 
     //TODO Delete process or relocate process pool
     return;

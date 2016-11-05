@@ -16,36 +16,6 @@ dblist* freeframe_list;
 extern dblist* waitingqueue;
 extern dblist* readyqueue;
 
-int kerneldelay(UserContext *uctxt){
-    TracePrintf(1, "Enter KernelDelay\n");
-
-    pcb_t *proc = TurnNodeToPCB(currProc);
-    proc->uctxt = *uctxt;
-    int clock_ticks = uctxt->regs[0];
-    int rc;
-    if (clock_ticks == 0){
-        return 0;
-    }
-    else if(clock_ticks <= 0){
-        return ERROR;
-    }
-    else{
-        lstnode *node = dereadyqueue(readyqueue);
-        if (node != currProc){
-            TracePrintf(1,"The first node of readyqueue should be the current process!\n");
-            return ERROR;
-        }
-        enwaitingqueue(currProc,waitingqueue);
-        proc->clock = clock_ticks;
-
-        lstnode *fstnode = firstnode(readyqueue);
-        rc = switchproc(node, fstnode);
-        if (rc) {
-            return ERROR;
-        }
-    }
-}
-
 int kernelregister(UserContext *uctxt){
     return ERROR;
 }
@@ -393,7 +363,7 @@ void CopyKernelStack (pte_t* pageTable){
     }
   
     //Restore the buffer.
-    g_pageTableR0[SAFETY_MARGIN_PAGE].valid = 0;
+    g_pageTableR0[SAFETY_MARGIN_PAGE].valid = INVALID;
     g_pageTableR0[SAFETY_MARGIN_PAGE].prot = PROT_NONE;
     g_pageTableR0[SAFETY_MARGIN_PAGE].pfn = UNALLOCATED;
 
@@ -429,13 +399,13 @@ KernelContext *MyCloneKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
 
 
 // when someone calls KernelContextSwitch, it might come to here.
-KernelContext *MyTrueKCS(KernelContext *kc_in,void *curr,void *next){
+KernelContext *MyTrueKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
     TracePrintf(1,"Enter MyTrueKCS\n");
 
     int i ,stackInx = 0;
 
-    lstnode* curr_pcb_node = (lstnode*) curr;
-    lstnode* next_pcb_node = (lstnode*) next;
+    lstnode* curr_pcb_node = (lstnode*) curNode;
+    lstnode* next_pcb_node = (lstnode*) nxtNode;
     
     pcb_t *cur_p = TurnNodeToPCB(curr_pcb_node);
     pcb_t *next_p = TurnNodeToPCB(next_pcb_node);
@@ -467,3 +437,21 @@ KernelContext *MyTrueKCS(KernelContext *kc_in,void *curr,void *next){
     return &(next_p->kctxt);
 }
 
+KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode){
+
+    lstnode* term_pcb_node = (lstnode*) termNode;
+    lstnode* next_pcb_node = (lstnode*) nxtNode;
+    
+    pcb_t *term_p = TurnNodeToPCB(term_pcb_node);
+    pcb_t *next_p = TurnNodeToPCB(next_pcb_node);
+
+
+    emptyregion1pagetable(term_p->usrPtb);
+    free(term_pcb_node);
+
+    TracePrintf(1,"Exit MyTerminateKCS\n");
+
+    //Return a pointer to a kernel context it had earlier saved
+    return &(next_p->kctxt);
+
+}
