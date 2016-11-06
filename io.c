@@ -6,6 +6,7 @@
 extern lstnode* currProc;
 
 int kernelttyread(UserContext *uctxt){
+	TracePrintf(1,"Enter kernelttyread\n");
 	int tty_id = uctxt->regs[0];
 	void *buf = (void*) uctxt->regs[1];
 	int len = uctxt->regs[2];
@@ -41,7 +42,7 @@ int kernelttyread(UserContext *uctxt){
 			int leftbuf[leftbuflen];
 			memcpy(leftbuf, &tty[tty_id]->receivebuf[len], leftbuflen);
 			memcpy(tty[tty_id]->receivebuf, leftbuf, leftbuflen);
-			receivelen = 0;
+			receivelen = leftbuflen;
 			lstnode* node = dereaderwaitingqueue(tty[tty_id]->readerwaiting);
 			enreadyqueue(node, readyqueue);
 
@@ -58,12 +59,10 @@ int kernelttyread(UserContext *uctxt){
 		}
 
 	}
-
-
-
 }
 
 int kernelttywrite(UserContext *uctxt){
+	TracePrintf(1,"Enter kernelttywrite\n");
 	int tty_id = uctxt->regs[0];
 	void *buf = (void*) uctxt->regs[1];
 	int len = uctxt->regs[2];
@@ -78,15 +77,17 @@ int kernelttywrite(UserContext *uctxt){
 	}
 
 	enwriterwaitingqueue(currProc, tty[tty_id]->writerwaiting);
-	if (!(firstnode(tty[tty_id]->readerwaiting) == currProc))
+	if (!(firstnode(tty[tty_id]->writerwaiting) == currProc))
 	{
-		enreaderwaitingqueue(currProc,tty[tty_id]->readerwaiting);
+		enwriterwaitingqueue(currProc,tty[tty_id]->writerwaiting);
 		switchproc();
 	}	
 
 	if (len < TERMINAL_MAX_LINE)
-	{
+	{	
+		TracePrintf(1,"Calling TtyTransmit\n");
 		TtyTransmit(tty_id, buf, len);
+		TracePrintf(1,"Called TtyTransmit\n");
 		lstnode *node = dewriterwaitingqueue(tty[tty_id]->writerwaiting);
 		enreadyqueue(node, readyqueue);
 
@@ -102,12 +103,13 @@ int kernelttywrite(UserContext *uctxt){
 		enreadyqueue(node, readyqueue);
 
 	}
-
+	TracePrintf(1,"Exit kernelttywrite\n");
 	return len;
 }
 
 //Capture TRAP_TTY_RECEIVE
 void TrapTtyReceive(UserContext *uctxt){
+    TracePrintf(1,"Enter TrapTtyReceive\n");
     /*
     //Get the input string using TtyReceive
 
@@ -122,7 +124,7 @@ void TrapTtyReceive(UserContext *uctxt){
      */
 	int tty_id = uctxt->code;
 	receivelen = TtyReceive(tty_id, tty[tty_id]->receivebuf, TERMINAL_MAX_LINE);
-
+	TracePrintf(1, "receivelen=%d\n", receivelen);
 	if(receivelen >0)
 	{
 		if(!isemptylist(tty[tty_id]->readerwaiting))
@@ -134,11 +136,12 @@ void TrapTtyReceive(UserContext *uctxt){
 
 	}
 	switchproc();
-
+    TracePrintf(1,"Exit TrapTtyReceive\n");
 }
 
 //Capture TRAP_TTY_TRANSMIT
 void TrapTtyTransmit(UserContext *uctxt){
+    TracePrintf(1,"Enter TrapTtyTransmit\n");
     /*
        tty_id = uctxt->code;
 

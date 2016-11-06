@@ -34,7 +34,7 @@ lstnode* firstnode(dblist* list)
 {
 	if(isemptylist(list))
 	{
-		TracePrintf(1, "%s\n", "error\n");
+		TracePrintf(1, "Error! The list is empty, cannot find first node!\n");
 		return NULL;
 	}
 	else{
