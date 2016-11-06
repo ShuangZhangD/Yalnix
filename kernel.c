@@ -7,9 +7,11 @@
 //Global Variables
 int m_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)
 int g_pid = 1;
+int g_isInitial = 1;
 int const g_pageNumOfStack = KERNEL_STACK_MAXSIZE / PAGESIZE;
 int const g_kStackStPage = KERNEL_STACK_BASE >> PAGESHIFT;
 int const g_kStackEdPage = (KERNEL_STACK_LIMIT - 1) >> PAGESHIFT;
+
 lstnode* currProc;
 dblist* freeframe_list;
 
@@ -188,7 +190,7 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     *uctxt = TurnNodeToPCB(currProc)->uctxt;
     TracePrintf(1,"Exit KernelStart.\n");
     return;
-}
+}   
 
 //  =========================================================================
 
@@ -418,7 +420,6 @@ KernelContext *MyTrueKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
     //Copy the kernel context to current process's pcb
     cur_p->kctxt = *kc_in;
 
-
     //Remember to change page table entries for kernel stack
     for (i = g_kStackStPage; i <= g_kStackEdPage; i++){
         g_pageTableR0[i].pfn = next_p->krnlStackPtb[stackInx].pfn;
@@ -454,9 +455,8 @@ KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode)
     pcb_t *term_p = TurnNodeToPCB(term_pcb_node);
     pcb_t *next_p = TurnNodeToPCB(next_pcb_node);
 
-    traverselist(readyqueue);
 /////////////////
-    CopyKernelStack(next_p->krnlStackPtb);
+    // CopyKernelStack(next_p->krnlStackPtb);
     //Remember to change page table entries for kernel stack
     for (i = g_kStackStPage; i <= g_kStackEdPage; i++){
         g_pageTableR0[i].pfn = next_p->krnlStackPtb[stackInx].pfn;
@@ -501,17 +501,12 @@ KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode)
         pcb_t* copyPcb = (pcb_t*) malloc(sizeof(pcb_t));
         memcpy(copyPcb, term_p, sizeof(pcb_t));
 
-
-        traverselist(readyqueue);//JASON
-        traverselist(currParent->terminatedchild);
-        
         remove_node(copyPcb->pid, currParent->children);
 
         traverselist(readyqueue);
-        traverselist(currParent->terminatedchild);
-
-        insert_tail(TurnPCBToNode(copyPcb),currParent->terminatedchild);
-
+        lstnode *copyNode = TurnPCBToNode(copyPcb);
+        insert_tail(copyNode,currParent->terminatedchild);
+        traverselist(readyqueue);
     } 
 
     free(term_pcb_node);
@@ -528,7 +523,7 @@ KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode)
 }
 
 
-KernelContext *MyTestKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
+KernelContext *MyForkKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
     TracePrintf(1, "Enter MyTestKCS\n");
 
     int i, stackInx = 0;

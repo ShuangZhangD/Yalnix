@@ -47,10 +47,8 @@ int kernelfork(UserContext *uctxt){
     CopyUserProcess(parentPcb->usrPtb, childPcb->usrPtb);
 
     //6. Put child into parent's children queue
-    if (parentPcb->children == NULL){
-        parentPcb->children = listinit();
-    } 
-    insert_tail(childProc,parentPcb->children);
+    lstnode* childNode = TurnPCBToNode(childPcb);
+    insert_tail(childNode,parentPcb->children);
 
     //7. Assign the address of the parent process to the child 
     childPcb->parent = parentProc;
@@ -62,12 +60,11 @@ int kernelfork(UserContext *uctxt){
     WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_ALL);
 
     // 3.  Copy the current kernel context and content of kernel stack from parent to child 
-    rc = KernelContextSwitch(MyTestKCS, (void*) parentProc, (void*)childProc);
+    rc = KernelContextSwitch(MyForkKCS, (void*) parentProc, (void*)childProc);
     if (rc){
         TracePrintf(1,"MyCloneKCS in kernelfork failed.\n");
         return ERROR;
     }
-
 
     TracePrintf(1,"parent:%p, child:%p\n", parentPcb->usrPtb, childPcb->usrPtb);
 
@@ -108,8 +105,6 @@ int kernelexit(UserContext *uctxt){
     pcb_t* currPcb = TurnNodeToPCB(currProc);
     currPcb->exitstatus = status;
 
-    traverselist(readyqueue);
-
     // If the initProcess Exit, halt the program
     if(currPcb->pid == 2) {
         free(currProc);
@@ -138,9 +133,7 @@ int kernelwait(UserContext *uctxt){
     }
 
     if (isemptylist(proc->terminatedchild)){
-        traverselist(readyqueue);
         enblockqueue(currProc,blockqueue);
-        traverselist(readyqueue);
         switchproc();        
     }
 
@@ -155,36 +148,6 @@ int kernelwait(UserContext *uctxt){
 
     return ERROR;
 }
-
-// int kerneldelay(UserContext *uctxt){
-//     TracePrintf(1, "Enter KernelDelay\n");
-
-//     pcb_t *proc = TurnNodeToPCB(currProc);
-//     proc->uctxt = *uctxt;
-//     int clock_ticks = uctxt->regs[0];
-//     int rc;
-//     if (clock_ticks == 0){
-//         return 0;
-//     }
-//     else if(clock_ticks <= 0){
-//         return ERROR;
-//     }
-//     else{
-//         lstnode *node = dereadyqueue(readyqueue);
-//         if (node != currProc){
-//             TracePrintf(1,"The first node of readyqueue should be the current process!\n");
-//             return ERROR;
-//         }
-//         enwaitingqueue(currProc,waitingqueue);
-//         proc->clock = clock_ticks;
-
-//         lstnode *fstnode = firstnode(readyqueue);
-//         rc = switchproc(node, fstnode);
-//         if (rc) {
-//             return ERROR;
-//         }
-//     }
-// }
 
 int kernelgetpid(){
     return TurnNodeToPCB(currProc)->pid;
