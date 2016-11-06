@@ -3,6 +3,7 @@
 #include "listcontrol.h"
 #include "processmanage.h"
 #include "loadprogram.h"
+#include "io.h"
 
 //Global Variables
 int m_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)
@@ -15,6 +16,7 @@ dblist* freeframe_list;
 
 extern dblist* waitingqueue;
 extern dblist* readyqueue;
+extern Tty* tty[NUM_TERMINALS];
 
 int kernelregister(UserContext *uctxt){
     return ERROR;
@@ -139,6 +141,14 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     //init Queue
     waitingqueue = listinit();
     readyqueue = listinit();
+    for (i = 0; i < NUM_TERMINALS; i++)
+    {
+        tty[i] = (Tty*) malloc(sizeof(Tty));
+        tty[i]->readerwaiting = listinit();
+        tty[i]->writerwaiting = listinit();
+        //tty[i]->receivebuf = (char*) malloc(sizeof(char) * TERMINAL_MAX_LINE);
+        //tty[i]->transmitbuf = (char*) malloc(sizeof(char) * TERMINAL_MAX_LINE);
+    }
 
     //Initialize Idle Process    
     TracePrintf(1, "Init pcb.\n");

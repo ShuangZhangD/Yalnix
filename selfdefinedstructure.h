@@ -46,5 +46,12 @@ typedef struct ProcessControlBlock{
     int exitstatus;
 } pcb_t;
 
+typedef struct Terminal{
+    dblist* readerwaiting;
+    dblist* writerwaiting;
+    char transmitbuf[TERMINAL_MAX_LINE];
+    char receivebuf[TERMINAL_MAX_LINE];
+} Tty;
+
 typedef void (*trapvector_t) (UserContext*);
 #endif 

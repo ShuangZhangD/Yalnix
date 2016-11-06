@@ -1,16 +1,12 @@
 #include "selfdefinedstructure.h"
+#include "listcontrol.h"
+#include "processmanage.h"
 
 int kernelttywrite(UserContext *uctxt);
 int kernelttywrite(UserContext *uctxt);
 
-typedef struct Terminal{
-	dblist* reader;
-	dblist* writer;
-	char* transmitbuf;
-	char* receivebuf;
-} tty;
-
-tty* Tty[NUM_TERMINALS];
+Tty* tty[NUM_TERMINALS];
+int receivelen;
 
 //Capture TRAP_TTY_RECEIVE
 void TrapTtyReceive(UserContext *uctxt);

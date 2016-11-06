@@ -145,13 +145,14 @@ int kernelwait(UserContext *uctxt){
         return removeproc->pid;
     }
     else{
+        enblockqueue(currProc,blockqueue);
         //TODO Block Queue
         lstnode *node = dereadyqueue(readyqueue);
         if (node != currProc){
             TracePrintf(1,"The first node of readyqueue should be the current process!\n");
             return ERROR;
         }
-        enblockqueue(currProc,blockqueue);
+
         lstnode *fstnode = firstnode(readyqueue);
         switchproc(node, fstnode);
     }
@@ -312,6 +313,11 @@ int switchproc(lstnode* switchOut, lstnode* switchIn)
 int switchnext()
 {
     lstnode *node = dereadyqueue(readyqueue);
+    if (node != currProc){
+        TracePrintf(1,"The first node of readyqueue should be the current process!\n");
+        return ERROR;
+    }
+
     lstnode *fstnode = firstnode(readyqueue);
     switchproc(node, fstnode);
 }
@@ -396,6 +402,51 @@ lstnode* deblockqueue(lstnode* waitingnode,dblist* queue)
     TracePrintf(1,"Exit dewaitingqueue\n");     
     return remove_node(TurnNodeToPCB(waitingnode)->pid,queue);
 }
+
+int enreaderwaitingqueue(lstnode* procnode,dblist* queue)
+{
+    TracePrintf(1, "Enter enwaitingqueue\n");    
+    pcb_t* proc = TurnNodeToPCB(procnode);
+
+    if (proc == NULL){
+        return ERROR;
+    }
+    proc->procState = WAITING;
+    insert_tail(procnode, queue);
+
+    TracePrintf(1, "Exit enwaitingqueue\n"); 
+    return 0;
+}
+
+lstnode* dereaderwaitingqueue(lstnode* waitingnode,dblist* queue)
+{
+    TracePrintf(1,"Enter dewaitingqueue\n");
+    TracePrintf(1,"Exit dewaitingqueue\n");     
+    return remove_head(queue);
+}
+
+int enwriterwaitingqueue(lstnode* procnode,dblist* queue)
+{
+    TracePrintf(1, "Enter enwaitingqueue\n");    
+    pcb_t* proc = TurnNodeToPCB(procnode);
+
+    if (proc == NULL){
+        return ERROR;
+    }
+    proc->procState = WAITING;
+    insert_tail(procnode, queue);
+
+    TracePrintf(1, "Exit enwaitingqueue\n"); 
+    return 0;
+}
+
+lstnode* dewriterwaitingqueue(lstnode* waitingnode,dblist* queue)
+{
+    TracePrintf(1,"Enter dewaitingqueue\n");
+    TracePrintf(1,"Exit dewaitingqueue\n");     
+    return remove_head(queue);
+}
+
 
 lstnode* TurnPCBToNode(pcb_t *pcb){
 
