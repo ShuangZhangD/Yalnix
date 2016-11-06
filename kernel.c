@@ -143,7 +143,7 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     //init Queue
     waitingqueue = listinit();
     readyqueue = listinit();
-    
+
     for (i = 0; i < NUM_TERMINALS; i++)
     {
         tty[i] = (Tty*) malloc(sizeof(Tty));
@@ -458,6 +458,7 @@ KernelContext *MyTrueKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
 }
 
 KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode){
+    
     int i, stackInx = 0;
 
     lstnode* term_pcb_node = (lstnode*) termNode;
@@ -502,22 +503,17 @@ KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode)
             TracePrintf(1,"node->id:%d\n", node->id);
             enreadyqueue(node,readyqueue);       
         }
+
+        lstnode* node = remove_node(term_p->pid, currParent->children);
         
         free(term_p->usrPtb);
         free(term_p->krnlStackPtb); 
-        free(term_p->parent);        
         free(term_p->children);
         free(term_p->terminatedchild);
 
-        pcb_t* copyPcb = (pcb_t*) malloc(sizeof(pcb_t));
-        memcpy(copyPcb, term_p, sizeof(pcb_t));
+        lstnode* testnode = TurnPCBToNode(term_p);
 
-        remove_node(copyPcb->pid, currParent->children);
-
-        traverselist(readyqueue);
-        lstnode *copyNode = TurnPCBToNode(copyPcb);
-        insert_tail(copyNode,currParent->terminatedchild);
-        traverselist(readyqueue);
+        insert_tail(testnode,currParent->terminatedchild);
     } 
 
     free(term_pcb_node);

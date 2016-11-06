@@ -8,7 +8,4 @@ include/
 lib/
 sample/
 yalnix
-init*
-bigstack*
-testbrk*
 

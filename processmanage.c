@@ -107,7 +107,6 @@ int kernelexit(UserContext *uctxt){
 
     // If the initProcess Exit, halt the program
     if(currPcb->pid == 2) {
-        free(currProc);
         Halt();
         return ERROR;
     }
@@ -448,8 +447,11 @@ lstnode* dewriterwaitingqueue(dblist* queue)
 
 
 lstnode* TurnPCBToNode(pcb_t *pcb){
-
+    traverselist(readyqueue);
+    TracePrintf(1, "pid = %d\n", pcb->pid);
     lstnode *node = nodeinit(pcb->pid);
+    TracePrintf(1, "Segmentation line ================\n");
+    traverselist(readyqueue);
     node->content = (void *) pcb;
 
     return node;
