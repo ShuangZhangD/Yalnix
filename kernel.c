@@ -8,9 +8,11 @@
 //Global Variables
 int m_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)
 int g_pid = 1;
+int g_isInitial = 1;
 int const g_pageNumOfStack = KERNEL_STACK_MAXSIZE / PAGESIZE;
 int const g_kStackStPage = KERNEL_STACK_BASE >> PAGESHIFT;
 int const g_kStackEdPage = (KERNEL_STACK_LIMIT - 1) >> PAGESHIFT;
+
 lstnode* currProc;
 dblist* freeframe_list;
 
@@ -141,6 +143,7 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     //init Queue
     waitingqueue = listinit();
     readyqueue = listinit();
+    
     for (i = 0; i < NUM_TERMINALS; i++)
     {
         tty[i] = (Tty*) malloc(sizeof(Tty));
@@ -149,6 +152,7 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
         //tty[i]->receivebuf = (char*) malloc(sizeof(char) * TERMINAL_MAX_LINE);
         //tty[i]->transmitbuf = (char*) malloc(sizeof(char) * TERMINAL_MAX_LINE);
     }
+    blockqueue = listinit();
 
     //Initialize Idle Process    
     TracePrintf(1, "Init pcb.\n");
@@ -182,7 +186,7 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
         return;
     }
 
-    enreadyqueue(initProc, readyqueue);
+    // enreadyqueue(initProc, readyqueue);
     enreadyqueue(idleProc, readyqueue);
 
     currProc = initProc;
@@ -197,7 +201,7 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     *uctxt = TurnNodeToPCB(currProc)->uctxt;
     TracePrintf(1,"Exit KernelStart.\n");
     return;
-}
+}   
 
 //  =========================================================================
 
@@ -310,6 +314,9 @@ lstnode *InitProc(){
         proc->krnlStackPtb[stackInx].pfn = first->id;
     }
 
+    proc->children = listinit();
+    proc->terminatedchild = listinit();
+
     return TurnPCBToNode(proc);
 }
 
@@ -404,6 +411,7 @@ KernelContext *MyCloneKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
     cur_pcb->kctxt = *kc_in;
     nxt_pcb->kctxt = *kc_in;
 
+    TracePrintf(1, "Exit MyCloneKCS\n");
     return kc_in;
 }
 
@@ -423,7 +431,6 @@ KernelContext *MyTrueKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
     //Copy the kernel context to current process's pcb
     cur_p->kctxt = *kc_in;
 
-
     //Remember to change page table entries for kernel stack
     for (i = g_kStackStPage; i <= g_kStackEdPage; i++){
         g_pageTableR0[i].pfn = next_p->krnlStackPtb[stackInx].pfn;
@@ -440,7 +447,10 @@ KernelContext *MyTrueKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
     if (READY == cur_p->procState){
         enreadyqueue(curr_pcb_node ,readyqueue);
     }
-    currProc = next_pcb_node; 
+
+    lstnode* node = dereadyqueue(readyqueue);
+    if (node != next_pcb_node) TracePrintf(1, "KernelContextSwitch Error!");
+    currProc = node; 
 
     TracePrintf(1,"Exit MyTrueKCS\n");
     //Return a pointer to a kernel context it had earlier saved
@@ -448,6 +458,7 @@ KernelContext *MyTrueKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
 }
 
 KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode){
+    int i, stackInx = 0;
 
     lstnode* term_pcb_node = (lstnode*) termNode;
     lstnode* next_pcb_node = (lstnode*) nxtNode;
@@ -455,15 +466,42 @@ KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode)
     pcb_t *term_p = TurnNodeToPCB(term_pcb_node);
     pcb_t *next_p = TurnNodeToPCB(next_pcb_node);
 
+/////////////////
+    // CopyKernelStack(next_p->krnlStackPtb);
+    //Remember to change page table entries for kernel stack
+    for (i = g_kStackStPage; i <= g_kStackEdPage; i++){
+        g_pageTableR0[i].pfn = next_p->krnlStackPtb[stackInx].pfn;
+        stackInx++;
+    }
 
-    emptyregion1pagetable(term_p->usrPtb);
+    WriteRegister(REG_PTBR1, (unsigned int) next_p->usrPtb);
+    WriteRegister(REG_PTLR1, (unsigned int) MAX_PT_LEN);
+    //Flush All TLB because 1. Kernel Stack Mapping has changed
+    WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_ALL);
+
+/////////////////
+
+
+    emptyregion1pagetable(term_p);
+
+    // If it has children, they should run normally but without a parent
+    lstnode* traverse = term_p->children->head->next;
+    while(traverse != NULL && traverse->id != -1) {
+        pcb_t* proc = TurnNodeToPCB(traverse);
+        proc->parent = NULL;             
+        traverse = traverse->next;   
+    }
 
     //When the orphans later exit, you need not save or report their exit status since there is no longer anybody to care.
     if (NULL != term_p->parent){
         pcb_t* currParent = TurnNodeToPCB(term_p->parent);
-        if (NULL == currParent->terminatedchild){
-            currParent->terminatedchild = listinit();
-        } 
+
+        if (NULL != search_node(currParent->pid,blockqueue)){
+            lstnode* node = deblockqueue(term_p->parent,blockqueue);
+            TracePrintf(1,"term_p->parent->id:%d\n", term_p->parent->id);
+            TracePrintf(1,"node->id:%d\n", node->id);
+            enreadyqueue(node,readyqueue);       
+        }
         
         free(term_p->usrPtb);
         free(term_p->krnlStackPtb); 
@@ -471,18 +509,50 @@ KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode)
         free(term_p->children);
         free(term_p->terminatedchild);
 
-        pcb_t* copyPcb = (pcb_t*) malloc(sizeof(currPcb));
-        memcpy(copyPcb, currPcb, sizeof(currProc));
+        pcb_t* copyPcb = (pcb_t*) malloc(sizeof(pcb_t));
+        memcpy(copyPcb, term_p, sizeof(pcb_t));
 
-        insert_tail(TurnPCBToNode(copyPcb),currParent->terminatedchild);
+        remove_node(copyPcb->pid, currParent->children);
 
+        traverselist(readyqueue);
+        lstnode *copyNode = TurnPCBToNode(copyPcb);
+        insert_tail(copyNode,currParent->terminatedchild);
+        traverselist(readyqueue);
     } 
 
     free(term_pcb_node);
+
+    lstnode* node = dereadyqueue(readyqueue);
+    if (node != next_pcb_node) TracePrintf(1, "KernelContextSwitch Error!");
+    currProc = node;
 
     TracePrintf(1,"Exit MyTerminateKCS\n");
 
     //Return a pointer to a kernel context it had earlier saved
     return &(next_p->kctxt);
 
+}
+
+
+KernelContext *MyForkKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
+    TracePrintf(1, "Enter MyTestKCS\n");
+
+    int i, stackInx = 0;
+
+    lstnode* cur_node = (lstnode*) curNode;
+    lstnode* nxt_node = (lstnode*) nxtNode;
+    pcb_t *cur_pcb = TurnNodeToPCB(cur_node);
+    pcb_t *nxt_pcb = TurnNodeToPCB(nxt_node);
+
+    CopyKernelStack(nxt_pcb->krnlStackPtb);
+
+    //Flush All TLB because 1. Kernel Stack Mapping has changed
+    WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_0);
+
+    //Copy the kernel context to current process's pcb
+    cur_pcb->kctxt = *kc_in;
+    nxt_pcb->kctxt = *kc_in;
+
+    TracePrintf(1, "Exit MyTestKCS\n");
+    return kc_in;
 }

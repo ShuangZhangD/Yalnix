@@ -7,7 +7,6 @@
 dblist* waitingqueue;
 dblist* readyqueue;
 dblist* blockqueue;
-dblist* terminatedqueue;
 
 int kerneldelay(UserContext *uctxt);
 
@@ -25,9 +24,11 @@ int kerneldelay(UserContext *uctxt);
 
 void TrapClock(UserContext *uctxt);
 
+int CheckAvailableFrame(lstnode *cur_p);
+
 void CopyUserProcess (pte_t* parentPtb, pte_t* childPtb);
 
-int switchproc(lstnode* switchOut, lstnode* switchIn);
+int switchproc();
 
 int switchnext();
 
@@ -46,9 +47,9 @@ int enblockqueue(lstnode* procnode,dblist* queue);
 lstnode* deblockqueue(lstnode* waitingnode,dblist* queue);
 
 int enreaderwaitingqueue(lstnode* procnode,dblist* queue);
-lstnode* dereaderwaitingqueue(lstnode* waitingnode,dblist* queue);
+lstnode* dereaderwaitingqueue(dblist* queue);
 int enwriterwaitingqueue(lstnode* procnode,dblist* queue);
-lstnode* dewriterwaitingqueue(lstnode* waitingnode,dblist* queue);
+lstnode* dewriterwaitingqueue(dblist* queue);
 
 
 lstnode* TurnPCBToNode(pcb_t *pcb);
