@@ -446,8 +446,6 @@ KernelContext *MyTrueKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
 }
 
 KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode){
-    TracePrintf(1,"Enter MyTerminateKCS\n");
-
     int i, stackInx = 0;
 
     lstnode* term_pcb_node = (lstnode*) termNode;
@@ -456,6 +454,7 @@ KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode)
     pcb_t *term_p = TurnNodeToPCB(term_pcb_node);
     pcb_t *next_p = TurnNodeToPCB(next_pcb_node);
 
+    traverselist(readyqueue);
 /////////////////
     CopyKernelStack(next_p->krnlStackPtb);
     //Remember to change page table entries for kernel stack
@@ -482,7 +481,6 @@ KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode)
         traverse = traverse->next;   
     }
 
-    traverselist(TurnNodeToPCB(term_p->parent)->children);
     //When the orphans later exit, you need not save or report their exit status since there is no longer anybody to care.
     if (NULL != term_p->parent){
         pcb_t* currParent = TurnNodeToPCB(term_p->parent);
@@ -504,13 +502,13 @@ KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode)
         memcpy(copyPcb, term_p, sizeof(pcb_t));
 
 
-        // traverselist(readyqueue);//JASO?N
-        traverselist(currParent->children);
+        traverselist(readyqueue);//JASON
+        traverselist(currParent->terminatedchild);
         
         remove_node(copyPcb->pid, currParent->children);
 
-        // traverselist(readyqueue);
-        traverselist(currParent->children);
+        traverselist(readyqueue);
+        traverselist(currParent->terminatedchild);
 
         insert_tail(TurnPCBToNode(copyPcb),currParent->terminatedchild);
 
