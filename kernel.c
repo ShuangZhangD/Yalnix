@@ -93,7 +93,7 @@ int SetKernelBrk(void *addr){
         if (rc) return -1;
 
         if (newBrk > m_kernel_brk){
-            writepagetable(g_pageTableR0, oldBrkPage, newBrk, VALID, (PROT_READ | PROT_WRITE));
+            writepagetable(g_pageTableR0, oldBrkPage, newBrkPage, VALID, (PROT_READ | PROT_WRITE));
             //Flush Tlb!
             WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_0);
 
