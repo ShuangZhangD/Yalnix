@@ -2,16 +2,16 @@
 
 extern pte_t g_pageTableR0[MAX_PT_LEN];
 
-void printUserPageTable(lstnode *p){
+void printUserPageTable(pte_t *pg){
     TracePrintf(1, "Print User Page Table.\n");
     int i;
 
-    pcb_t *proc = TurnNodeToPCB(p);
+    // pcb_t *proc = TurnNodeToPCB(p);
 
     for (i = 0; i < MAX_PT_LEN; i++){
 
-        int v = proc->usrPtb[i].valid;
-        int prot = proc->usrPtb[i].prot;
+        int v = pg[i].valid;
+        int prot = pg[i].prot;
 
         char *read = NULL;
         char *write = NULL;
@@ -20,7 +20,7 @@ void printUserPageTable(lstnode *p){
         if (prot & PROT_WRITE) write = "PROT_WRITE";
         if (prot & PROT_EXEC) exec = "PROT_EXEC";
 
-        int pfn = proc->usrPtb[i].pfn;
+        int pfn = pg[i].pfn;
 
         TracePrintf(1, "Entry %d: valid:%d, PROT=%x, PROT_READ=%s PROT_WRITE=%s PROT_EXEC=%s, pageFrameNumber:%d\n",i,v,prot,read,write,exec,pfn);
     }
@@ -55,7 +55,7 @@ void traverselist(dblist* list)
     lstnode *traverse = list->head;
     if(isemptylist(list))
     {
-        TracePrintf(1, "%s\n", "Error");
+        TracePrintf(1, "%s\n", "List Is Empty!");
     }
     else
         while(traverse->next != NULL)
