@@ -511,9 +511,7 @@ KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode)
         free(term_p->children);
         free(term_p->terminatedchild);
 
-        lstnode* testnode = TurnPCBToNode(term_p);
-
-        insert_tail(testnode,currParent->terminatedchild);
+        insert_tail(node,currParent->terminatedchild);
     } 
 
     free(term_pcb_node);
