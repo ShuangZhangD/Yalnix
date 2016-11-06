@@ -22,7 +22,7 @@ int kernelttyread(UserContext *uctxt){
 	if (receivelen <= 0)
 	{
 		enreaderwaitingqueue(currProc,tty[tty_id]->readerwaiting);
-		switchnext();
+		switchproc();
 	}
 	
 	enreaderwaitingqueue(currProc,tty[tty_id]->readerwaiting);
@@ -30,7 +30,7 @@ int kernelttyread(UserContext *uctxt){
 	if (!(firstnode(tty[tty_id]->readerwaiting) == currProc))
 	{
 		enreaderwaitingqueue(currProc,tty[tty_id]->readerwaiting);
-		switchnext();
+		switchproc();
 	}
 	else{
 
@@ -81,7 +81,7 @@ int kernelttywrite(UserContext *uctxt){
 	if (!(firstnode(tty[tty_id]->readerwaiting) == currProc))
 	{
 		enreaderwaitingqueue(currProc,tty[tty_id]->readerwaiting);
-		switchnext();
+		switchproc();
 	}	
 
 	if (len < TERMINAL_MAX_LINE)
@@ -133,7 +133,8 @@ void TrapTtyReceive(UserContext *uctxt){
 		}
 
 	}
-	switchnext();
+	switchproc();
+
 }
 
 //Capture TRAP_TTY_TRANSMIT
@@ -151,7 +152,7 @@ void TrapTtyTransmit(UserContext *uctxt){
 		lstnode* node = dewriterwaitingqueue(tty[tty_id]->writerwaiting);
 		enreadyqueue(node, readyqueue);
 	}
-	switchnext();
+	switchproc();
 
 
 }
