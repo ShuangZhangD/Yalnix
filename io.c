@@ -26,7 +26,7 @@ int kernelttyread(UserContext *uctxt){
 		switchproc();
 	}
 	
-	enreaderwaitingqueue(currProc,tty[tty_id]->readerwaiting);
+	// enreaderwaitingqueue(currProc,tty[tty_id]->readerwaiting);
 	TracePrintf(1, "something to read\n");
 	// if (!(firstnode(tty[tty_id]->readerwaiting) == currProc))
 	// {
@@ -45,8 +45,8 @@ int kernelttyread(UserContext *uctxt){
 			memcpy(leftbuf, &tty[tty_id]->receivebuf[len], leftbuflen);
 			memcpy(tty[tty_id]->receivebuf, leftbuf, leftbuflen);
 			receivelen = leftbuflen;
-			lstnode* node = dereaderwaitingqueue(tty[tty_id]->readerwaiting);
-			enreadyqueue(node, readyqueue);
+			// lstnode* node = dereaderwaitingqueue(tty[tty_id]->readerwaiting);
+			// enreadyqueue(currProc, readyqueue);
 
 			return len;
 		}
@@ -59,8 +59,12 @@ int kernelttyread(UserContext *uctxt){
 			int len = receivelen;
 			receivelen = 0;
 
-			lstnode* node = dereaderwaitingqueue(tty[tty_id]->readerwaiting);
-			enreadyqueue(node, readyqueue);
+			// lstnode* node = dereaderwaitingqueue(tty[tty_id]->readerwaiting);
+			// if (tty[tty_id]->readerwaiting->size > 1)
+			// {
+			// enreadyqueue(currProc, readyqueue);	
+			// }
+			
 
 			return len;
 		}
@@ -138,7 +142,13 @@ void TrapTtyReceive(UserContext *uctxt){
 		{
 			TracePrintf(1, "receive dereaderwaitingqueue\n");
 			lstnode* node = dereaderwaitingqueue(tty[tty_id]->readerwaiting);
-			enreadyqueue(node, readyqueue);
+			int rc;
+			insert_head(node, readyqueue);
+			switchproc();
+
+			// rc = KernelContextSwitch(MyTrueKCS, (void *) currProc, (void *) node);
+            // if (rc) TracePrintf(1,"MyTrueKCS in switchproc failed!\n");
+			// enreadyqueue(node, readyqueue);
 			
 		}
 
