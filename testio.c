@@ -9,8 +9,8 @@ int main(int argc, char const *argv[])
 	// }
 
 	int len = 20;
-	char* buf1;
-	TtyRead(1, buf1, len);
+	char buf1[20];
+	TtyRead(1, (void *)buf1, len);
 	TracePrintf(1, "Buffer Content : %s\n", buf1);
 
 	return 0;

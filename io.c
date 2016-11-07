@@ -8,7 +8,7 @@ extern lstnode* currProc;
 int kernelttyread(UserContext *uctxt){
 	TracePrintf(1,"Enter kernelttyread\n");
 	int tty_id = uctxt->regs[0];
-	void *buf = (void*) uctxt->regs[1];
+	void *buf = (void *) uctxt->regs[1];
 	int len = uctxt->regs[2];
 	if (len < 0)
 	{
@@ -20,14 +20,14 @@ int kernelttyread(UserContext *uctxt){
 		return ERROR;
 	}
 	//to if buffer is empty then enwaitingqueue
-	if (receivelen <= 0)
+	while (receivelen <= 0)
 	{
 		enreaderwaitingqueue(currProc,tty[tty_id]->readerwaiting);
 		switchproc();
 	}
 	
 	enreaderwaitingqueue(currProc,tty[tty_id]->readerwaiting);
-
+	traverselist(tty[tty_id]->readerwaiting);
 	if (!(firstnode(tty[tty_id]->readerwaiting) == currProc))
 	{
 		enreaderwaitingqueue(currProc,tty[tty_id]->readerwaiting);
@@ -37,6 +37,7 @@ int kernelttyread(UserContext *uctxt){
 
 		if (len <= receivelen)
 		{
+			
 			memcpy(buf, tty[tty_id]->receivebuf, len);
 			int leftbuflen = receivelen - len;
 			int leftbuf[leftbuflen];
@@ -49,9 +50,14 @@ int kernelttyread(UserContext *uctxt){
 			return len;
 		}
 		else{
-			memcpy(buf, tty[tty_id]->receivebuf, receivelen);
+			TracePrintf(1, "Enter memcpy\n");
+			TracePrintf(1, "buf: %p, ttybuffer: %s", buf, tty[tty_id]->receivebuf);
+			memcpy(buf, (void*)tty[tty_id]->receivebuf, receivelen);
+			TracePrintf(1, "Exit memcpy\n");
+
 			int len = receivelen;
 			receivelen = 0;
+
 			lstnode* node = dereaderwaitingqueue(tty[tty_id]->readerwaiting);
 			enreadyqueue(node, readyqueue);
 
