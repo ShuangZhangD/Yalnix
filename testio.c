@@ -8,7 +8,7 @@ int main(int argc, char const *argv[])
 	// 	TracePrintf(1, "testio error\n");
 	// }
 
-	int len = 20;
+	int len = 2;
 	char buf1[4][20];
 	int i;
 	int *status;

@@ -136,10 +136,10 @@ void TrapTtyReceive(UserContext *uctxt){
 	int tty_id = uctxt->code;
 	receivelen = TtyReceive(tty_id, tty[tty_id]->receivebuf, TERMINAL_MAX_LINE);
 	TracePrintf(1, "receivelen=%d\n", receivelen);
-	if(receivelen >0)
+	while (receivelen > 0 && (!isemptylist(tty[tty_id]->readerwaiting)))
 	{
-		if(!isemptylist(tty[tty_id]->readerwaiting))
-		{
+		
+		
 			TracePrintf(1, "receive dereaderwaitingqueue\n");
 			lstnode* node = dereaderwaitingqueue(tty[tty_id]->readerwaiting);
 			int rc;
@@ -150,7 +150,7 @@ void TrapTtyReceive(UserContext *uctxt){
             // if (rc) TracePrintf(1,"MyTrueKCS in switchproc failed!\n");
 			// enreadyqueue(node, readyqueue);
 			
-		}
+		
 
 	}
 	switchproc();
