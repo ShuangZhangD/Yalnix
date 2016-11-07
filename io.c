@@ -27,13 +27,14 @@ int kernelttyread(UserContext *uctxt){
 	}
 	
 	enreaderwaitingqueue(currProc,tty[tty_id]->readerwaiting);
-	traverselist(tty[tty_id]->readerwaiting);
-	if (!(firstnode(tty[tty_id]->readerwaiting) == currProc))
-	{
-		enreaderwaitingqueue(currProc,tty[tty_id]->readerwaiting);
-		switchproc();
-	}
-	else{
+	TracePrintf(1, "something to read\n");
+	// if (!(firstnode(tty[tty_id]->readerwaiting) == currProc))
+	// {
+	// 	TracePrintf(1, "firstnode enreaderwaitingqueue");
+	// 	enreaderwaitingqueue(currProc,tty[tty_id]->readerwaiting);
+	// 	switchproc();
+	// }
+	// else{
 
 		if (len <= receivelen)
 		{
@@ -51,7 +52,7 @@ int kernelttyread(UserContext *uctxt){
 		}
 		else{
 			TracePrintf(1, "Enter memcpy\n");
-			TracePrintf(1, "buf: %p, ttybuffer: %s", buf, tty[tty_id]->receivebuf);
+			TracePrintf(1, "PID = %d, buf: %p, ttybuffer: %s", currProc->id, buf, tty[tty_id]->receivebuf);
 			memcpy(buf, (void*)tty[tty_id]->receivebuf, receivelen);
 			TracePrintf(1, "Exit memcpy\n");
 
@@ -64,7 +65,7 @@ int kernelttyread(UserContext *uctxt){
 			return len;
 		}
 
-	}
+	// }
 }
 
 int kernelttywrite(UserContext *uctxt){
@@ -135,6 +136,7 @@ void TrapTtyReceive(UserContext *uctxt){
 	{
 		if(!isemptylist(tty[tty_id]->readerwaiting))
 		{
+			TracePrintf(1, "receive dereaderwaitingqueue\n");
 			lstnode* node = dereaderwaitingqueue(tty[tty_id]->readerwaiting);
 			enreadyqueue(node, readyqueue);
 			
