@@ -458,7 +458,7 @@ KernelContext *MyTrueKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
 }
 
 KernelContext *MyIOKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
-    TracePrintf(1,"Enter MyTrueKCS\n");
+    TracePrintf(1,"Enter MyIOKCS\n");
 
     int i ,stackInx = 0;
 
@@ -485,7 +485,7 @@ KernelContext *MyIOKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
 
     currProc = next_pcb_node; 
 
-    TracePrintf(1,"Exit MyTrueKCS\n");
+    TracePrintf(1,"Exit MyIOKCS\n");
     //Return a pointer to a kernel context it had earlier saved
     return &(next_p->kctxt);
 }
