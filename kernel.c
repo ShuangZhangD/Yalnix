@@ -457,6 +457,39 @@ KernelContext *MyTrueKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
     return &(next_p->kctxt);
 }
 
+KernelContext *MyIOKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
+    TracePrintf(1,"Enter MyTrueKCS\n");
+
+    int i ,stackInx = 0;
+
+    lstnode* curr_pcb_node = (lstnode*) curNode;
+    lstnode* next_pcb_node = (lstnode*) nxtNode;
+    
+    pcb_t *cur_p = TurnNodeToPCB(curr_pcb_node);
+    pcb_t *next_p = TurnNodeToPCB(next_pcb_node);
+
+    //Copy the kernel context to current process's pcb
+    cur_p->kctxt = *kc_in;
+
+    //Remember to change page table entries for kernel stack
+    for (i = g_kStackStPage; i <= g_kStackEdPage; i++){
+        g_pageTableR0[i].pfn = next_p->krnlStackPtb[stackInx].pfn;
+        stackInx++;
+    }
+
+    WriteRegister(REG_PTBR1, (unsigned int) next_p->usrPtb);
+    WriteRegister(REG_PTLR1, (unsigned int) MAX_PT_LEN);
+
+    //Flush All TLB because 1. Kernel Stack Mapping has changed 2. User Page Table has been written into register
+    WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_ALL);
+
+    currProc = next_pcb_node; 
+
+    TracePrintf(1,"Exit MyTrueKCS\n");
+    //Return a pointer to a kernel context it had earlier saved
+    return &(next_p->kctxt);
+}
+
 KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode){
     
     int i, stackInx = 0;
