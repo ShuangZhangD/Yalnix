@@ -4,21 +4,23 @@
 
 dblist *lockqueue;
 extern lstnode *currProc;
+extern dblist* readyqueue;
 
 int kernellockinit(UserContext *uctxt){
 
 	int id = getMutexId();
-	uctxt->regs[0] = id;
+	int* lock_idp =(int *) uctxt->regs[0];
 	lstnode *lockNode = nodeinit(id);
 	lock_t *lock = (lock_t*)malloc(sizeof(lock_t));
 
 	lock->lock_id = id;
-	lock->owner = NULL;
+	lock->ownerid = -1;
 
 	lock->waitlist = listinit();
 
 	lockNode->content = (void *) lock;
-	enlockqueue(lockNode, lockqueue);
+	insert_tail(lockNode, lockqueue);
+	*lock_idp = lock->lock_id;
 
     return SUCCESS;
 }
@@ -31,19 +33,18 @@ int kernelaquire(UserContext *uctxt){
     //if the lock is owned by itself, return message
 
 	int lockId = uctxt->regs[0];
-	lstnode *node = search_node(lockqueue, lockId);
+	lstnode *node = search_node(lockId, lockqueue);
 	if (node == NULL){
 		return ERROR;
 	}
 
 	lock_t *lock = (lock_t*) node->content;
 
-	if (lock->owner == NULL){
-		node->owner = currProc;
+	if (lock->ownerid == -1){
+		lock->ownerid = currProc->id;
 		return SUCCESS;
-	} else if (lock->owner != currProc){
-		lstnode* node = nodeinit(currProc->id);
-		enwaitlockqueue(node,lock->waitlist());
+	} else if (lock->ownerid != currProc->id){
+		enwaitlockqueue(currProc,lock->waitlist);
 		switchnext();
 		return SUCCESS;
 	} else {
@@ -63,13 +64,20 @@ int kernelrelease(UserContext *uctxt){
 	//if the lock is owned by others, return error
 
 	int lockId = uctxt->regs[0];
-	if (isemptylist(lockqueue) || !currProc->hasLock || !currProc->lockId) return ERROR;
+	if (isemptylist(lockqueue)) return ERROR;
 
-	lstnode* lockNode = search_node(currProc->lockId,lockqueue);
+	lstnode* lockNode = search_node(lockId,lockqueue);
 
 	lock_t *lock = (lock_t *) lockNode->content;
+	if (lock->ownerid != currProc->id)
+	{
+		return ERROR;
+	}
+	lock->ownerid = -1;
 	if (!isemptylist(lock->waitlist)){
-		
+		lstnode* node = dewaitlockqueue(lock->waitlist);
+		enreadyqueue(node,readyqueue);
+		switchnext();
 	}
 
 

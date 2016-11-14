@@ -60,46 +60,6 @@ void TrapKernel(UserContext *uctxt){
             rc = kernelttywrite(uctxt);
             break;
 
-        case YALNIX_REGISTER:
-            rc = kernelregister(uctxt);
-            break;
-
-        case YALNIX_SEND:    
-            rc = kernelsend(uctxt);
-            break;
-
-        case YALNIX_RECEIVE:
-            rc = kernelreceive(uctxt);
-            break;
-
-        case YALNIX_RECEIVESPECIFIC:
-            rc = kernelreceivespecific(uctxt);
-            break;
-
-        case YALNIX_REPLY:
-            rc = kernelreply(uctxt);
-            break;
-
-        case YALNIX_FORWARD:
-            rc = kernelforward(uctxt);
-            break;
-
-        case YALNIX_COPY_FROM:
-            rc = kernelcopyfrom(uctxt);
-            break;
-
-        case YALNIX_COPY_TO:
-            rc = kernelcopyto(uctxt);
-            break;
-
-        case YALNIX_READ_SECTOR:
-            rc = kernelreadsector(uctxt);
-            break;
-
-        case YALNIX_WRITE_SECTOR:
-            rc = kernelwritesector(uctxt);
-            break;
-
         case YALNIX_PIPE_INIT:
             rc = kernelpipeinit(uctxt);
             break;
@@ -129,11 +89,11 @@ void TrapKernel(UserContext *uctxt){
                 break;
 
             case YALNIX_CVAR_SIGNAL:
-                rc = kernelcavrsignal(uctxt);
+                rc = kernelcvarsignal(uctxt);
                 break;
 
             case YALNIX_CVAR_BROADCAST:
-                rc = kernelcarbroadcast(uctxt);
+                rc = kernelcvarbroadcast(uctxt);
                 break;
 
             case YALNIX_CVAR_WAIT:

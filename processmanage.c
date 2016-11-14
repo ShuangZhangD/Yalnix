@@ -443,36 +443,29 @@ lstnode* dewriterwaitingqueue(dblist* queue)
     return remove_head(queue);
 }
 
-int enlockqueue(lstnode* procnode,dblist* queue){
+
+int enwaitlockqueue(lstnode* procnode,dblist* queue)
+{
     TracePrintf(1, "Enter enwaitingqueue\n");    
+    pcb_t* proc = TurnNodeToPCB(procnode);
 
     if (proc == NULL){
         return ERROR;
     }
+    proc->procState = WAITING;
     insert_tail(procnode, queue);
 
+    TracePrintf(1, "Exit enwaitingqueue\n"); 
+    return 0;
 }
 
-lstnode* delockqueue(dblist* queue){
-    TracePrintf(1,"Enter delockqueue\n");
-    TracePrintf(1,"Exit delockqueue\n");     
+lstnode* dewaitlockqueue(dblist* queue)
+{
+    TracePrintf(1,"Enter dewaitingqueue\n");
+    TracePrintf(1,"Exit dewaitingqueue\n");     
     return remove_head(queue);
 }
 
-int enwaitlockqueue(lstnode* procnode,dblist* queue){
-    TracePrintf(1, "Enter enwaitingqueue\n");    
-
-    if (proc == NULL){
-        return ERROR;
-    }
-    insert_tail(procnode, queue);
-}
-
-<<<<<<< HEAD
-lstnode* dewaitlockqueue(dblist* queue){
-    TracePrintf(1,"Enter dewaitlockqueue\n");
-    TracePrintf(1,"Exit dewaitlockqueue\n");     
-=======
 int encvarqueue(lstnode* procnode,dblist* queue)
 {
     TracePrintf(1, "Enter enwaitingqueue\n");    
@@ -492,7 +485,6 @@ lstnode* decvarqueue(dblist* queue)
 {
     TracePrintf(1,"Enter dewaitingqueue\n");
     TracePrintf(1,"Exit dewaitingqueue\n");     
->>>>>>> bd2d09f9121e21d74e9f3950c4df5b2a8d843033
     return remove_head(queue);
 }
 

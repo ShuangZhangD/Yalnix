@@ -59,7 +59,7 @@ int kernelcvarsignal(UserContext *uctxt){
     return ERROR;
 }
 
-int kenrnelcvarbroadcast(UserContext *uctxt){
+int kernelcvarbroadcast(UserContext *uctxt){
 
 	//if the cvar with cvar_id is not initialized, return ERROR
 	int cvar_id = uctxt->regs[0];	

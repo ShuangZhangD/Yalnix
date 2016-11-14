@@ -1,5 +1,6 @@
 #include "selfdefinedstructure.h"
 #include "listcontrol.h"
+#include "processmanage.h"
 
 int kernellockinit(UserContext *uctxt);
 

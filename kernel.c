@@ -48,10 +48,10 @@ int kernelreclaim(UserContext *uctxt)
         int id = uctxt->regs[0];
         lstnode* locknode = remove_node(id , lockqueue);
         lock_t* lock = locknode->content;
-        if(lock->owner != NULL)
-        {
-            free(lock->owner);
-        }
+        // if(lock->owner != NULL)
+        // {
+        //     free(lock->owner);
+        // }
         if(lock->waitlist != NULL)
         {
             free(lock->waitlist);
@@ -320,8 +320,7 @@ lstnode *InitProc(){
     proc->pid = g_pid++;
 
     proc->usrPtb = InitUserPageTable();
-    proc->hasLock = 0;
-    proc->lockId = 0;
+
 
     proc->krnlStackPtb = (pte_t *) calloc(g_pageNumOfStack ,sizeof(pte_t));
     proc->krnlStackPtbSize = g_pageNumOfStack;
@@ -350,8 +349,7 @@ pcb_t *InitIdleProc(UserContext *uctxt){
     proc->pid = g_pid++;
     proc->uctxt = *uctxt;
 
-    proc->hasLock = 0;
-    proc->lockId = 0;
+
     
     proc->krnlStackPtb = (pte_t *) calloc(g_pageNumOfStack ,sizeof(pte_t));
     proc->krnlStackPtbSize = g_pageNumOfStack;
