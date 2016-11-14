@@ -51,6 +51,9 @@ lstnode* dereaderwaitingqueue(dblist* queue);
 int enwriterwaitingqueue(lstnode* procnode,dblist* queue);
 lstnode* dewriterwaitingqueue(dblist* queue);
 
+int enlockqueue(lstnode* procnode,dblist* queue);
+lstnode* delockqueue(dblist* queue);
+
 
 lstnode* TurnPCBToNode(pcb_t *pcb);
 pcb_t* TurnNodeToPCB(lstnode *node);

@@ -2,13 +2,29 @@
 #include "hardware.h"
 #include "lock.h"
 
+dblist *lockqueue;
+extern 
+
+int getMutexId(){
+	return ++g_mutex_id;
+}
+
 int kernellockinit(UserContext *uctxt){
 
-	//create a new lock
+	int id = getMutexId();
+	uctxt->regs[0] = id;
+	lstnode* lockNode = nodeinit(id);
+	lock_t *lock = (lock_t*)malloc(sizeof(lock_t));
 
-	//save its identifier at *lock_idp
+	lock->lock_id = id;
+	lock->owner = NULL;
 
-    return ERROR;
+	lock->waitlist = listinit();
+
+	lockNode->content = (void *) lock;
+	enlockqueue(lockNode);
+
+    return SUCCESS;
 }
 
 int kernelaquire(UserContext *uctxt){
@@ -20,6 +36,9 @@ int kernelaquire(UserContext *uctxt){
     //if the lock is owned by others, get on the waitlist
 
     //if the lock is owned by itself, return message
+
+
+
 
 
     return ERROR;

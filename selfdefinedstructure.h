@@ -53,5 +53,17 @@ typedef struct Terminal{
     char receivebuf[TERMINAL_MAX_LINE];
 } Tty;
 
+typedef struct lock{
+    int lock_id;
+    lstnode *owner;
+    dblist *waitlist;
+} lock_t;
+
+typedef struct cvar{
+    int cvar_id;
+    lstnode *owner;
+} cvar_t;
+
+
 typedef void (*trapvector_t) (UserContext*);
 #endif 

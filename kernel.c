@@ -9,6 +9,7 @@
 int m_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)
 int g_pid = 1;
 int g_isInitial = 1;
+int g_mutex_id = 0;
 int const g_pageNumOfStack = KERNEL_STACK_MAXSIZE / PAGESIZE;
 int const g_kStackStPage = KERNEL_STACK_BASE >> PAGESHIFT;
 int const g_kStackEdPage = (KERNEL_STACK_LIMIT - 1) >> PAGESHIFT;
@@ -143,6 +144,9 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     //init Queue
     waitingqueue = listinit();
     readyqueue = listinit();
+    lockqueue = listinit();
+    cvarqueue = listinit();
+
 
     for (i = 0; i < NUM_TERMINALS; i++)
     {
@@ -582,4 +586,8 @@ KernelContext *MyForkKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
 
     TracePrintf(1, "Exit MyTestKCS\n");
     return kc_in;
+}
+
+int getMutexId(){
+    return ++g_mutex_id;
 }

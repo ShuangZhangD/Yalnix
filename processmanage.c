@@ -144,19 +144,8 @@ int kernelwait(UserContext *uctxt){
         free(remove);
         return removeproc->pid;
     }
-    // else{
-    //     enblockqueue(currProc,blockqueue);
-    //     //TODO Block Queue
-    //     lstnode *node = dereadyqueue(readyqueue);
-    //     if (node != currProc){
-    //         TracePrintf(1,"The first node of readyqueue should be the current process!\n");
-    //         return ERROR;
-    //     }
 
-    //     lstnode *fstnode = firstnode(readyqueue);
-    //     switchproc(node, fstnode);
-    // }
-
+    return ERROR;
 }
 
 int kernelgetpid(){
@@ -443,6 +432,16 @@ lstnode* dewriterwaitingqueue(dblist* queue)
     TracePrintf(1,"Enter dewaitingqueue\n");
     TracePrintf(1,"Exit dewaitingqueue\n");     
     return remove_head(queue);
+}
+
+int enlockqueue(lstnode* procnode,dblist* queue){
+
+
+}
+
+lstnode* delockqueue(dblist* queue){
+
+
 }
 
 

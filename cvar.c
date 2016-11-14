@@ -2,6 +2,8 @@
 #include "hardware.h"
 #include "cvar.h"
 
+dblist *cvarqueue;
+
 int kernelcvarinit(UserContext *uctxt){
 
 	//Create a new condition variable
