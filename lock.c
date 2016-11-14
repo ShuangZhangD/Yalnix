@@ -3,6 +3,7 @@
 #include "lock.h"
 
 dblist *lockqueue;
+extern lstnode *currProc;
 
 int kernellockinit(UserContext *uctxt){
 
@@ -17,7 +18,7 @@ int kernellockinit(UserContext *uctxt){
 	lock->waitlist = listinit();
 
 	lockNode->content = (void *) lock;
-	enlockqueue(lockNode);
+	enlockqueue(lockNode, lockqueue);
 
     return SUCCESS;
 }
@@ -25,16 +26,30 @@ int kernellockinit(UserContext *uctxt){
 int kernelaquire(UserContext *uctxt){
     
     //try to acquire the lock with the lock_id
-
     //if the lock is available, get the lock
-
     //if the lock is owned by others, get on the waitlist
-
     //if the lock is owned by itself, return message
 
+	int lockId = uctxt->regs[0];
+	lstnode *node = search_node(lockqueue, lockId);
+	if (node == NULL){
+		return ERROR;
+	}
 
+	lock_t *lock = (lock_t*) node->content;
 
-
+	if (lock->owner == NULL){
+		node->owner = currProc;
+		return SUCCESS;
+	} else if (lock->owner != currProc){
+		lstnode* node = nodeinit(currProc->id);
+		enwaitlockqueue(node,lock->waitlist());
+		switchproc();
+		return SUCCESS;
+	} else {
+		TracePrintf(1, "Acquire Success");
+		return SUCCESS;
+	}
 
     return ERROR;
 }

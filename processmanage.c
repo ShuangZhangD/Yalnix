@@ -8,6 +8,10 @@ extern int g_pid;
 extern int g_kStackStPage;
 extern int g_kStackEdPage;
 extern int g_pageNumOfStack;
+
+extern dblist* lockqueue;
+extern dblist* cvarqueue;
+
 /*
     SYSCALL
 */
@@ -114,13 +118,6 @@ int kernelexit(UserContext *uctxt){
     terminateProcess(currProc);
     TracePrintf(1,"Exit KernelExit\n");
     return ERROR;
-    
-    // if(proc->parent != NULL){
-    //     pcb_t* pcb = (pcb_t *) proc->parent->content;
-    //     pcb->terminatedchild = listinit();
-    
-    //switchnext();
-
 }
 
 int kernelwait(UserContext *uctxt){
@@ -159,7 +156,6 @@ void TrapClock(UserContext *uctxt){
 
     // int rc = 0;
     if (!isemptylist(waitingqueue)){
-
         lstnode *traverse = waitingqueue->head->next;
         while(traverse != NULL && traverse->id != -1) {               
             pcb_t* proc = TurnNodeToPCB(traverse);
@@ -176,6 +172,23 @@ void TrapClock(UserContext *uctxt){
         }
         
     }
+
+    if (!isemptylist(lockqueue)){
+        lstnode *lockNode = lockqueue->head->next;
+        while(lockNode!=NULL && lockNode->id !=- 1){
+            lock_t *lock = (lock_t *) lockNode->content;
+            if (lockNode->owner != NULL){
+                if (!isemptylist(lockNode->waitlist)){
+
+                }
+            }
+
+            lockNode = lockNode->next;
+        }
+
+    }
+
+
     if (!isemptylist(readyqueue)){
         switchproc();
     }
@@ -435,15 +448,35 @@ lstnode* dewriterwaitingqueue(dblist* queue)
 }
 
 int enlockqueue(lstnode* procnode,dblist* queue){
+    TracePrintf(1, "Enter enwaitingqueue\n");    
 
+    if (proc == NULL){
+        return ERROR;
+    }
+    insert_tail(procnode, queue);
 
 }
 
 lstnode* delockqueue(dblist* queue){
-
-
+    TracePrintf(1,"Enter delockqueue\n");
+    TracePrintf(1,"Exit delockqueue\n");     
+    return remove_head(queue);
 }
 
+int enwaitlockqueue(lstnode* procnode,dblist* queue){
+    TracePrintf(1, "Enter enwaitingqueue\n");    
+
+    if (proc == NULL){
+        return ERROR;
+    }
+    insert_tail(procnode, queue);
+}
+
+lstnode* dewaitlockqueue(dblist* queue){
+    TracePrintf(1,"Enter dewaitlockqueue\n");
+    TracePrintf(1,"Exit dewaitlockqueue\n");     
+    return remove_head(queue);
+}
 
 lstnode* TurnPCBToNode(pcb_t *pcb){
     lstnode *node = nodeinit(pcb->pid);
