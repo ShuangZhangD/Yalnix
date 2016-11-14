@@ -72,6 +72,7 @@ typedef struct lock{
 
 typedef struct cvar{
     int cvar_id;
+    dblist* cvarwaiting;
     lstnode *owner;
 } cvar_t;
 
