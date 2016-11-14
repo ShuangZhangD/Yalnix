@@ -14,6 +14,9 @@
 
 extern lstnode* currProc;
 extern dblist* freeframe_list;
+extern dblist* lockqueue;
+extern dblist* cvarqueue;
+extern dblist* pipequeue;
 
 //capture TRAP_CLOCK
 void TrapKernel(UserContext *uctxt){
@@ -141,9 +144,9 @@ void TrapKernel(UserContext *uctxt){
             //     rc = kernelcvarwait(uctxt);
             //     break;
 
-            // case YALNIX_RECLAIM:
-            //     rc = kernelreclaim(uctxt);
-            //     break;
+        case YALNIX_RECLAIM:
+            rc = kernelreclaim(uctxt);
+            break;
 
             // case YALNIX_CUSTOM_0:
             //     rc = kernelcustom0(uctxt);
@@ -196,6 +199,8 @@ void TrapDisk(UserContext *uctxt){
        DO SOMETHING......(Not specified in manual)
      */
 }
+
+
 
 void InitInterruptTable(){
 

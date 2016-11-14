@@ -9,5 +9,8 @@ void TrapIllegal(UserContext *uctxt);
 
 void InitInterruptTable();
 
+void TrapMath(UserContext *uctxt);
+
+
 //Capture TRAP_DISK
 void TrapDisk(UserContext *uctxt);

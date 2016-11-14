@@ -22,6 +22,7 @@ extern dblist* readyqueue;
 extern dblist* lockqueue;
 extern dblist* cvarqueue;
 extern Tty* tty[NUM_TERMINALS];
+extern dblist* pipequeue;
 
 int kernelregister(UserContext *uctxt){
     return ERROR;
@@ -63,8 +64,56 @@ int kernelwritesector(UserContext *uctxt){
     return ERROR;
 }
 
-int kernelreclaim(int id){
-    //Destroy Cvar, lock, pipe identified by Id 
+int kernelreclaim(UserContext *uctxt)
+{
+    int id = uctxt->regs[0];
+    if (search_node(id , pipequeue) != NULL)
+    {
+        lstnode* pipenode = remove_node(id , pipequeue);
+        Pipe* pipe = pipenode->content;
+        if(pipe->readers != NULL)
+        {
+            free(pipe->readers);
+        }
+        if(pipe->writers != NULL)
+        {
+            free(pipe->writers);
+        }        
+        free(pipe);
+        free(pipenode);
+    }
+
+    if (search_node(id , lockqueue) != NULL)
+    {
+        int id = uctxt->regs[0];
+        lstnode* locknode = remove_node(id , lockqueue);
+        lock_t* lock = locknode->content;
+        if(lock->owner != NULL)
+        {
+            free(lock->owner);
+        }
+        if(lock->waitlist != NULL)
+        {
+            free(lock->waitlist);
+        }
+        free(lock);
+        free(locknode);
+                
+    }
+
+    if (search_node(id , cvarqueue) != NULL)
+    {
+        int id = uctxt->regs[0];
+        lstnode* cvarnode = remove_node(id , cvarqueue);
+        cvar_t* cvar = cvarnode->content;
+        if(cvar->owner != NULL)
+        {
+            free(cvar->owner);
+        }
+        free(cvar);
+        free(cvarnode);
+        
+    }
     return ERROR;
 }
 
@@ -148,6 +197,7 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     readyqueue = listinit();
     lockqueue = listinit();
     cvarqueue = listinit();
+    pipequeue = listinit();
 
 
     for (i = 0; i < NUM_TERMINALS; i++)

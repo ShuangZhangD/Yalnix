@@ -2,6 +2,7 @@
 #define DS_H_INCLUDED
 
 #include "hardware.h"
+#include "yalnix.h"
 
 #define VALID 1
 #define INVALID 0
@@ -52,6 +53,16 @@ typedef struct Terminal{
     char transmitbuf[TERMINAL_MAX_LINE];
     char receivebuf[TERMINAL_MAX_LINE];
 } Tty;
+
+typedef struct pipe
+{
+    int id;
+    int len;
+    int contentlen;
+    char buffer[PIPE_BUFFER_LEN];
+    dblist* readers;
+    dblist* writers; 
+}Pipe;
 
 typedef struct lock{
     int lock_id;

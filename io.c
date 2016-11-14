@@ -2,9 +2,12 @@
 #include"hardware.h"
 #include"io.h"
 #include"kernel.h"
+#include "testutil.h"
+
 
 extern lstnode* currProc;
-
+int transmitbusy = 0;
+int transleftbuflen;
 int kernelttyread(UserContext *uctxt){
 	TracePrintf(1,"Enter kernelttyread\n");
 	int tty_id = uctxt->regs[0];
@@ -88,7 +91,10 @@ int kernelttywrite(UserContext *uctxt){
 	}
 
 	enwriterwaitingqueue(currProc, tty[tty_id]->writerwaiting);
-	if (!(firstnode(tty[tty_id]->writerwaiting) == currProc))
+
+	traverselist(tty[tty_id]->writerwaiting);
+
+	while (!(firstnode(tty[tty_id]->writerwaiting) == currProc))
 	{
 		enwriterwaitingqueue(currProc,tty[tty_id]->writerwaiting);
 		switchproc();
@@ -99,19 +105,40 @@ int kernelttywrite(UserContext *uctxt){
 		TracePrintf(1,"Calling TtyTransmit\n");
 		TtyTransmit(tty_id, buf, len);
 		TracePrintf(1,"Called TtyTransmit\n");
-		lstnode *node = dewriterwaitingqueue(tty[tty_id]->writerwaiting);
-		enreadyqueue(node, readyqueue);
+		// lstnode *node = dewriterwaitingqueue(tty[tty_id]->writerwaiting);
+		// enreadyqueue(node, readyqueue);
 
 	}
 	else{
-		int leftbuflen = len;
-		while(leftbuflen > 0)
+
+		transleftbuflen = len;
+		// tty[tty_id]->transmitbuf = (char *)malloc(sizeof(char) * leftbuflen);
+		while(transleftbuflen > 0)
 		{			
-			TtyTransmit(tty_id, buf+len-leftbuflen, TERMINAL_MAX_LINE);
-			leftbuflen = leftbuflen - TERMINAL_MAX_LINE;
+			// memcpy((void *)tty[tty_id]->transmitbuf+len-leftbuflen, buf+len-leftbuflen, TERMINAL_MAX_LINE);
+			// if (!(firstnode(tty[tty_id]->writerwaiting) == currProc))
+			// {
+			// 	insert_head(currProc, tty[tty_id]->writerwaiting);
+			// }
+
+			if(transmitbusy == 0)
+			{
+				TracePrintf(1, "TRANSMIT\n");
+				TtyTransmit(tty_id, buf+len-transleftbuflen, TERMINAL_MAX_LINE);
+				transmitbusy = 1;
+				transleftbuflen = transleftbuflen - TERMINAL_MAX_LINE;
+			}
+			switchproc(); 
+			TracePrintf(1, "While loop\n");			
+
 		}
-		lstnode *node = dewriterwaitingqueue(tty[tty_id]->writerwaiting);
-		enreadyqueue(node, readyqueue);
+		transleftbuflen = 0;
+		// TtyTransmit(tty_id, tty[tty_id]->transmitbuf, TERMINAL_MAX_LINE);
+
+		TracePrintf(1, "AND TRANSMIT\n");
+
+		// lstnode *node = dewriterwaitingqueue(tty[tty_id]->writerwaiting);
+		// enreadyqueue(node, readyqueue);
 
 	}
 	TracePrintf(1,"Exit kernelttywrite\n");
@@ -168,12 +195,32 @@ void TrapTtyTransmit(UserContext *uctxt){
 
      */
 	int tty_id = uctxt->code;
-	if(!isemptylist(tty[tty_id]->writerwaiting))
+	transmitbusy = 0;
+	// if(transleftbuflen > 0)
+	// {
+	// 	insert_head(currProc, tty[tty_id]->writerwaiting);
+	// 	switchproc();
+	// 	TracePrintf(1, "enter transleftbuflen");
+	// }
+	if (transleftbuflen > 0)
+	{
+		lstnode* node = firstnode(tty[tty_id]->writerwaiting);
+		int rc;
+		rc = KernelContextSwitch(MyIOKCS, (void *)currProc, (void *)node);        
+		if (rc) TracePrintf(1,"MyTrueKCS in switchproc failed!\n");
+	}
+
+
+	if (!isemptylist(tty[tty_id]->writerwaiting) && transleftbuflen <= 0)
 	{
 		lstnode* node = dewriterwaitingqueue(tty[tty_id]->writerwaiting);
 		enreadyqueue(node, readyqueue);
 	}
-	switchproc();
+	// 
 
+	// traverselist(tty[tty_id]->writerwaiting);
+		TracePrintf(1, "switchproc success");
+
+	switchproc();
 
 }
