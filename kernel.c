@@ -70,6 +70,10 @@ int kernelreclaim(UserContext *uctxt)
         {
             free(cvar->owner);
         }
+        if(cvar->cvarwaiting != NULL)
+        {
+            free(cvar->cvarwaiting);
+        }
         free(cvar);
         free(cvarnode);
         

@@ -173,30 +173,30 @@ void TrapClock(UserContext *uctxt){
         
     }
 
-    if (!isemptylist(lockqueue)){
-        lstnode *lockNode = lockqueue->head->next;
-        while(lockNode!=NULL && lockNode->id !=- 1){
-            lock_t *lock = (lock_t *) lockNode->content;
-            if (lock->owner != NULL){
-                if (lock->owner == currProc) break;
-                else continue;
-            } else {
-                if (!isemptylist(lock->waitlist)){
-                    lstnode *node = search_node(currProc->id,lock->waitlist);
-                    if (node == NULL) continue;
-                    remove_node(currProc->id, lock->waitlist);
-                    lock->owner = currProc;
-                    break;
-                }
-            }
+    // if (!isemptylist(lockqueue)){
+    //     lstnode *lockNode = lockqueue->head->next;
+    //     while(lockNode!=NULL && lockNode->id !=- 1){
+    //         lock_t *lock = (lock_t *) lockNode->content;
+    //         if (lock->owner != NULL){
+    //             if (lock->owner == currProc) break;
+    //             else continue;
+    //         } else {
+    //             if (!isemptylist(lock->waitlist)){
+    //                 lstnode *node = search_node(currProc->id,lock->waitlist);
+    //                 if (node == NULL) continue;
+    //                 remove_node(currProc->id, lock->waitlist);
+    //                 lock->owner = currProc;
+    //                 break;
+    //             }
+    //         }
 
-            lockNode = lockNode->next;
-        }
-    }
+    //         lockNode = lockNode->next;
+    //     }
+    // }
 
-    while(){
-        switchproc();
-    }
+    // while(){
+    //     switchproc();
+    // }
 
     if (!isemptylist(readyqueue)){
         switchproc();
@@ -468,9 +468,31 @@ int enwaitlockqueue(lstnode* procnode,dblist* queue){
     insert_tail(procnode, queue);
 }
 
+<<<<<<< HEAD
 lstnode* dewaitlockqueue(dblist* queue){
     TracePrintf(1,"Enter dewaitlockqueue\n");
     TracePrintf(1,"Exit dewaitlockqueue\n");     
+=======
+int encvarqueue(lstnode* procnode,dblist* queue)
+{
+    TracePrintf(1, "Enter enwaitingqueue\n");    
+    pcb_t* proc = TurnNodeToPCB(procnode);
+
+    if (proc == NULL){
+        return ERROR;
+    }
+    proc->procState = WAITING;
+    insert_tail(procnode, queue);
+
+    TracePrintf(1, "Exit enwaitingqueue\n"); 
+    return 0;
+}
+
+lstnode* decvarqueue(dblist* queue)
+{
+    TracePrintf(1,"Enter dewaitingqueue\n");
+    TracePrintf(1,"Exit dewaitingqueue\n");     
+>>>>>>> bd2d09f9121e21d74e9f3950c4df5b2a8d843033
     return remove_head(queue);
 }
 
