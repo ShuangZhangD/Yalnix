@@ -3,17 +3,12 @@
 #include "lock.h"
 
 dblist *lockqueue;
-extern 
-
-int getMutexId(){
-	return ++g_mutex_id;
-}
 
 int kernellockinit(UserContext *uctxt){
 
 	int id = getMutexId();
 	uctxt->regs[0] = id;
-	lstnode* lockNode = nodeinit(id);
+	lstnode *lockNode = nodeinit(id);
 	lock_t *lock = (lock_t*)malloc(sizeof(lock_t));
 
 	lock->lock_id = id;

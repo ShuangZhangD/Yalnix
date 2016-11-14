@@ -65,3 +65,4 @@ KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode)
 
 KernelContext *MyForkKCS(KernelContext *kc_in,void *curNode,void *nxtNode);
 
+int getMutexId();

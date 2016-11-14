@@ -1,5 +1,6 @@
-#include"yalnix.h"
-#include"hardware.h"
+#include "yalnix.h"
+#include "hardware.h"
+#include "selfdefinedstructure.h"
 
 int kernelcvarinit(UserContext *uctxt);
 

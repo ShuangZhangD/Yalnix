@@ -19,6 +19,8 @@ dblist* freeframe_list;
 
 extern dblist* waitingqueue;
 extern dblist* readyqueue;
+extern dblist* lockqueue;
+extern dblist* cvarqueue;
 extern Tty* tty[NUM_TERMINALS];
 
 int kernelregister(UserContext *uctxt){

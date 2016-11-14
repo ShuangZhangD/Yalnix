@@ -1,3 +1,5 @@
+#include "selfdefinedstructure.h"
+#include "listcontrol.h"
 
 int kernellockinit(UserContext *uctxt);
 
