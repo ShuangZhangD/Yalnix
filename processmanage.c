@@ -177,17 +177,26 @@ void TrapClock(UserContext *uctxt){
         lstnode *lockNode = lockqueue->head->next;
         while(lockNode!=NULL && lockNode->id !=- 1){
             lock_t *lock = (lock_t *) lockNode->content;
-            if (lockNode->owner != NULL){
-                if (!isemptylist(lockNode->waitlist)){
-
+            if (lock->owner != NULL){
+                if (lock->owner == currProc) break;
+                else continue;
+            } else {
+                if (!isemptylist(lock->waitlist)){
+                    lstnode *node = search_node(currProc->id,lock->waitlist);
+                    if (node == NULL) continue;
+                    remove_node(currProc->id, lock->waitlist);
+                    lock->owner = currProc;
+                    break;
                 }
             }
 
             lockNode = lockNode->next;
         }
-
     }
 
+    while(){
+        switchproc();
+    }
 
     if (!isemptylist(readyqueue)){
         switchproc();
@@ -313,20 +322,7 @@ int switchproc()
 
 int switchnext()
 {
-// <<<<<<< HEAD
-//     lstnode *node = dereadyqueue(readyqueue);
-//     if (node != currProc){
-//         TracePrintf(1,"The first node of readyqueue should be the current process!\n");
-//         return ERROR;
-//     }
-
-//     lstnode *fstnode = firstnode(readyqueue);
-//     switchproc(node, fstnode);
-// =======
-    // lstnode *node = dereadyqueue(readyqueue);
-    // lstnode *fstnode = firstnode(readyqueue);
     switchproc();
-// >>>>>>> kernelfork
 }
 
 void terminateProcess(lstnode *procnode){

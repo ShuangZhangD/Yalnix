@@ -45,6 +45,8 @@ typedef struct ProcessControlBlock{
     int data_page;
     int clock;
     int exitstatus;
+    int hasLock;
+    int lockId;
 } pcb_t;
 
 typedef struct Terminal{

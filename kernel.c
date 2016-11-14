@@ -24,46 +24,6 @@ extern dblist* cvarqueue;
 extern Tty* tty[NUM_TERMINALS];
 extern dblist* pipequeue;
 
-int kernelregister(UserContext *uctxt){
-    return ERROR;
-}
-
-int kernelsend(UserContext *uctxt){
-    return ERROR;
-}
-
-int kernelreceive(UserContext *uctxt){
-    return ERROR;
-}
-
-int kernelreceivespecific(UserContext *uctxt){
-    return ERROR;
-}
-
-int kernelreply(UserContext *uctxt){
-    return ERROR;
-}
-
-int kernelforward(UserContext *uctxt){
-    return ERROR;
-}
-
-int kernelcopyfrom(UserContext *uctxt){
-    return ERROR;
-}
-
-int kernelcopyto(UserContext *uctxt){
-    return ERROR;
-}
-
-int kernelreadsector(UserContext *uctxt){
-    return ERROR;
-}
-
-int kernelwritesector(UserContext *uctxt){
-    return ERROR;
-}
-
 int kernelreclaim(UserContext *uctxt)
 {
     int id = uctxt->regs[0];
@@ -356,7 +316,8 @@ lstnode *InitProc(){
     proc->pid = g_pid++;
 
     proc->usrPtb = InitUserPageTable();
-    // proc->uctxt = *uctxt;
+    proc->hasLock = 0;
+    proc->lockId = 0;
 
     proc->krnlStackPtb = (pte_t *) calloc(g_pageNumOfStack ,sizeof(pte_t));
     proc->krnlStackPtbSize = g_pageNumOfStack;
@@ -385,6 +346,9 @@ pcb_t *InitIdleProc(UserContext *uctxt){
     proc->pid = g_pid++;
     proc->uctxt = *uctxt;
 
+    proc->hasLock = 0;
+    proc->lockId = 0;
+    
     proc->krnlStackPtb = (pte_t *) calloc(g_pageNumOfStack ,sizeof(pte_t));
     proc->krnlStackPtbSize = g_pageNumOfStack;
 

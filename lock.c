@@ -44,7 +44,7 @@ int kernelaquire(UserContext *uctxt){
 	} else if (lock->owner != currProc){
 		lstnode* node = nodeinit(currProc->id);
 		enwaitlockqueue(node,lock->waitlist());
-		switchproc();
+		switchnext();
 		return SUCCESS;
 	} else {
 		TracePrintf(1, "Acquire Success");
@@ -57,15 +57,23 @@ int kernelaquire(UserContext *uctxt){
 int kernelrelease(UserContext *uctxt){
 	
 	//try to release the lock with the lock_id
-
 	//if the lock is owned by itslef, release the lock
-
 	//if release is successful, the lock will be avalable
-	
 	//check the waitlist to see if someone is trying to get the lock
-
-
 	//if the lock is owned by others, return error
+
+	int lockId = uctxt->regs[0];
+	if (isemptylist(lockqueue) || !currProc->hasLock || !currProc->lockId) return ERROR;
+
+	lstnode* lockNode = search_node(currProc->lockId,lockqueue);
+
+	lock_t *lock = (lock_t *) lockNode->content;
+	if (!isemptylist(lock->waitlist)){
+		
+	}
+
+
+
 
     return ERROR;
 }
