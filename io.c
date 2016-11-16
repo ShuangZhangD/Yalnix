@@ -80,36 +80,19 @@ int kernelttywrite(UserContext *uctxt){
 	int tty_id = uctxt->regs[0];
 	void *buf = (void*) uctxt->regs[1];
 	int len = uctxt->regs[2];
-	if (len < 0)
-	{
+	if (len < 0) {
 		return ERROR;
 	}
 
-	if (tty_id < 0 || tty_id >= NUM_TERMINALS)
-	{
+	if (tty_id < 0 || tty_id >= NUM_TERMINALS) {
 		return ERROR;
 	}
 
 	enwriterwaitingqueue(currProc, tty[tty_id]->writerwaiting);
-
-	traverselist(tty[tty_id]->writerwaiting);
-
-	while (!(firstnode(tty[tty_id]->writerwaiting) == currProc))
-	{
-		enwriterwaitingqueue(currProc,tty[tty_id]->writerwaiting);
-		switchproc();
-	}	
-
-	if (len < TERMINAL_MAX_LINE)
-	{	
-		TracePrintf(1,"Calling TtyTransmit\n");
+	if (len < TERMINAL_MAX_LINE) {	
 		TtyTransmit(tty_id, buf, len);
-		TracePrintf(1,"Called TtyTransmit\n");
-		// lstnode *node = dewriterwaitingqueue(tty[tty_id]->writerwaiting);
-		// enreadyqueue(node, readyqueue);
-
-	}
-	else{
+		switchnext();
+	} else{
 
 		transleftbuflen = len;
 		// tty[tty_id]->transmitbuf = (char *)malloc(sizeof(char) * leftbuflen);
@@ -187,15 +170,9 @@ void TrapTtyReceive(UserContext *uctxt){
 //Capture TRAP_TTY_TRANSMIT
 void TrapTtyTransmit(UserContext *uctxt){
     TracePrintf(1,"Enter TrapTtyTransmit\n");
-    /*
-       tty_id = uctxt->code;
-
-    //Complete blocked process 
-    kernelttywrite(int tty_id, void *buf, int len);
-
-     */
 	int tty_id = uctxt->code;
 	transmitbusy = 0;
+	
 	// if(transleftbuflen > 0)
 	// {
 	// 	insert_head(currProc, tty[tty_id]->writerwaiting);

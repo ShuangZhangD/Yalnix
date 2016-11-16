@@ -9,7 +9,7 @@ extern dblist* readyqueue;
 int kernellockinit(UserContext *uctxt){
 
 	int id = getMutexId();
-	int* lock_idp =(int *) uctxt->regs[0];
+	int *lock_idp =(int *) uctxt->regs[0];
 	lstnode *lockNode = nodeinit(id);
 	lock_t *lock = (lock_t*)malloc(sizeof(lock_t));
 
@@ -33,26 +33,7 @@ int kernelaquire(UserContext *uctxt){
     //if the lock is owned by itself, return message
 
 	int lockId = uctxt->regs[0];
-	lstnode *node = search_node(lockId, lockqueue);
-	if (node == NULL){
-		return ERROR;
-	}
-
-	lock_t *lock = (lock_t*) node->content;
-
-	if (lock->ownerid == -1){
-		lock->ownerid = currProc->id;
-		return SUCCESS;
-	} else if (lock->ownerid != currProc->id){
-		enwaitlockqueue(currProc,lock->waitlist);
-		switchnext();
-		return SUCCESS;
-	} else {
-		TracePrintf(1, "Acquire Success");
-		return SUCCESS;
-	}
-
-    return ERROR;
+    return AcquireLock(lockId);
 }
 
 int kernelrelease(UserContext *uctxt){
@@ -66,23 +47,52 @@ int kernelrelease(UserContext *uctxt){
 	int lockId = uctxt->regs[0];
 	if (isemptylist(lockqueue)) return ERROR;
 
-	lstnode* lockNode = search_node(lockId,lockqueue);
 
-	lock_t *lock = (lock_t *) lockNode->content;
-	if (lock->ownerid != currProc->id)
-	{
+    return ReleaseLock(lockId);
+}
+
+int AcquireLock(int lock_id){
+	lstnode *locknode = search_node(lock_id, lockqueue);
+	if (locknode == NULL){
 		return ERROR;
 	}
+
+	lock_t *lock = (lock_t*) locknode->content;
+
+	while (lock->ownerid != -1 && lock->ownerid != currProc->id){
+		enwaitlockqueue(currProc,lock->waitlist);
+		switchnext();
+	}
+
+	TracePrintf(1, "Owner Id:%d, currProc:%d\n",lock->ownerid, currProc->id);
+	if (lock->ownerid == -1){
+		lock->ownerid = currProc->id;
+		return SUCCESS;
+	} 
+
+	return ERROR;
+}
+
+
+int ReleaseLock(int lock_id){
+
+	lstnode* locknode = search_node(lock_id,lockqueue);
+	if (locknode == NULL){
+		return ERROR;
+	}
+
+	lock_t *lock = (lock_t *) locknode->content;
+	if (lock->ownerid != currProc->id){
+		return ERROR;
+	}
+
 	lock->ownerid = -1;
 	if (!isemptylist(lock->waitlist)){
 		lstnode* node = dewaitlockqueue(lock->waitlist);
 		enreadyqueue(node,readyqueue);
-		switchnext();
 	}
 
-
-
-
-    return ERROR;
+	return SUCCESS;
 }
+
 

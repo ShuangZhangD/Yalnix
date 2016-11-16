@@ -62,7 +62,7 @@ typedef struct pipe
     char buffer[PIPE_BUFFER_LEN];
     dblist* readers;
     dblist* writers; 
-}Pipe;
+} pipe_t;
 
 typedef struct lock{
     int lock_id;
@@ -73,7 +73,6 @@ typedef struct lock{
 typedef struct cvar{
     int cvar_id;
     dblist* cvarwaiting;
-    lstnode *owner;
 } cvar_t;
 
 

@@ -30,7 +30,7 @@ int kernelreclaim(UserContext *uctxt)
     if (search_node(id , pipequeue) != NULL)
     {
         lstnode* pipenode = remove_node(id , pipequeue);
-        Pipe* pipe = pipenode->content;
+        pipe_t* pipe = pipenode->content;
         if(pipe->readers != NULL)
         {
             free(pipe->readers);
@@ -66,19 +66,14 @@ int kernelreclaim(UserContext *uctxt)
         int id = uctxt->regs[0];
         lstnode* cvarnode = remove_node(id , cvarqueue);
         cvar_t* cvar = cvarnode->content;
-        if(cvar->owner != NULL)
-        {
-            free(cvar->owner);
-        }
-        if(cvar->cvarwaiting != NULL)
-        {
+        if(cvar->cvarwaiting != NULL){
             free(cvar->cvarwaiting);
         }
         free(cvar);
         free(cvarnode);
         
     }
-    return ERROR;
+    return SUCCESS;
 }
 
 /*

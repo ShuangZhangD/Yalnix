@@ -446,7 +446,7 @@ lstnode* dewriterwaitingqueue(dblist* queue)
 
 int enwaitlockqueue(lstnode* procnode,dblist* queue)
 {
-    TracePrintf(1, "Enter enwaitingqueue\n");    
+    TracePrintf(1, "Enter enwaitlockqueue\n");    
     pcb_t* proc = TurnNodeToPCB(procnode);
 
     if (proc == NULL){
@@ -455,14 +455,14 @@ int enwaitlockqueue(lstnode* procnode,dblist* queue)
     proc->procState = WAITING;
     insert_tail(procnode, queue);
 
-    TracePrintf(1, "Exit enwaitingqueue\n"); 
+    TracePrintf(1, "Exit enwaitlockqueue\n"); 
     return 0;
 }
 
 lstnode* dewaitlockqueue(dblist* queue)
 {
-    TracePrintf(1,"Enter dewaitingqueue\n");
-    TracePrintf(1,"Exit dewaitingqueue\n");     
+    TracePrintf(1,"Enter dewaitlockqueue\n");
+    TracePrintf(1,"Exit dewaitlockqueue\n");     
     return remove_head(queue);
 }
 
@@ -487,6 +487,29 @@ lstnode* decvarqueue(dblist* queue)
     TracePrintf(1,"Exit dewaitingqueue\n");     
     return remove_head(queue);
 }
+
+int enwaitcvarqueue(lstnode* procnode,dblist* queue)
+{
+    TracePrintf(1, "Enter enwaitcvarqueue\n");    
+    pcb_t* proc = TurnNodeToPCB(procnode);
+
+    if (proc == NULL){
+        return ERROR;
+    }
+    proc->procState = WAITING;
+    insert_tail(procnode, queue);
+
+    TracePrintf(1, "Exit enwaitcvarqueue\n"); 
+    return 0;
+}
+
+lstnode* dewaitcvarqueue(dblist* queue)
+{
+    TracePrintf(1,"Enter dewaitcvarqueue\n");
+    TracePrintf(1,"Exit dewaitcvarqueue\n");     
+    return remove_head(queue);
+}
+
 
 lstnode* TurnPCBToNode(pcb_t *pcb){
     lstnode *node = nodeinit(pcb->pid);
