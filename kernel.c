@@ -157,7 +157,7 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     lockqueue = listinit();
     cvarqueue = listinit();
     pipequeue = listinit();
-
+    blockqueue = listinit();
 
     for (i = 0; i < NUM_TERMINALS; i++)
     {
@@ -167,7 +167,6 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
         //tty[i]->receivebuf = (char*) malloc(sizeof(char) * TERMINAL_MAX_LINE);
         //tty[i]->transmitbuf = (char*) malloc(sizeof(char) * TERMINAL_MAX_LINE);
     }
-    blockqueue = listinit();
 
     //Initialize Idle Process    
     TracePrintf(1, "Init pcb.\n");

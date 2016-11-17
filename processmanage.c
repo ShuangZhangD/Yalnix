@@ -85,11 +85,12 @@ int kernelfork(UserContext *uctxt){
 }
 
 int kernelexec(UserContext *uctxt){
+    TracePrintf(1,"Enter KernelExec\n");
     lstnode* loadProc = currProc;
     pcb_t* loadPcb = TurnNodeToPCB(loadProc);
 
-    char* name = (char*) uctxt->regs[0];
-    char** args = (char**) uctxt->regs[1];
+    char *name = (char*) uctxt->regs[0];
+    char **args = (char**) uctxt->regs[1];
     int rc = LoadProgram(name,args,loadProc);
     
     *uctxt = loadPcb->uctxt;

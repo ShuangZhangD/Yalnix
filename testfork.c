@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 void main(int argc, char const *argv[])
 {
 	/* code */
@@ -7,7 +9,9 @@ void main(int argc, char const *argv[])
 		TracePrintf(1,"I am child, code = %d\n", code);
 		int pid = GetPid();
 		TracePrintf(1,"Child Pid = %d\n", pid);
-		exit(1);
+    	char *arglist[1];
+    	arglist[0] = "testexec";
+		Exec(arglist[0],arglist);
 	} else {
 		int *status_ptr;
 		TracePrintf(1,"Before Waiting\n");
@@ -15,10 +19,15 @@ void main(int argc, char const *argv[])
 		TracePrintf(1,"I am Parent, child pid = %d, exit child status:%d\n",code, status_ptr);
 		int pid = GetPid();
 		TracePrintf(1,"Patent Pid = %d\n", pid);
+
+		Delay(10);
+	}
+	if (!code){
+		Exit(-1);
 	}
 
-	while(1){
-		TracePrintf(1, "testFork for RR\n");
-	}
+	int *status;
+	Wait(&status);
+
 	return;
 }

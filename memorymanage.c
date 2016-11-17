@@ -14,20 +14,20 @@ int kernelbrk(UserContext *uctxt){
     int oldBrkPage = proc->brk_page;
     int stacklimitpage = proc->stack_limit_page;
     int dataPage = proc->data_page;
-    int newBrkPage = newBrk >> PAGESHIFT;
+    int newBrkPage = (newBrk - VMEM_1_BASE)>> PAGESHIFT;
 
     TracePrintf(1,"oldBrkPage:%d, stacklimitpage:%d, dataPage:%d, newBrkPage:%d\n", oldBrkPage, stacklimitpage, dataPage, newBrkPage);
 
     if(newBrkPage >= stacklimitpage - 1){
         return ERROR;
     } else if (newBrkPage > oldBrkPage){
-        
+        TracePrintf(1, "Grow New Brk in kernelbrk\n");        
         writepagetable(proc->usrPtb, oldBrkPage, newBrkPage, VALID, (PROT_READ | PROT_WRITE));
         //Flush Tlb!
         WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
 
     } else if (newBrkPage < oldBrkPage){
-        
+        TracePrintf(1, "Lower Brk in kernelbrk\n");
         if (newBrkPage < dataPage) return ERROR;
         //Remap  Add this frame back to free frame tracker
         ummap(proc->usrPtb, newBrkPage, oldBrkPage, INVALID, PROT_NONE);
@@ -59,7 +59,7 @@ void TrapMemory(UserContext *uctxt){
     
     int rc;
     int trapCode = uctxt->code;
-    unsigned int newStackPage = ((unsigned int) uctxt->addr) >> PAGESHIFT;
+    unsigned int newStackPage = ((unsigned int) uctxt->addr - VMEM_1_BASE) >> PAGESHIFT;
 
     switch(trapCode){
         case (YALNIX_MAPERR):
@@ -78,7 +78,6 @@ void TrapMemory(UserContext *uctxt){
                 terminateProcess(currProc);
                 return;
             }
-            WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
             break;
         case (YALNIX_ACCERR):
             terminateProcess(currProc);
@@ -157,6 +156,7 @@ int GrowUserStack(lstnode *procnode, int addrPage){
 	}
 
 	writepagetable(proc->usrPtb, oldStackPage, newStackPage, VALID, (PROT_READ | PROT_WRITE));
+    WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
 	proc->stack_limit_page = newStackPage;
 
 	return 0;

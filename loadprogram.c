@@ -203,7 +203,8 @@ int LoadProgram(char *name, char *args[], lstnode *proc_node)
    */
   WriteRegister(REG_PTBR1, (unsigned int) proc->usrPtb);
   WriteRegister(REG_PTLR1, (unsigned int) MAX_PT_LEN);
-  
+ 
+  WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1); 
   /*
    * Read the text from the file into memory.
    */
@@ -221,7 +222,6 @@ int LoadProgram(char *name, char *args[], lstnode *proc_node)
    */
   lseek(fd, li.id_faddr, 0);
   segment_size = li.id_npg << PAGESHIFT;
-
   if (read(fd, (void *) li.id_vaddr, segment_size) != segment_size) {
     close(fd);
     return KILL;
