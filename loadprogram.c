@@ -186,7 +186,7 @@ int LoadProgram(char *name, char *args[], lstnode *proc_node)
 // ==>> These pages should be marked valid, with a protection of 
 // ==>> (PROT_READ | PROT_WRITE).
   writepagetable(proc->usrPtb, data_pg1, data_pg1 + data_npg - 1, VALID, (PROT_READ | PROT_WRITE));
-  proc->brk_page = data_pg1 + data_npg - 1;
+  proc->brk_page = data_pg1 + data_npg;
   proc->data_page = data_pg1 + data_npg - 1;
   /*
    * Allocate memory for the user stack too.
