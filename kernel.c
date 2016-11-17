@@ -316,7 +316,6 @@ lstnode *InitProc(){
 
     proc->usrPtb = InitUserPageTable();
 
-
     proc->krnlStackPtb = (pte_t *) calloc(g_pageNumOfStack ,sizeof(pte_t));
     proc->krnlStackPtbSize = g_pageNumOfStack;
 
@@ -343,8 +342,6 @@ pcb_t *InitIdleProc(UserContext *uctxt){
     proc->procState = READY;
     proc->pid = g_pid++;
     proc->uctxt = *uctxt;
-
-
     
     proc->krnlStackPtb = (pte_t *) calloc(g_pageNumOfStack ,sizeof(pte_t));
     proc->krnlStackPtbSize = g_pageNumOfStack;

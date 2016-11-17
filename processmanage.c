@@ -424,12 +424,12 @@ lstnode* dereaderwaitingqueue(dblist* queue)
 int enwriterwaitingqueue(lstnode* procnode,dblist* queue)
 {
     TracePrintf(1, "Enter enwaitingqueue\n");    
-    pcb_t* proc = TurnNodeToPCB(procnode);
+    // pcb_t* proc = TurnNodeToPCB(procnode);
 
-    if (proc == NULL){
-        return ERROR;
-    }
-    proc->procState = WAITING;
+    // if (proc == NULL){
+    //     return ERROR;
+    // }
+    // proc->procState = WAITING;
     insert_tail(procnode, queue);
 
     TracePrintf(1, "Exit enwaitingqueue\n"); 
@@ -438,8 +438,8 @@ int enwriterwaitingqueue(lstnode* procnode,dblist* queue)
 
 lstnode* dewriterwaitingqueue(dblist* queue)
 {
-    TracePrintf(1,"Enter dewaitingqueue\n");
-    TracePrintf(1,"Exit dewaitingqueue\n");     
+    TracePrintf(1,"Enter dewriterwaitingqueue\n");
+    TracePrintf(1,"Exit dewriterwaitingqueue\n");     
     return remove_head(queue);
 }
 
