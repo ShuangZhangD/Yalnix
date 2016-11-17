@@ -25,7 +25,6 @@ int kernelbrk(UserContext *uctxt){
         writepagetable(proc->usrPtb, oldBrkPage, newBrkPage, VALID, (PROT_READ | PROT_WRITE));
         //Flush Tlb!
         WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
-
     } else if (newBrkPage < oldBrkPage){
         TracePrintf(1, "Lower Brk in kernelbrk\n");
         if (newBrkPage < dataPage) return ERROR;
@@ -41,7 +40,9 @@ int kernelbrk(UserContext *uctxt){
 
     //Let addr be the new kernel break
     proc->brk_page = newBrkPage;
-
+    TracePrintf(1,"CUUCCCC:%d\n", currProc->id);   
+    // printUserPageTable(proc->usrPtb);
+    check_heap();
     return SUCCESS;
 }
 

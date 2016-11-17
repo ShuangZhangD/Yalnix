@@ -20,7 +20,7 @@ int main()
 
 	// return 0;
 	TracePrintf(1,"Allocate\n");
-	int* x = (int*) malloc(10000* sizeof(int));
+	int* x = (int*) malloc(100* sizeof(int));
 	TracePrintf(1,"Free\n");
 	free(x);
 
