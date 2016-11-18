@@ -10,6 +10,12 @@ int KernelCvarInit(UserContext *uctxt){
 
 	//Create a new condition variable
 	int *cvar_idp = (int *) uctxt->regs[0];
+
+    int rc = InputSanityCheck(cvar_idp);
+    if (rc){
+        TracePrintf(1, "Error!The cvar_idp address:%d in kernellockinit is not valid!\n", cvar_idp);
+    }
+
 	//Create a new cvar
 	int cvar_id = getMutexId();
 	lstnode* cvarnode = nodeinit(cvar_id);

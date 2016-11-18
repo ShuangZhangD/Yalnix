@@ -10,7 +10,17 @@ int kernellockinit(UserContext *uctxt){
 
 	int id = getMutexId();
 	int *lock_idp =(int *) uctxt->regs[0];
+
+    int rc = InputSanityCheck(lock_idp);
+    if (rc){
+        TracePrintf(1, "Error!The lock_idp address:%d in kernellockinit is not valid!\n", lock_idp);
+    }
+
 	lstnode *lockNode = nodeinit(id);
+	if (NULL == lockNode){
+		return ERROR;
+	}
+
 	lock_t *lock = (lock_t*)MallocCheck(sizeof(lock_t));
 	if (NULL == lock){
 		TracePrintf(1, "Malloc Failed! Get a NULL lock in kernellockinit!\n");  

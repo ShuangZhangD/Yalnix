@@ -72,33 +72,33 @@ void TrapKernel(UserContext *uctxt){
             rc = kernelpipewrite(uctxt);
             break;
 
-            case YALNIX_LOCK_INIT:
-                rc = kernellockinit(uctxt);
-                break;
+        case YALNIX_LOCK_INIT:
+            rc = kernellockinit(uctxt);
+            break;
 
-            case YALNIX_LOCK_ACQUIRE:
-                rc = kernelaquire(uctxt);
-                break;
+        case YALNIX_LOCK_ACQUIRE:
+            rc = kernelaquire(uctxt);
+            break;
 
-            case YALNIX_LOCK_RELEASE:
-                rc = kernelrelease(uctxt);
-                break;
+        case YALNIX_LOCK_RELEASE:
+            rc = kernelrelease(uctxt);
+            break;
 
-            case YALNIX_CVAR_INIT:
-                rc = KernelCvarInit(uctxt);
-                break;
+        case YALNIX_CVAR_INIT:
+            rc = KernelCvarInit(uctxt);
+            break;
 
-            case YALNIX_CVAR_SIGNAL:
-                rc = KernelCvarSignal(uctxt);
-                break;
+        case YALNIX_CVAR_SIGNAL:
+            rc = KernelCvarSignal(uctxt);
+            break;
 
-            case YALNIX_CVAR_BROADCAST:
-                rc = KernelCvarBroadcast(uctxt);
-                break;
+        case YALNIX_CVAR_BROADCAST:
+            rc = KernelCvarBroadcast(uctxt);
+            break;
 
-            case YALNIX_CVAR_WAIT:
-                rc = KernelCvarWait(uctxt);
-                break;
+        case YALNIX_CVAR_WAIT:
+            rc = KernelCvarWait(uctxt);
+            break;
 
         case YALNIX_RECLAIM:
             rc = kernelreclaim(uctxt);

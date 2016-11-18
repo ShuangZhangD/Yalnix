@@ -9,18 +9,24 @@ extern lstnode* currProc;
 
 int kernelttyread(UserContext *uctxt){
 	TracePrintf(1,"Enter kernelttyread\n");
-	int tty_id = uctxt->regs[0];
-	void *buf = (void *) uctxt->regs[1];
+	int tty_id = uctxt->regs[0], rc;
 	int len = uctxt->regs[2];
-	if (len < 0)
-	{
+	void *buf = (void *) uctxt->regs[1];
+	
+	rc = InputSanityCheck((int *)buf);
+	if (rc){
+		TracePrintf(1, "Error! The buffer address:%d in kernelttyread is not valid!\n",buf);
+		return;
+	}
+
+	if (len < 0) {
+		return ERROR;
+	}
+	if (tty_id < 0 || tty_id >= NUM_TERMINALS) {
 		return ERROR;
 	}
 
-	if (tty_id < 0 || tty_id >= NUM_TERMINALS)
-	{
-		return ERROR;
-	}
+
 	//to if buffer is empty then enwaitingqueue
 	while (receivelen <= 0)
 	{
@@ -79,6 +85,13 @@ int kernelttywrite(UserContext *uctxt){
 	int tty_id = uctxt->regs[0];
 	void *buf = (void*) uctxt->regs[1];
 	int len = uctxt->regs[2];
+
+	int rc = IOSanityCheck((int *)buf);
+	if (rc){
+		TracePrintf(1, "Error! The buffer address:%p in kernelttywrite is not valid!\n", buf);
+		return;
+	}
+
 	if (len < 0) {
 		return ERROR;
 	}

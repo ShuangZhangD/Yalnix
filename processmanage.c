@@ -16,11 +16,14 @@ extern dblist* cvarqueue;
     SYSCALL
 */
 int kernelfork(UserContext *uctxt){
-    TracePrintf(1,"Enter Kernelfork\n");
+    TracePrintf(2,"Enter Kernelfork\n");
     int rc;
 
     rc = CheckAvailableFrame(currProc);
-    if (rc) return ERROR;
+    if (rc) {
+        TracePrintf(1, "Error! There is no enough Free Frames!\n");
+        return ERROR;
+    }
     /*
         1. Initialize Empty Child Process (including initialize user page table, allocate free frame to it)
     */
@@ -70,9 +73,9 @@ int kernelfork(UserContext *uctxt){
         return ERROR;
     }
 
-    TracePrintf(1,"parent:%p, child:%p\n", parentPcb->usrPtb, childPcb->usrPtb);
+    TracePrintf(3,"parent:%p, child:%p\n", parentPcb->usrPtb, childPcb->usrPtb);
 
-    TracePrintf(1,"Exit Kernelfork\n");
+    TracePrintf(2,"Exit Kernelfork\n");
     //10. if current process is childprocess, return 0, otherwise return pid
     if(currProc == childProc) {
         return 0;
@@ -85,28 +88,29 @@ int kernelfork(UserContext *uctxt){
 }
 
 int kernelexec(UserContext *uctxt){
-    TracePrintf(1,"Enter KernelExec\n");
+    TracePrintf(2,"Enter KernelExec\n");
     lstnode* loadProc = currProc;
     pcb_t* loadPcb = TurnNodeToPCB(loadProc);
 
     char *name = (char*) uctxt->regs[0];
     char **args = (char**) uctxt->regs[1];
-    int rc = LoadProgram(name,args,loadProc);
-    
-    *uctxt = loadPcb->uctxt;
 
+    int rc = LoadProgram(name,args,loadProc);
     if (rc == ERROR) {
         return ERROR;
     } else if (rc == KILL){
         terminateProcess(loadProc);
         return ERROR;
     }
+
+    *uctxt = loadPcb->uctxt;
     return SUCCESS;
 }
 
 int kernelexit(UserContext *uctxt){
     TracePrintf(1,"Enter KernelExit\n");
     int status = uctxt->regs[0];
+
     pcb_t* currPcb = TurnNodeToPCB(currProc);
     currPcb->exitstatus = status;
 
@@ -117,13 +121,18 @@ int kernelexit(UserContext *uctxt){
     }
 
     terminateProcess(currProc);
-    TracePrintf(1,"Exit KernelExit\n");
+    TracePrintf(1,"Error! A process should never return from KernelExit\n");
     return ERROR;
 }
 
 int kernelwait(UserContext *uctxt){
     TracePrintf(1,"Enter kernelwait\n");
     pcb_t *proc = TurnNodeToPCB(currProc);
+
+    int rc = InputSanityCheck(uctxt->regs[0]);
+    if (rc){
+        TracePrintf(1, "Error!The status_ptr address:%d in kernelwait is not valid!\n", uctxt->regs[0]);
+    }
 
     if (isemptylist(proc->children) && isemptylist(proc->terminatedchild)){
         return ERROR;
@@ -133,7 +142,6 @@ int kernelwait(UserContext *uctxt){
         enblockqueue(currProc,blockqueue);
         switchproc();        
     }
-
 
     if (!isemptylist(proc->terminatedchild)){
         lstnode* remove = remove_head(proc->terminatedchild);
@@ -151,11 +159,9 @@ int kernelgetpid(){
 }
 
 //Capture TRAP_CLOCK
-//TODO: Implement round-robin process scheduling with CPU quantum per process of 1 clock tick.
 void TrapClock(UserContext *uctxt){
     TracePrintf(1, "TrapClock called\n");
 
-    // int rc = 0;
     if (!isemptylist(waitingqueue)){
         lstnode *traverse = waitingqueue->head->next;
         while(traverse != NULL && traverse->id != -1) {               
@@ -174,38 +180,13 @@ void TrapClock(UserContext *uctxt){
         
     }
 
-    // if (!isemptylist(lockqueue)){
-    //     lstnode *lockNode = lockqueue->head->next;
-    //     while(lockNode!=NULL && lockNode->id !=- 1){
-    //         lock_t *lock = (lock_t *) lockNode->content;
-    //         if (lock->owner != NULL){
-    //             if (lock->owner == currProc) break;
-    //             else continue;
-    //         } else {
-    //             if (!isemptylist(lock->waitlist)){
-    //                 lstnode *node = search_node(currProc->id,lock->waitlist);
-    //                 if (node == NULL) continue;
-    //                 remove_node(currProc->id, lock->waitlist);
-    //                 lock->owner = currProc;
-    //                 break;
-    //             }
-    //         }
-
-    //         lockNode = lockNode->next;
-    //     }
-    // }
-
-    // while(){
-    //     switchproc();
-    // }
-
     if (!isemptylist(readyqueue)){
         switchproc();
     }
 }
 
 int kerneldelay(UserContext *uctxt){
-    TracePrintf(1, "Enter KernelDelay\n");
+    TracePrintf(2, "Enter KernelDelay\n");
 
     pcb_t *proc = TurnNodeToPCB(currProc);
     proc->uctxt = *uctxt;
@@ -293,7 +274,7 @@ void CopyUserProcess (pte_t* parentPtb, pte_t* childPtb){
 
 int switchproc()
 {
-        TracePrintf(1,"Enter switchproc.\n");
+        TracePrintf(2,"Enter switchproc.\n");
         int rc = 0;
 
         // lstnode *switchOut = dereadyqueue(readyqueue);
@@ -339,7 +320,7 @@ void terminateProcess(lstnode *procnode){
 
 int enreadyqueue(lstnode* procnode,dblist* queue)
 {	
-    TracePrintf(1, "Enter enreadyqueue\n");    
+    TracePrintf(3, "Enter enreadyqueue\n");    
 	pcb_t* proc = TurnNodeToPCB(procnode);
 
 	if (proc == NULL){
@@ -358,7 +339,7 @@ lstnode* dereadyqueue(dblist* queue)
 
 int enwaitingqueue(lstnode* procnode,dblist* queue)
 {
-    TracePrintf(1, "Enter enwaitingqueue\n");    
+    TracePrintf(3, "Enter enwaitingqueue\n");    
 	pcb_t* proc = TurnNodeToPCB(procnode);
 
 	if (proc == NULL){
@@ -367,20 +348,20 @@ int enwaitingqueue(lstnode* procnode,dblist* queue)
 	proc->procState = WAITING;
 	insert_tail(procnode, queue);
 
-    TracePrintf(1, "Exit enwaitingqueue\n"); 
+    TracePrintf(3, "Exit enwaitingqueue\n"); 
 	return 0;
 }
 
 lstnode* dewaitingqueue(lstnode* waitingnode,dblist* queue)
 {
-    TracePrintf(1,"Enter dewaitingqueue\n");
-    TracePrintf(1,"Exit dewaitingqueue\n");   	
+    TracePrintf(3,"Enter dewaitingqueue\n");
+    TracePrintf(3,"Exit dewaitingqueue\n");   	
 	return remove_node(TurnNodeToPCB(waitingnode)->pid,queue);
 }
 
 int enblockqueue(lstnode* procnode,dblist* queue)
 {
-    TracePrintf(1, "Enter enblockqueue\n");    
+    TracePrintf(3, "Enter enblockqueue\n");    
     pcb_t* proc = TurnNodeToPCB(procnode);
 
     if (proc == NULL){
@@ -389,20 +370,20 @@ int enblockqueue(lstnode* procnode,dblist* queue)
     proc->procState = WAITING;
     insert_tail(procnode, queue);
 
-    TracePrintf(1, "Exit enblockqueue\n"); 
+    TracePrintf(3, "Exit enblockqueue\n"); 
     return 0;
 }
 
 lstnode* deblockqueue(lstnode* waitingnode,dblist* queue)
 {
-    TracePrintf(1,"Enter deblockqueue\n");
-    TracePrintf(1,"Exit deblockqueue\n");     
+    TracePrintf(3,"Enter deblockqueue\n");
+    TracePrintf(3,"Exit deblockqueue\n");     
     return remove_node(TurnNodeToPCB(waitingnode)->pid,queue);
 }
 
 int enreaderwaitingqueue(lstnode* procnode,dblist* queue)
 {
-    TracePrintf(1, "Enter enwaitingqueue\n");    
+    TracePrintf(3, "Enter enwaitingqueue\n");    
     pcb_t* proc = TurnNodeToPCB(procnode);
 
     if (proc == NULL){
@@ -411,20 +392,20 @@ int enreaderwaitingqueue(lstnode* procnode,dblist* queue)
     proc->procState = WAITING;
     insert_tail(procnode, queue);
 
-    TracePrintf(1, "Exit enwaitingqueue\n"); 
+    TracePrintf(3, "Exit enwaitingqueue\n"); 
     return 0;
 }
 
 lstnode* dereaderwaitingqueue(dblist* queue)
 {
-    TracePrintf(1,"Enter dewaitingqueue\n");
-    TracePrintf(1,"Exit dewaitingqueue\n");     
+    TracePrintf(3,"Enter dewaitingqueue\n");
+    TracePrintf(3,"Exit dewaitingqueue\n");     
     return remove_head(queue);
 }
 
 int enwriterwaitingqueue(lstnode* procnode,dblist* queue)
 {
-    TracePrintf(1, "Enter enwaitingqueue\n");    
+    TracePrintf(3, "Enter enwaitingqueue\n");    
     // pcb_t* proc = TurnNodeToPCB(procnode);
 
     // if (proc == NULL){
@@ -433,21 +414,21 @@ int enwriterwaitingqueue(lstnode* procnode,dblist* queue)
     // proc->procState = WAITING;
     insert_tail(procnode, queue);
 
-    TracePrintf(1, "Exit enwaitingqueue\n"); 
-    return 0;
+    TracePrintf(3, "Exit enwaitingqueue\n"); 
+    return SUCCESS;
 }
 
 lstnode* dewriterwaitingqueue(dblist* queue)
 {
-    TracePrintf(1,"Enter dewriterwaitingqueue\n");
-    TracePrintf(1,"Exit dewriterwaitingqueue\n");     
+    TracePrintf(3,"Enter dewriterwaitingqueue\n");
+    TracePrintf(3,"Exit dewriterwaitingqueue\n");     
     return remove_head(queue);
 }
 
 
 int enwaitlockqueue(lstnode* procnode,dblist* queue)
 {
-    TracePrintf(1, "Enter enwaitlockqueue\n");    
+    TracePrintf(3, "Enter enwaitlockqueue\n");    
     pcb_t* proc = TurnNodeToPCB(procnode);
 
     if (proc == NULL){
@@ -456,20 +437,20 @@ int enwaitlockqueue(lstnode* procnode,dblist* queue)
     proc->procState = WAITING;
     insert_tail(procnode, queue);
 
-    TracePrintf(1, "Exit enwaitlockqueue\n"); 
+    TracePrintf(3, "Exit enwaitlockqueue\n"); 
     return 0;
 }
 
 lstnode* dewaitlockqueue(dblist* queue)
 {
-    TracePrintf(1,"Enter dewaitlockqueue\n");
-    TracePrintf(1,"Exit dewaitlockqueue\n");     
+    TracePrintf(3,"Enter dewaitlockqueue\n");
+    TracePrintf(3,"Exit dewaitlockqueue\n");     
     return remove_head(queue);
 }
 
 int encvarqueue(lstnode* procnode,dblist* queue)
 {
-    TracePrintf(1, "Enter enwaitingqueue\n");    
+    TracePrintf(3, "Enter enwaitingqueue\n");    
     pcb_t* proc = TurnNodeToPCB(procnode);
 
     if (proc == NULL){
@@ -484,14 +465,14 @@ int encvarqueue(lstnode* procnode,dblist* queue)
 
 lstnode* decvarqueue(dblist* queue)
 {
-    TracePrintf(1,"Enter dewaitingqueue\n");
-    TracePrintf(1,"Exit dewaitingqueue\n");     
+    TracePrintf(3,"Enter dewaitingqueue\n");
+    TracePrintf(3,"Exit dewaitingqueue\n");     
     return remove_head(queue);
 }
 
 int enwaitcvarqueue(lstnode* procnode,dblist* queue)
 {
-    TracePrintf(1, "Enter enwaitcvarqueue\n");    
+    TracePrintf(3, "Enter enwaitcvarqueue\n");    
     pcb_t* proc = TurnNodeToPCB(procnode);
 
     if (proc == NULL){
@@ -506,8 +487,8 @@ int enwaitcvarqueue(lstnode* procnode,dblist* queue)
 
 lstnode* dewaitcvarqueue(dblist* queue)
 {
-    TracePrintf(1,"Enter dewaitcvarqueue\n");
-    TracePrintf(1,"Exit dewaitcvarqueue\n");     
+    TracePrintf(3,"Enter dewaitcvarqueue\n");
+    TracePrintf(3,"Exit dewaitcvarqueue\n");     
     return remove_head(queue);
 }
 

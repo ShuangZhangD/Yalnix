@@ -7,13 +7,18 @@ extern lstnode* currProc;
 
 
 int kernelbrk(UserContext *uctxt){
-    int i,rc;
     pcb_t *proc = TurnNodeToPCB(currProc);
 
+    int i,rc;    
     unsigned int newBrk = (unsigned int) uctxt->regs[0];
     int oldBrkPage = proc->brk_page;
     int stacklimitpage = proc->stack_limit_page;
     int dataPage = proc->data_page;
+
+    if (newBrk < VMEM_1_BASE){
+        TracePrintf(1,"Error! The New Break Address:%d is lower than the address of region 1!\n", newBrk);
+        return ERROR;
+    }
     int newBrkPage = (newBrk - VMEM_1_BASE)>> PAGESHIFT;
 
     TracePrintf(3,"oldBrkPage:%d, stacklimitpage:%d, dataPage:%d, newBrkPage:%d\n", oldBrkPage, stacklimitpage, dataPage, newBrkPage);
@@ -27,7 +32,7 @@ int kernelbrk(UserContext *uctxt){
         WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
     } else if (newBrkPage < oldBrkPage){
         TracePrintf(1, "Lower Brk in kernelbrk\n");
-        if (newBrkPage < dataPage) return ERROR;
+        if (newBrkPage <= dataPage) return ERROR;
         //Remap  Add this frame back to free frame tracker
         ummap(proc->usrPtb, newBrkPage, oldBrkPage, INVALID, PROT_NONE);
         
@@ -39,48 +44,47 @@ int kernelbrk(UserContext *uctxt){
     }
 
     //Let addr be the new kernel break
-    proc->brk_page = newBrkPage;
-    TracePrintf(1,"CUUCCCC:%d\n", currProc->id);   
-    // printUserPageTable(proc->usrPtb);
-    check_heap();
+    proc->brk_page = newBrkPage;  
+
     return SUCCESS;
 }
 
 //Capture TRAP_MEMORY
 void TrapMemory(UserContext *uctxt){
-    TracePrintf(1,"TrapMemory\n");
+    TracePrintf(2,"TrapMemory\n");
 
-    // printUserPageTable(currProc);
-    // printKernelPageTable();
-
-    pcb_t *proc = TurnNodeToPCB(currProc);
-    proc->uctxt = *uctxt;
-    
-    TracePrintf(1, "uctxt->addr:%p\n", uctxt->addr);
-    
     int rc;
     int trapCode = uctxt->code;
     unsigned int newStackPage = ((unsigned int) uctxt->addr - VMEM_1_BASE) >> PAGESHIFT;
 
+    TracePrintf(3, "uctxt->addr:%p\n", uctxt->addr);
+
+    pcb_t *proc = TurnNodeToPCB(currProc);
+    proc->uctxt = *uctxt;
+        
     switch(trapCode){
         case (YALNIX_MAPERR):
             if (newStackPage > proc->stack_limit_page){
+                TracePrintf(1, "Error! The new Stack Address:%d is INVALID!\n",uctxt->addr);
                 terminateProcess(currProc);
                 return;
             }
 
             if (newStackPage < proc->brk_page){
+                TracePrintf(1, "Error! The new Stack Address:%d is INVALID!\n",uctxt->addr);
                 terminateProcess(currProc);
                 return;
             }
 
             rc = GrowUserStack(currProc,newStackPage);
+            TracePrintf(3, "The new Stack Address is: %d\n",uctxt->addr);
             if (rc){
                 terminateProcess(currProc);
                 return;
             }
             break;
         case (YALNIX_ACCERR):
+            TracePrintf(1, "Error! Touch Illegal Address!\n");
             terminateProcess(currProc);
             break;
         default:
@@ -168,4 +172,36 @@ void* MallocCheck(int size){
     bzero(mm, size);
 
     return mm;
+}
+
+int InputSanityCheck(int *addr){
+    int ad = (int) addr;
+    int page = (ad - VMEM_1_BASE) >> PAGESHIFT;
+
+    if (page > MAX_PT_LEN){
+        return ERROR;
+    }
+
+    if (page <  TurnNodeToPCB(currProc)->stack_limit_page){
+        return ERROR;
+    } 
+
+    return SUCCESS;
+}
+
+int IOSanityCheck(int *addr){
+    int ad = (int) addr;
+    int page = (ad - VMEM_1_BASE) >> PAGESHIFT;
+
+    if (page > MAX_PT_LEN){
+        return ERROR;
+    }
+
+    if (TurnNodeToPCB(currProc)->data_page < page && page <  TurnNodeToPCB(currProc)->stack_limit_page){
+        return ERROR;
+    } 
+
+    return SUCCESS;
+
+
 }

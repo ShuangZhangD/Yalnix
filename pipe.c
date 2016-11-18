@@ -9,6 +9,12 @@ extern lstnode* currProc;
 int kernelpipeinit(UserContext *uctxt){
 	
 	int *pipe_idp =(int *) uctxt->regs[0];
+
+    int rc = InputSanityCheck(pipe_idp);
+	if (rc){
+        TracePrintf(1, "Error!The pipe_idp address:%d in kernelpipeinit is not valid!\n", pipe_idp);
+    }
+
 	//Create a new pipe
 	lstnode* pipenode = nodeinit(getMutexId());
 	if(pipenode == NULL){
@@ -39,6 +45,12 @@ int kernelpiperead(UserContext *uctxt){
 	int pipe_id = uctxt->regs[0];
 	void* buf =(void*) uctxt->regs[1];
 	int len = uctxt->regs[2];
+
+    int rc = InputSanityCheck((int *)buf);
+	if (rc){
+        TracePrintf(1, "Error!The buf address:%p in kernelpiperead is not valid!\n", buf);
+    }
+
 	//if len is valid, use pipe_id to get the pipe to read from
 	if(len < 0)
 	{
@@ -80,8 +92,14 @@ int kernelpiperead(UserContext *uctxt){
 
 int kernelpipewrite(UserContext *uctxt){
 	int pipe_id = uctxt->regs[0];
-	void* buf =(void*) uctxt->regs[1];
+	unsigned int *buf = (unsigned int *) uctxt->regs[1];
 	int len = uctxt->regs[2];
+
+    int rc = InputSanityCheck(*buf);
+	if (rc){
+        TracePrintf(1, "Error!The buf address:%p in kernelpipewrite is not valid!\n", buf);
+    }
+
 	//if len is valid, use pipe_id to get the pipe to write to
 	if(len < 0){
 		return ERROR;
