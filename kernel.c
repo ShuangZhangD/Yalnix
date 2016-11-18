@@ -161,7 +161,11 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
 
     for (i = 0; i < NUM_TERMINALS; i++)
     {
-        tty[i] = (Tty*) malloc(sizeof(Tty));
+        tty[i] = (Tty*) MallocCheck(sizeof(Tty));
+        if (NULL == tty[i]){
+            TracePrintf(1, "Malloc Failed in KernelStart! TTY is NULL!\n");
+            return;
+        }
         tty[i]->readerwaiting = listinit();
         tty[i]->writerwaiting = listinit();
         //tty[i]->receivebuf = (char*) malloc(sizeof(char) * TERMINAL_MAX_LINE);
@@ -171,6 +175,10 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     //Initialize Idle Process    
     TracePrintf(1, "Init pcb.\n");
     pcb_t *idlePcb = InitIdleProc(uctxt);
+    if (NULL == idlePcb){
+        TracePrintf(1, "Error! IdlePcb == NULL\n");
+        return;
+    }
     idlePcb->usrPtb = idlePageTable;
     idlePcb->usrPtb[MAX_PT_LEN-1].valid = 1;
     idlePcb->usrPtb[MAX_PT_LEN-1].prot = (PROT_WRITE | PROT_READ);
@@ -187,6 +195,10 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     
     //Initialize Init Process
     lstnode *initProc = InitProc();
+    if (NULL == initProc){
+        TracePrintf(1, "Error! initProc == NULL\n");
+        return;
+    }
 
     //Create first process  and load initial program to it
     if (NULL == cmd_args[0]){
@@ -213,7 +225,7 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     }
 
     *uctxt = TurnNodeToPCB(currProc)->uctxt;
-    TracePrintf(1,"Exit KernelStart.\n");
+    TracePrintf(2,"Exit KernelStart.\n");
     return;
 }   
 
@@ -222,8 +234,11 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
 pte_t* InitUserPageTable (){
     int i;
 
-    pte_t *usrPtb = (pte_t *) malloc(sizeof(pte_t) * MAX_PT_LEN);
-
+    pte_t *usrPtb = (pte_t *) MallocCheck(sizeof(pte_t) * MAX_PT_LEN);
+    if (NULL == usrPtb){
+        TracePrintf(1, "Malloc Failed! InitUserPageTable get a NULL page!\n");
+        return NULL;
+    }
     //Mark User Page table as Invalid;
     for (i = 0; i < MAX_PT_LEN; i++){
         usrPtb[i].valid = 0;
@@ -309,13 +324,24 @@ lstnode *InitProc(){
     int i, stackInx;
 
     //Initialize Process
-    pcb_t *proc = (pcb_t *) malloc (sizeof(pcb_t));
+    pcb_t *proc = (pcb_t *) MallocCheck (sizeof(pcb_t));
+    if (NULL == proc){
+        TracePrintf(1, "Malloc Failed! Get a NULL proc in InitProc!\n");
+        return NULL;
+    }
     proc->procState = READY;
     proc->pid = g_pid++;
 
     proc->usrPtb = InitUserPageTable();
+    if (NULL == proc->usrPtb){
+        return NULL;
+    }
 
-    proc->krnlStackPtb = (pte_t *) calloc(g_pageNumOfStack ,sizeof(pte_t));
+    proc->krnlStackPtb = (pte_t *) MallocCheck(g_pageNumOfStack * sizeof(pte_t));
+    if (NULL == proc->krnlStackPtb){
+         TracePrintf(1, "Malloc Failed! Get a NULL krnlStackPtb in InitProc!\n");  
+         return NULL;     
+    }
     proc->krnlStackPtbSize = g_pageNumOfStack;
 
     //Let a userprocess have its own kernel stack
@@ -337,12 +363,21 @@ pcb_t *InitIdleProc(UserContext *uctxt){
     int i, stackInx;
 
     //Initialize Process
-    pcb_t *proc = (pcb_t *) malloc (sizeof(pcb_t));
+    pcb_t *proc = (pcb_t *) MallocCheck(sizeof(pcb_t));
+    if (NULL == proc){
+        TracePrintf(1, "Malloc Failed! Get a NULL proc in InitIdleProc!\n");
+        return NULL;       
+    }
+
     proc->procState = READY;
     proc->pid = g_pid++;
     proc->uctxt = *uctxt;
     
-    proc->krnlStackPtb = (pte_t *) calloc(g_pageNumOfStack ,sizeof(pte_t));
+    proc->krnlStackPtb = (pte_t *) MallocCheck(g_pageNumOfStack * sizeof(pte_t));
+    if (NULL == proc->krnlStackPtb){
+         TracePrintf(1, "Malloc Failed! Get a NULL krnlStackPtb in InitIdleProc!\n");
+         return NULL;       
+    }
     proc->krnlStackPtbSize = g_pageNumOfStack;
 
     //Let a userprocess have its own kernel stack
@@ -504,7 +539,8 @@ KernelContext *MyIOKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
 }
 
 KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode){
-    
+    TracePrintf(2,"Enter MyTerminateKCS\n");
+
     int i, stackInx = 0;
 
     lstnode* term_pcb_node = (lstnode*) termNode;
@@ -545,8 +581,8 @@ KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode)
 
         if (NULL != search_node(currParent->pid,blockqueue)){
             lstnode* node = deblockqueue(term_p->parent,blockqueue);
-            TracePrintf(1,"term_p->parent->id:%d\n", term_p->parent->id);
-            TracePrintf(1,"node->id:%d\n", node->id);
+            TracePrintf(3,"term_p->parent->id:%d\n", term_p->parent->id);
+            TracePrintf(3,"node->id:%d\n", node->id);
             enreadyqueue(node,readyqueue);       
         }
 
@@ -566,7 +602,7 @@ KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode)
     if (node != next_pcb_node) TracePrintf(1, "KernelContextSwitch Error!");
     currProc = node;
 
-    TracePrintf(1,"Exit MyTerminateKCS\n");
+    TracePrintf(2,"Exit MyTerminateKCS\n");
 
     //Return a pointer to a kernel context it had earlier saved
     return &(next_p->kctxt);
@@ -575,7 +611,7 @@ KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode)
 
 
 KernelContext *MyForkKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
-    TracePrintf(1, "Enter MyTestKCS\n");
+    TracePrintf(2, "Enter MyTestKCS\n");
 
     int i, stackInx = 0;
 
@@ -593,7 +629,7 @@ KernelContext *MyForkKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
     cur_pcb->kctxt = *kc_in;
     nxt_pcb->kctxt = *kc_in;
 
-    TracePrintf(1, "Exit MyTestKCS\n");
+    TracePrintf(2, "Exit MyTestKCS\n");
     return kc_in;
 }
 

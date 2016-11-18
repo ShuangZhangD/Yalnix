@@ -12,3 +12,5 @@ void writepagetable(pte_t *pagetable, int startPage, int endPage, int valid, int
 void ummap(pte_t *pagetable, int startPage, int endPage, int valid, int prot);
 
 int GrowUserStack(lstnode *procnode, int addrPage);
+
+void* MallocCheck(int size);

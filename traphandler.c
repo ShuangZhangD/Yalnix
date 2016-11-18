@@ -85,19 +85,19 @@ void TrapKernel(UserContext *uctxt){
                 break;
 
             case YALNIX_CVAR_INIT:
-                rc = kernelcvarinit(uctxt);
+                rc = KernelCvarInit(uctxt);
                 break;
 
             case YALNIX_CVAR_SIGNAL:
-                rc = kernelcvarsignal(uctxt);
+                rc = KernelCvarSignal(uctxt);
                 break;
 
             case YALNIX_CVAR_BROADCAST:
-                rc = kernelcvarbroadcast(uctxt);
+                rc = KernelCvarBroadcast(uctxt);
                 break;
 
             case YALNIX_CVAR_WAIT:
-                rc = kernelcvarwait(uctxt);
+                rc = KernelCvarWait(uctxt);
                 break;
 
         case YALNIX_RECLAIM:

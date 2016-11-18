@@ -16,7 +16,7 @@ int kernelbrk(UserContext *uctxt){
     int dataPage = proc->data_page;
     int newBrkPage = (newBrk - VMEM_1_BASE)>> PAGESHIFT;
 
-    TracePrintf(1,"oldBrkPage:%d, stacklimitpage:%d, dataPage:%d, newBrkPage:%d\n", oldBrkPage, stacklimitpage, dataPage, newBrkPage);
+    TracePrintf(3,"oldBrkPage:%d, stacklimitpage:%d, dataPage:%d, newBrkPage:%d\n", oldBrkPage, stacklimitpage, dataPage, newBrkPage);
 
     if(newBrkPage >= stacklimitpage - 1){
         return ERROR;
@@ -161,4 +161,11 @@ int GrowUserStack(lstnode *procnode, int addrPage){
 	proc->stack_limit_page = newStackPage;
 
 	return 0;
+}
+
+void* MallocCheck(int size){
+    void* mm = (void* ) malloc(size);
+    bzero(mm, size);
+
+    return mm;
 }

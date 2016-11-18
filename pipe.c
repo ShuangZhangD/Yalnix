@@ -11,14 +11,14 @@ int kernelpipeinit(UserContext *uctxt){
 	int *pipe_idp =(int *) uctxt->regs[0];
 	//Create a new pipe
 	lstnode* pipenode = nodeinit(getMutexId());
-
 	if(pipenode == NULL){
+		TracePrintf(1, "Error! pipenode is NULL!\n");  
 		return ERROR;
 	}
 
-	pipe_t *pipe = (pipe_t *) malloc(sizeof(pipe_t));
-
+	pipe_t *pipe = (pipe_t *) MallocCheck(sizeof(pipe_t));
 	if(pipe == NULL) {
+		TracePrintf(1, "Malloc Failed! Get a NULL pipe in kernelpipeinit!\n");  
 		return ERROR;
 	}
 

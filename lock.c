@@ -11,7 +11,11 @@ int kernellockinit(UserContext *uctxt){
 	int id = getMutexId();
 	int *lock_idp =(int *) uctxt->regs[0];
 	lstnode *lockNode = nodeinit(id);
-	lock_t *lock = (lock_t*)malloc(sizeof(lock_t));
+	lock_t *lock = (lock_t*)MallocCheck(sizeof(lock_t));
+	if (NULL == lock){
+		TracePrintf(1, "Malloc Failed! Get a NULL lock in kernellockinit!\n");  
+		return ERROR;
+	}
 
 	lock->lock_id = id;
 	lock->ownerid = -1;

@@ -6,7 +6,7 @@
 dblist *cvarqueue;
 extern lstnode* currProc;
 
-int kernelcvarinit(UserContext *uctxt){
+int KernelCvarInit(UserContext *uctxt){
 
 	//Create a new condition variable
 	int *cvar_idp = (int *) uctxt->regs[0];
@@ -17,8 +17,9 @@ int kernelcvarinit(UserContext *uctxt){
 		return ERROR;
 	}
 
-	cvar_t* cvar = (cvar_t*) malloc(sizeof(cvar_t));
+	cvar_t* cvar = (cvar_t*) MallocCheck(sizeof(cvar_t));
 	if(cvar == NULL){
+		TracePrintf(1, "Malloc Failed! Get a NULL cvar in KernelCvarInit!\n");  
 		return ERROR;
 	}
 
@@ -35,7 +36,7 @@ int kernelcvarinit(UserContext *uctxt){
 
 }
 
-int kernelcvarsignal(UserContext *uctxt){
+int KernelCvarSignal(UserContext *uctxt){
 
 	//if the cvar with cvar_id is not initialized, return ERROR
 	int cvar_id = uctxt->regs[0];
@@ -57,7 +58,7 @@ int kernelcvarsignal(UserContext *uctxt){
     return SUCCESS;
 }
 
-int kernelcvarbroadcast(UserContext *uctxt){
+int KernelCvarBroadcast(UserContext *uctxt){
 
 	//if the cvar with cvar_id is not initialized, return ERROR
 	int cvar_id = uctxt->regs[0];	
@@ -78,7 +79,7 @@ int kernelcvarbroadcast(UserContext *uctxt){
     return SUCCESS;
 }
 
-int kernelcvarwait(UserContext *uctxt){
+int KernelCvarWait(UserContext *uctxt){
 	TracePrintf(1, "Enter kernelcvarwait\n");
 	//if the cvar with cvar_id is not initialized, return ERROR
 	int rc;
@@ -108,5 +109,7 @@ int kernelcvarwait(UserContext *uctxt){
 	if (rc){
 		TracePrintf(1, "AcquireLock in KernelCvarWait Failed!\n");
 	}
+
+	TracePrintf(2, "Exit kernelcvarwait\n");
     return SUCCESS;
 }

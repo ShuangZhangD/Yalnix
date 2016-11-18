@@ -4,10 +4,12 @@
 #include "selfdefinedstructure.h"
 #include "listcontrol.h"
 #include "processmanage.h"
-int kernelcvarinit(UserContext *uctxt);
 
-int kernelcvarsignal(UserContext *uctxt);
 
-int kernelcvarbroadcast(UserContext *uctxt);
+int KernelCvarInit(UserContext *uctxt);
 
-int kernelcvarwait(UserContext *uctxt);
+int KernelCvarSignal(UserContext *uctxt);
+
+int KernelCvarBroadcast(UserContext *uctxt);
+
+int KernelCvarWait(UserContext *uctxt);

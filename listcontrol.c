@@ -6,7 +6,11 @@
 
 lstnode* nodeinit(int i)
 {
-	lstnode* node = (lstnode *)malloc(sizeof(lstnode));
+	lstnode* node = (lstnode *)MallocCheck(sizeof(lstnode));
+	if (NULL == node){
+		TracePrintf(1, "Malloc Failed in nodeinit! node is NULL!\n");
+		return NULL;
+	}
 	node->id = i;
 	node->pre = NULL;
 	node->next = NULL;
@@ -16,13 +20,26 @@ lstnode* nodeinit(int i)
 dblist* listinit()
 {
 	
-	dblist* list = (dblist* )malloc(sizeof(dblist));
+	dblist* list = (dblist* ) MallocCheck(sizeof(dblist));
+	if (NULL == list){
+		TracePrintf(1, "Malloc Failed in nodeinit! list is NULL!\n");
+		return NULL;
+	}
 
-	list->head = (lstnode *)malloc(sizeof(lstnode));
+	list->head = (lstnode *) MallocCheck(sizeof(lstnode));
+	if (NULL == list->head){
+		TracePrintf(1, "Malloc Failed in listinit! list->head is NULL!\n");
+		return NULL;
+	}
 	list->head->id = -1;
 	list->head->pre = NULL;
 	list->head->next = NULL;
-	list->tail = (lstnode *)malloc(sizeof(lstnode));
+	list->tail = (lstnode *) MallocCheck(sizeof(lstnode));
+	if (NULL == list->tail){
+		TracePrintf(1, "Malloc Failed in listinit! list->tail is NULL!\n");
+		return NULL;
+	}
+
 	list->tail->id = -1;
 	list->tail->pre = NULL;
 	list->tail->next = NULL;

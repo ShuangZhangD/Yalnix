@@ -146,9 +146,10 @@ int LoadProgram(char *name, char *args[], lstnode *proc_node)
    * Now save the arguments in a separate buffer in region 0, since
    * we are about to blow away all of region 1.
    */
-  cp2 = argbuf = (char *)malloc(size);
+  cp2 = argbuf = (char *)MallocCheck(size);
 // ==>> You should perhaps check that malloc returned valid space
   if (cp2 == NULL){
+    TracePrintf(1, "Malloc Failed in LoadProgram! cp2 is NULL!\n");
     return KILL;
   }
 
