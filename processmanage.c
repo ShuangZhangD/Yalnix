@@ -148,6 +148,8 @@ int kernelwait(UserContext *uctxt){
     return ERROR;
 }
 
+
+
 int kernelgetpid(){
     return TurnNodeToPCB(currProc)->pid;
 }
@@ -505,7 +507,27 @@ lstnode* dewaitcvarqueue(dblist* queue)
     TracePrintf(3,"Exit dewaitcvarqueue\n");     
     return remove_head(queue);
 }
+int enwaitsemqueue(lstnode* procnode,dblist* queue)
+{
+    TracePrintf(3, "Enter enwaitcvarqueue\n");    
+    pcb_t* proc = TurnNodeToPCB(procnode);
 
+    if (proc == NULL){
+        return ERROR;
+    }
+    proc->procState = WAITING;
+    insert_tail(procnode, queue);
+
+    TracePrintf(3, "Exit enwaitcvarqueue\n"); 
+    return 0;
+}
+
+lstnode* dewaitsemqueue(dblist* queue)
+{
+    TracePrintf(3,"Enter dewaitcvarqueue\n");
+    TracePrintf(3,"Exit dewaitcvarqueue\n");     
+    return remove_head(queue);
+}
 
 lstnode* TurnPCBToNode(pcb_t *pcb){
     lstnode *node = nodeinit(pcb->pid);

@@ -42,9 +42,50 @@ int KernelSemInit(UserContext *uctxt){
 }
 
 int KernelSemUp(UserContext *uctxt){
+	int id = (int) uctxt->regs[0];
+	lstnode* semNode = search_node(id, semqueue);
+
+	if(semNode == NULL)
+	{
+		return ERROR;
+	}
+	sem_t* sem = (sem_t*)semNode->content;
+	sem->sem_val++;
+
+	if(!isemptylist(sem->semwaitlist))
+	{
+		lstnode* node = dewaitsemqueue(sem->semwaitlist);
+		enreadyqueue(node, readyqueue);
+	}
 	return SUCCESS;
 }
 
 int KernelSemDown(UserContext *uctxt){
+	int id = (int) uctxt->regs[0];
+	lstnode* semNode = search_node(id, semqueue);
+
+	if(semNode == NULL)
+	{
+		return ERROR;
+	}
+	sem_t* sem = (sem_t*)semNode->content;
+
+	pcb_t* proc =(pcb_t*) currProc->content;
+	if(sem->ownerid == -1)
+	{
+		sem->sem_id = proc->pid;
+	}else if(sem->ownerid != proc->pid)
+	{
+		return ERROR;
+	}
+	
+	
+	while (sem->sem_val <= 0)
+	{
+		enwaitsemqueue(currProc, sem->semwaitlist);
+		switchnext();
+	}
+	sem->sem_val--;
+	
 	return SUCCESS;
 }
