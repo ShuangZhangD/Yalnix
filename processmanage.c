@@ -108,7 +108,7 @@ int kernelexec(UserContext *uctxt){
 }
 
 int kernelexit(UserContext *uctxt){
-    TracePrintf(1,"Enter KernelExit\n");
+    TracePrintf(2,"Enter KernelExit\n");
     int status = uctxt->regs[0];
 
     pcb_t* currPcb = TurnNodeToPCB(currProc);
@@ -160,7 +160,7 @@ int kernelgetpid(){
 
 //Capture TRAP_CLOCK
 void TrapClock(UserContext *uctxt){
-    TracePrintf(1, "TrapClock called\n");
+    TracePrintf(2, "TrapClock called\n");
 
     if (!isemptylist(waitingqueue)){
         lstnode *traverse = waitingqueue->head->next;
@@ -168,7 +168,7 @@ void TrapClock(UserContext *uctxt){
             pcb_t* proc = TurnNodeToPCB(traverse);
             if(proc->clock > 0){
                 proc->clock--;
-                TracePrintf(1, "proc->clock:%d\n", proc->clock);
+                TracePrintf(3, "proc->clock:%d\n", proc->clock);
             }
             if(proc->clock == 0){
                 lstnode* traverseNode = dewaitingqueue(traverse,waitingqueue);
@@ -199,7 +199,7 @@ int kerneldelay(UserContext *uctxt){
         return ERROR;
     }
     else{
-        TracePrintf(1, "pid = %d\n", TurnNodeToPCB(currProc)->pid);
+        TracePrintf(3, "pid = %d\n", TurnNodeToPCB(currProc)->pid);
         enwaitingqueue(currProc,waitingqueue);
         proc->clock = clock_ticks;
 
@@ -287,13 +287,13 @@ int switchproc()
         
         if (TERMINATED ==  TurnNodeToPCB(currProc)->procState){
             rc = KernelContextSwitch(MyTerminateKCS, (void *) currProc, (void *) switchIn);
-            if (rc) TracePrintf(1,"MyTerminateKCS in switchproc failed!\n");  
+            if (rc) TracePrintf(1,"Error! MyTerminateKCS in switchproc failed!\n");  
 
         } else if (!isemptylist(readyqueue)){
-            TracePrintf(1, "currProc->id%d\n", TurnNodeToPCB(currProc)->pid );
-            TracePrintf(1, "switchIn->id%d\n" ,TurnNodeToPCB(switchIn)->pid);
+            TracePrintf(3, "currProc->id%d\n", TurnNodeToPCB(currProc)->pid );
+            TracePrintf(3, "switchIn->id%d\n" ,TurnNodeToPCB(switchIn)->pid);
             rc = KernelContextSwitch(MyTrueKCS, (void *) currProc, (void *) switchIn);
-            if (rc) TracePrintf(1,"MyTrueKCS in switchproc failed!\n");
+            if (rc) TracePrintf(1,"Error! MyTrueKCS in switchproc failed!\n");
         }
         else{
             rc =  1;
@@ -383,7 +383,7 @@ lstnode* deblockqueue(lstnode* waitingnode,dblist* queue)
 
 int enreaderwaitingqueue(lstnode* procnode,dblist* queue)
 {
-    TracePrintf(3, "Enter enwaitingqueue\n");    
+    TracePrintf(3, "Enter enreaderwaitingqueue\n");    
     pcb_t* proc = TurnNodeToPCB(procnode);
 
     if (proc == NULL){
@@ -392,20 +392,20 @@ int enreaderwaitingqueue(lstnode* procnode,dblist* queue)
     proc->procState = WAITING;
     insert_tail(procnode, queue);
 
-    TracePrintf(3, "Exit enwaitingqueue\n"); 
+    TracePrintf(3, "Exit enreaderwaitingqueue\n"); 
     return 0;
 }
 
 lstnode* dereaderwaitingqueue(dblist* queue)
 {
-    TracePrintf(3,"Enter dewaitingqueue\n");
-    TracePrintf(3,"Exit dewaitingqueue\n");     
+    TracePrintf(3,"Enter dereaderwaitingqueue\n");
+    TracePrintf(3,"Exit dereaderwaitingqueue\n");     
     return remove_head(queue);
 }
 
 int enwriterwaitingqueue(lstnode* procnode,dblist* queue)
 {
-    TracePrintf(3, "Enter enwaitingqueue\n");    
+    TracePrintf(3, "Enter enwriterwaitingqueue\n");    
     // pcb_t* proc = TurnNodeToPCB(procnode);
 
     // if (proc == NULL){
@@ -414,7 +414,7 @@ int enwriterwaitingqueue(lstnode* procnode,dblist* queue)
     // proc->procState = WAITING;
     insert_tail(procnode, queue);
 
-    TracePrintf(3, "Exit enwaitingqueue\n"); 
+    TracePrintf(3, "Exit enwriterwaitingqueue\n"); 
     return SUCCESS;
 }
 
@@ -481,7 +481,7 @@ int enwaitcvarqueue(lstnode* procnode,dblist* queue)
     proc->procState = WAITING;
     insert_tail(procnode, queue);
 
-    TracePrintf(1, "Exit enwaitcvarqueue\n"); 
+    TracePrintf(3, "Exit enwaitcvarqueue\n"); 
     return 0;
 }
 

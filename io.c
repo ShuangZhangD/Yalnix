@@ -6,16 +6,17 @@
 
 
 extern lstnode* currProc;
+int g_isFinised = 1;
 
 int kernelttyread(UserContext *uctxt){
-	TracePrintf(1,"Enter kernelttyread\n");
+	TracePrintf(2,"Enter kernelttyread\n");
 	int tty_id = uctxt->regs[0], rc;
 	int len = uctxt->regs[2];
 	void *buf = (void *) uctxt->regs[1];
 	
 	rc = InputSanityCheck((int *)buf);
 	if (rc){
-		TracePrintf(1, "Error! The buffer address:%d in kernelttyread is not valid!\n",buf);
+		TracePrintf(1, "Error! The buffer address:%p in kernelttyread is not valid!\n",buf);
 		return;
 	}
 
@@ -35,7 +36,7 @@ int kernelttyread(UserContext *uctxt){
 	}
 	
 	// enreaderwaitingqueue(currProc,tty[tty_id]->readerwaiting);
-	TracePrintf(1, "something to read\n");
+	TracePrintf(2, "something to read\n");
 	// if (!(firstnode(tty[tty_id]->readerwaiting) == currProc))
 	// {
 	// 	TracePrintf(1, "firstnode enreaderwaitingqueue");
@@ -59,10 +60,10 @@ int kernelttyread(UserContext *uctxt){
 			return len;
 		}
 		else{
-			TracePrintf(1, "Enter memcpy\n");
-			TracePrintf(1, "PID = %d, buf: %p, ttybuffer: %s", currProc->id, buf, tty[tty_id]->receivebuf);
+			TracePrintf(3, "Enter memcpy\n");
+			TracePrintf(3, "PID = %d, buf: %p, ttybuffer: %s", currProc->id, buf, tty[tty_id]->receivebuf);
 			memcpy(buf, (void*)tty[tty_id]->receivebuf, receivelen);
-			TracePrintf(1, "Exit memcpy\n");
+			TracePrintf(3, "Exit memcpy\n");
 
 			int len = receivelen;
 			receivelen = 0;
@@ -81,7 +82,7 @@ int kernelttyread(UserContext *uctxt){
 }
 
 int kernelttywrite(UserContext *uctxt){
-	TracePrintf(1,"Enter kernelttywrite\n");
+	TracePrintf(2,"Enter kernelttywrite\n");
 	int tty_id = uctxt->regs[0];
 	void *buf = (void*) uctxt->regs[1];
 	int len = uctxt->regs[2];
@@ -111,7 +112,10 @@ int kernelttywrite(UserContext *uctxt){
 
 	while(leftlen > 0){
 		int write_len = (len > TERMINAL_MAX_LINE) ? TERMINAL_MAX_LINE:len;
-		TtyTransmit(tty_id, buf + len - leftlen, write_len);
+		if (g_isFinised) {
+			TtyTransmit(tty_id, buf + len - leftlen, write_len);
+			g_isFinised = 0;
+		}
 		switchnext();
 		leftlen -= write_len;
 	}
@@ -124,13 +128,13 @@ int kernelttywrite(UserContext *uctxt){
 		return ERROR;
 	}
 
-	TracePrintf(1,"Exit kernelttywrite\n");
+	TracePrintf(2,"Exit kernelttywrite\n");
 	return len;
 }
 
 //Capture TRAP_TTY_RECEIVE
 void TrapTtyReceive(UserContext *uctxt){
-    TracePrintf(1,"Enter TrapTtyReceive\n");
+    TracePrintf(2,"Enter TrapTtyReceive\n");
     /*
     //Get the input string using TtyReceive
 
@@ -145,12 +149,12 @@ void TrapTtyReceive(UserContext *uctxt){
      */
 	int tty_id = uctxt->code;
 	receivelen = TtyReceive(tty_id, tty[tty_id]->receivebuf, TERMINAL_MAX_LINE);
-	TracePrintf(1, "receivelen=%d\n", receivelen);
+	TracePrintf(3, "receivelen=%d\n", receivelen);
 	while (receivelen > 0 && (!isemptylist(tty[tty_id]->readerwaiting)))
 	{
 		
 		
-			TracePrintf(1, "receive dereaderwaitingqueue\n");
+			TracePrintf(3, "receive dereaderwaitingqueue\n");
 			lstnode* node = dereaderwaitingqueue(tty[tty_id]->readerwaiting);
 			int rc;
 			insert_head(node, readyqueue);
@@ -164,11 +168,12 @@ void TrapTtyReceive(UserContext *uctxt){
 
 	}
 	switchproc();
-    TracePrintf(1,"Exit TrapTtyReceive\n");
+    TracePrintf(2,"Exit TrapTtyReceive\n");
 }
 
 //Capture TRAP_TTY_TRANSMIT
 void TrapTtyTransmit(UserContext *uctxt){
-    TracePrintf(1,"Finish Transmit\n");
+    TracePrintf(2,"Finish Transmit\n");
+    g_isFinised = 1;
 	return;
 }

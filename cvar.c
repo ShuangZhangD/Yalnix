@@ -86,7 +86,7 @@ int KernelCvarBroadcast(UserContext *uctxt){
 }
 
 int KernelCvarWait(UserContext *uctxt){
-	TracePrintf(1, "Enter kernelcvarwait\n");
+	TracePrintf(2, "Enter kernelcvarwait\n");
 	//if the cvar with cvar_id is not initialized, return ERROR
 	int rc;
 	int cvar_id = uctxt->regs[0];

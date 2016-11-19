@@ -78,7 +78,7 @@ int AcquireLock(int lock_id){
 		switchnext();
 	}
 
-	TracePrintf(1, "Owner Id:%d, currProc:%d\n",lock->ownerid, currProc->id);
+	TracePrintf(3, "Owner Id:%d, currProc:%d\n",lock->ownerid, currProc->id);
 	if (lock->ownerid == -1){
 		lock->ownerid = currProc->id;
 		return SUCCESS;

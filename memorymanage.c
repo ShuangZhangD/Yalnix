@@ -26,12 +26,12 @@ int kernelbrk(UserContext *uctxt){
     if(newBrkPage >= stacklimitpage - 1){
         return ERROR;
     } else if (newBrkPage > oldBrkPage){
-        TracePrintf(1, "Grow New Brk in kernelbrk\n");        
+        TracePrintf(2, "Grow New Brk in kernelbrk\n");        
         writepagetable(proc->usrPtb, oldBrkPage, newBrkPage, VALID, (PROT_READ | PROT_WRITE));
         //Flush Tlb!
         WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
     } else if (newBrkPage < oldBrkPage){
-        TracePrintf(1, "Lower Brk in kernelbrk\n");
+        TracePrintf(2, "Lower Brk in kernelbrk\n");
         if (newBrkPage <= dataPage) return ERROR;
         //Remap  Add this frame back to free frame tracker
         ummap(proc->usrPtb, newBrkPage, oldBrkPage, INVALID, PROT_NONE);

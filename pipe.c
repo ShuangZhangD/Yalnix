@@ -5,6 +5,7 @@
 dblist* pipequeue;
 extern int g_mutex_id;
 extern lstnode* currProc;
+extern dblist* readyqueue;
 
 int kernelpipeinit(UserContext *uctxt){
 	
@@ -49,45 +50,45 @@ int kernelpiperead(UserContext *uctxt){
     int rc = InputSanityCheck((int *)buf);
 	if (rc){
         TracePrintf(1, "Error!The buf address:%p in kernelpiperead is not valid!\n", buf);
+        return ERROR;
     }
 
 	//if len is valid, use pipe_id to get the pipe to read from
-	if(len < 0)
-	{
+	if(len < 0 || len > PIPE_BUFFER_LEN){
+		TracePrintf(1, "Error! Invalid length in kernelpiperead!\n");
 		return ERROR;
 	}
 
-	if(search_node(pipe_id, pipequeue) == NULL)
-	{
+	lstnode *pipenode = search_node(pipe_id, pipequeue);	
+	if(pipenode == NULL){
+		TracePrintf(1, "Error! cannot find pipe_id in kernelpiperead!\n");
 		return ERROR;
 	}
 
-	pipe_t *pipe = search_node(pipe_id, pipequeue)->content;
+	pipe_t *pipe = (pipe_t *) pipenode->content;
 
 	//if buffer < len, block the caller until there are enough bytes available
 
-
-	if (len > pipe->contentlen)
-	{
-		if(pipe->readers == NULL)
-		{
-			pipe->readers = listinit();
-		}
-	enreaderwaitingqueue(currProc, pipe->readers);			
-	
-	}else{
-		
-		memcpy(buf, pipe->buffer, len);
-		int leftbuflen = pipe->contentlen - len;
-		int leftbuf[leftbuflen];
-		memcpy(leftbuf, &pipe->buffer[len], leftbuflen);
-		memcpy(pipe->buffer, leftbuf, leftbuflen);
-		pipe->contentlen = leftbuflen;
-		return len;
+	while (len > pipe->contentlen) {
+		enreaderwaitingqueue(currProc, pipe->readers);
+		switchnext();			
 	}
+	
+	memcpy(buf, &pipe->buffer, len);
 
+	int leftbuflen = pipe->contentlen - len;
+	if (len == PIPE_BUFFER_LEN){
+		bzero(pipe->buffer, PIPE_BUFFER_LEN);
+	} else {
+		// TracePrintf(1, "Touch Address: %p\n", pipe->buffer);
+		memcpy(&pipe->buffer, &pipe->buffer[len], leftbuflen);
+		// TracePrintf(1, "After memcpy\n", pipe->buffer);
+		memset(&pipe->buffer[leftbuflen], 0, PIPE_BUFFER_LEN-leftbuflen);
+		pipe->contentlen = leftbuflen;
+	}
+	TracePrintf(3, "The content of buffer in kernelpiperead = %s\n", pipe->buffer);
 	//if success, return the number of bytes read
-
+	return len;
 }
 
 int kernelpipewrite(UserContext *uctxt){
@@ -95,31 +96,47 @@ int kernelpipewrite(UserContext *uctxt){
 	unsigned int *buf = (unsigned int *) uctxt->regs[1];
 	int len = uctxt->regs[2];
 
-    int rc = InputSanityCheck(*buf);
+    int rc = InputSanityCheck((int *)buf);
 	if (rc){
         TracePrintf(1, "Error!The buf address:%p in kernelpipewrite is not valid!\n", buf);
+        return ERROR;
     }
 
 	//if len is valid, use pipe_id to get the pipe to write to
 	if(len < 0){
+		TracePrintf(1, "Error! Invalid length in kernelpipewrite!\n");
 		return ERROR;
 	}	
+
 	lstnode *pipenode = search_node(pipe_id, pipequeue);
 	if(pipenode == NULL){
+		TracePrintf(1, "Error! cannot find pipe_id in kernelpipewrite!\n");
 		return ERROR;
 	}
 
 	pipe_t *pipe = (pipe_t *) pipenode->content;
+	if (pipe->contentlen == PIPE_BUFFER_LEN){
+		TracePrintf(1, "Error! PIPE is full!\n");
+		return ERROR;
+	}
+	
 	//read the buffer, and write the content to the pipe
-	int totallen = pipe->contentlen + len;
 
-	if(totallen > PIPE_BUFFER_LEN) {
-		enwriterwaitingqueue(currProc, pipe->writers);
+	int bufferLeft = PIPE_BUFFER_LEN - pipe->contentlen;
+	if (len > bufferLeft){
+		TracePrintf(1, "Error! PIPE buffer only has %d bytes left, can't write %d bytes!!\n", bufferLeft, len);
+		return ERROR;
+	} else {
+		int cpStInx = pipe->contentlen;
+		memcpy(&pipe->buffer[cpStInx],buf,len);	
+		pipe->contentlen+=len;
+
+		if(!isemptylist(pipe->readers)){ 
+			lstnode *node = dereaderwaitingqueue(pipe->readers);
+			enreadyqueue(node, readyqueue);
+		}
 	}
-	else{
-		memcpy(&pipe->buffer[pipe->contentlen],buf,len);
-		return len;
-	}
+	TracePrintf(3, "The content of buffer in kernelpipewrite= %s\n", pipe->buffer);
 	//if success, return the number of bytes written
-	return ERROR;
+	return len;
 }

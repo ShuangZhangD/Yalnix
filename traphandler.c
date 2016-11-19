@@ -20,7 +20,7 @@ extern dblist* pipequeue;
 
 //capture TRAP_CLOCK
 void TrapKernel(UserContext *uctxt){
-    TracePrintf(1, "TrapKernel called\n");
+    TracePrintf(2, "TrapKernel called\n");
     TurnNodeToPCB(currProc)->uctxt = *uctxt;
     int rc;
     switch(uctxt->code){

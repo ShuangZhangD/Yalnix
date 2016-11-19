@@ -27,7 +27,8 @@ extern dblist* pipequeue;
 int kernelreclaim(UserContext *uctxt)
 {
     int id = uctxt->regs[0];
-    if (search_node(id , pipequeue) != NULL)
+
+    if (search_node(id , pipequeue)!= NULL)
     {
         lstnode* pipenode = remove_node(id , pipequeue);
         pipe_t* pipe = pipenode->content;
@@ -41,25 +42,25 @@ int kernelreclaim(UserContext *uctxt)
         }        
         free(pipe);
         free(pipenode);
-    }
+
+        return SUCCESS;
+    } 
 
     if (search_node(id , lockqueue) != NULL)
     {
         int id = uctxt->regs[0];
         lstnode* locknode = remove_node(id , lockqueue);
         lock_t* lock = locknode->content;
-        // if(lock->owner != NULL)
-        // {
-        //     free(lock->owner);
-        // }
+
         if(lock->waitlist != NULL)
         {
             free(lock->waitlist);
         }
         free(lock);
-        free(locknode);
-                
-    }
+        free(locknode); 
+
+        return SUCCESS;          
+    } 
 
     if (search_node(id , cvarqueue) != NULL)
     {
@@ -71,28 +72,31 @@ int kernelreclaim(UserContext *uctxt)
         }
         free(cvar);
         free(cvarnode);
+
+        return SUCCESS;
         
     }
-    return SUCCESS;
+
+    return ERROR;
 }
 
 /*
    Kernel Initiailization functions
  */
 void SetKernelData(void *_KernelDataStart, void *_KernelDataEnd){
-    TracePrintf(1, "_KernelDataStart: %p\n", _KernelDataStart);
+    TracePrintf(2, "_KernelDataStart: %p\n", _KernelDataStart);
     m_kernel_brk = (unsigned int) _KernelDataEnd;
     m_kernel_data_end = (unsigned int) _KernelDataEnd;
     m_kernel_data_start = (unsigned int) _KernelDataStart;
 
 
-    TracePrintf(1, "KernelDataStart = %x \n", m_kernel_data_start);
-    TracePrintf(1, "KernelDataEnd = %x \n", m_kernel_brk);  
+    TracePrintf(3, "KernelDataStart = %x \n", m_kernel_data_start);
+    TracePrintf(3, "KernelDataEnd = %x \n", m_kernel_brk);  
     return;
 }
 
 int SetKernelBrk(void *addr){
-    TracePrintf(1, "SetKernelBrk is called ! addr = %x, m_enableVM = %d\n", addr, m_enableVM);
+    TracePrintf(2, "SetKernelBrk is called ! addr = %x, m_enableVM = %d\n", addr, m_enableVM);
 
     int i,rc = 0;
     unsigned int newBrk = (unsigned int) addr;
@@ -118,7 +122,7 @@ int SetKernelBrk(void *addr){
 
     //Let addr be the new kernel break
     m_kernel_brk = newBrk;
-    TracePrintf(1, "New Brk! m_kernel_brk = %x\n", m_kernel_brk);
+    TracePrintf(2, "New Brk! m_kernel_brk = %x\n", m_kernel_brk);
     return 0;
 }
 
@@ -126,19 +130,19 @@ int SetKernelBrk(void *addr){
 void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     int i, rc, stackInx = 0;
     //Initialize interrupt vector table and REG_VECTOR_BASE
-    TracePrintf(1, "Init interrupt table.\n");
+    TracePrintf(3, "Init interrupt table.\n");
     InitInterruptTable();
 
     //Build a structure to track free frame
-    TracePrintf(1, "Init free frame list.\n");
+    TracePrintf(3, "Init free frame list.\n");
     InitFreeFrameTracking(pmem_size);
 
     //Build initial page table for Region 1 (before kernel page protection)
-    TracePrintf(1, "Init user page table \n");
+    TracePrintf(3, "Init user page table \n");
     pte_t *idlePageTable = InitUserPageTable();
 
     // //Build initial page table for Region 0
-    TracePrintf(1, "Init kernel page table \n");
+    TracePrintf(3, "Init kernel page table \n");
     InitKernelPageTable();
     WriteRegister(REG_PTBR0, (unsigned int) g_pageTableR0);
     WriteRegister(REG_PTLR0, (unsigned int) MAX_PT_LEN);
@@ -147,7 +151,7 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     WriteRegister(REG_PTLR1, (unsigned int) MAX_PT_LEN);
 
 
-    TracePrintf(1, "Enable VM\n");
+    TracePrintf(3, "Enable VM\n");
     WriteRegister(REG_VM_ENABLE,1);
     m_enableVM = 1;
 
@@ -173,7 +177,7 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     }
 
     //Initialize Idle Process    
-    TracePrintf(1, "Init pcb.\n");
+    TracePrintf(3, "Init pcb.\n");
     pcb_t *idlePcb = InitIdleProc(uctxt);
     if (NULL == idlePcb){
         TracePrintf(1, "Error! IdlePcb == NULL\n");
@@ -187,7 +191,7 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
 
     //====Cook DoIdle()====
-    TracePrintf(1, "Cook DoIdle\n");
+    TracePrintf(3, "Cook DoIdle\n");
     CookDoIdle(uctxt);
 
     idlePcb->uctxt = *uctxt;
@@ -217,7 +221,7 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
 
     currProc = initProc;
 
-    TracePrintf(1,"idle:%p, init:%p\n", idlePcb->usrPtb, TurnNodeToPCB(initProc)->usrPtb);
+    TracePrintf(3,"idle:%p, init:%p\n", idlePcb->usrPtb, TurnNodeToPCB(initProc)->usrPtb);
     rc = KernelContextSwitch(MyCloneKCS, (void *)idleProc, (void *)initProc);
 
     if (rc) {
@@ -289,7 +293,7 @@ void InitKernelPageTable(pcb_t *proc) {
 //Do Idle Process
 void DoIdle (void){
     while(1){
-        TracePrintf(1, "DoIdle\n");
+        TracePrintf(2, "DoIdle\n");
         Pause();
     }
     return;
@@ -436,7 +440,7 @@ void CopyKernelStack (pte_t* pageTable){
 }
 
 KernelContext *MyCloneKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
-    TracePrintf(1, "Enter MyCloneKCS\n");
+    TracePrintf(2, "Enter MyCloneKCS\n");
 
     int i, stackInx = 0;
 
@@ -459,14 +463,14 @@ KernelContext *MyCloneKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
     cur_pcb->kctxt = *kc_in;
     nxt_pcb->kctxt = *kc_in;
 
-    TracePrintf(1, "Exit MyCloneKCS\n");
+    TracePrintf(2, "Exit MyCloneKCS\n");
     return kc_in;
 }
 
 
 // when someone calls KernelContextSwitch, it might come to here.
 KernelContext *MyTrueKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
-    TracePrintf(1,"Enter MyTrueKCS\n");
+    TracePrintf(2,"Enter MyTrueKCS\n");
 
     int i ,stackInx = 0;
 
@@ -500,13 +504,13 @@ KernelContext *MyTrueKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
     if (node != next_pcb_node) TracePrintf(1, "KernelContextSwitch Error!");
     currProc = node; 
 
-    TracePrintf(1,"Exit MyTrueKCS\n");
+    TracePrintf(2,"Exit MyTrueKCS\n");
     //Return a pointer to a kernel context it had earlier saved
     return &(next_p->kctxt);
 }
 
 KernelContext *MyIOKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
-    TracePrintf(1,"Enter MyIOKCS\n");
+    TracePrintf(2,"Enter MyIOKCS\n");
 
     int i ,stackInx = 0;
 
@@ -533,7 +537,7 @@ KernelContext *MyIOKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
 
     currProc = next_pcb_node; 
 
-    TracePrintf(1,"Exit MyIOKCS\n");
+    TracePrintf(2,"Exit MyIOKCS\n");
     //Return a pointer to a kernel context it had earlier saved
     return &(next_p->kctxt);
 }
@@ -549,8 +553,6 @@ KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode)
     pcb_t *term_p = TurnNodeToPCB(term_pcb_node);
     pcb_t *next_p = TurnNodeToPCB(next_pcb_node);
 
-/////////////////
-    // CopyKernelStack(next_p->krnlStackPtb);
     //Remember to change page table entries for kernel stack
     for (i = g_kStackStPage; i <= g_kStackEdPage; i++){
         g_pageTableR0[i].pfn = next_p->krnlStackPtb[stackInx].pfn;
@@ -561,9 +563,6 @@ KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode)
     WriteRegister(REG_PTLR1, (unsigned int) MAX_PT_LEN);
     //Flush All TLB because 1. Kernel Stack Mapping has changed
     WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_ALL);
-
-/////////////////
-
 
     emptyregion1pagetable(term_p);
 
