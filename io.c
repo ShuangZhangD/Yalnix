@@ -27,55 +27,47 @@ int kernelttyread(UserContext *uctxt){
         return ERROR;
     }
 
+    bzero(buf, strlen(buf)); //Empty Buf before writing data into it
 
     //to if buffer is empty then enwaitingqueue
-    while (receivelen <= 0)
-    {
+    while (tty[tty_id]->LeftBufLen <= 0) {
         enreaderwaitingqueue(currProc,tty[tty_id]->readerwaiting);
         switchproc();
     }
 
-    // enreaderwaitingqueue(currProc,tty[tty_id]->readerwaiting);
     TracePrintf(2, "something to read\n");
-    // if (!(firstnode(tty[tty_id]->readerwaiting) == currProc))
-    // {
-    // 	TracePrintf(1, "firstnode enreaderwaitingqueue");
-    // 	enreaderwaitingqueue(currProc,tty[tty_id]->readerwaiting);
-    // 	switchproc();
-    // }
-    // else{
 
-    if (len <= receivelen)
-    {
+    int leftlen = len;
+    while (leftlen > 0 && tty[tty_id]->LeftBufLen>0){
+        lstnode* bufferNode = firstnode(tty[tty_id]->bufferqueue);
+        msg_t* bufMsg = (msg_t *) bufferNode->content;
 
-        memcpy(buf, tty[tty_id]->receivebuf, len);
-        int leftbuflen = receivelen - len;
-        int leftbuf[leftbuflen];
-        memcpy(leftbuf, &tty[tty_id]->receivebuf[len], leftbuflen);
-        memcpy(tty[tty_id]->receivebuf, leftbuf, leftbuflen);
-        receivelen = leftbuflen;
-        // lstnode* node = dereaderwaitingqueue(tty[tty_id]->readerwaiting);
-        // enreadyqueue(currProc, readyqueue);
+        int copylen = (leftlen > bufMsg->len)? bufMsg->len: leftlen;
+        int leftbuflen = bufMsg->len - copylen;
 
-        return len;
+        memcpy(buf + len - leftlen, bufMsg->buf, copylen);
+        TracePrintf(3, "Hello buf:%s\n", buf + len - leftlen);
+
+        leftlen -= copylen;
+        bufMsg->len -= copylen;
+        tty[tty_id]->LeftBufLen -= copylen;
+
+        if (bufMsg->len == 0){
+            lstnode *node = debufferqueue(tty[tty_id]->bufferqueue);
+            free(node);
+            if(isemptylist(tty[tty_id]->bufferqueue)){
+                len = len - leftlen;
+                break;
+            }
+        } else if (bufMsg->len < 0){
+            TracePrintf(1, "Error! copy wrong size in kernelttyread!\n");
+            return ERROR;
+        } else {
+            memcpy(&bufMsg->buf,&bufMsg->buf[copylen],leftbuflen); 
+        }
     }
-    else{
-        TracePrintf(3, "Enter memcpy\n");
-        TracePrintf(3, "PID = %d, buf: %p, ttybuffer: %s", currProc->id, buf, tty[tty_id]->receivebuf);
-        memcpy(buf, (void*)tty[tty_id]->receivebuf, receivelen);
-        TracePrintf(3, "Exit memcpy\n");
+    return len;
 
-        int len = receivelen;
-        receivelen = 0;
-
-        // lstnode* node = dereaderwaitingqueue(tty[tty_id]->readerwaiting);
-        // if (tty[tty_id]->readerwaiting->size > 1)
-        // {
-        // enreadyqueue(currProc, readyqueue);	
-        // }
-
-        return len;
-    }
 }
 
 int kernelttywrite(UserContext *uctxt){
@@ -97,6 +89,9 @@ int kernelttywrite(UserContext *uctxt){
     if (tty_id < 0 || tty_id >= NUM_TERMINALS) {
         return ERROR;
     }
+
+    bzero(buf, strlen(buf)); //Empty Buf before writing data into it
+    
     pcb_t* currPcb = TurnNodeToPCB(currProc);
 
     int leftlen = len;	
@@ -132,37 +127,42 @@ int kernelttywrite(UserContext *uctxt){
 //Capture TRAP_TTY_RECEIVE
 void TrapTtyReceive(UserContext *uctxt){
     TracePrintf(2,"Enter TrapTtyReceive\n");
-    /*
-    //Get the input string using TtyReceive
 
-    char[] = str;
-    tty_id = uctxt->code; 
-    whlile (TtyReceive(int tty_id, void *buf, int len) != 0{
-    str+=buf;
+    int tty_id = uctxt->code;
+
+    while (1){
+        int len = TtyReceive(tty_id, tty[tty_id]->receivebuf, TERMINAL_MAX_LINE);
+
+        if (len<=0) break;
+        lstnode *msgNode = nodeinit(0);
+        if (NULL == msgNode){
+            free(tty[tty_id]->bufferqueue);
+            tty[tty_id]->bufferqueue = listinit();
+            TracePrintf(1, "Error! Init node in TrapTtyReceive failed!\n");
+            return;
+        }
+
+        msg_t *msg = (msg_t *) MallocCheck(sizeof(msg_t));
+        if (NULL == msg){
+            TracePrintf(1, "Error! Malloc nsg_t in TrapTtyReceive failed!\n");
+            return;   
+        }
+        msg->len = len;
+        memcpy(msg->buf, tty[tty_id]->receivebuf, len);
+        bzero(tty[tty_id]->receivebuf, TERMINAL_MAX_LINE);
+
+        msgNode->content = (void *) msg;
+        enbufferqueue(msgNode, tty[tty_id]->bufferqueue);
+        tty[tty_id]->LeftBufLen+=len;
     }
 
-    //Buffer for kernelttyread
-    kernelttyread(str);
-     */
-    int tty_id = uctxt->code;
-    receivelen = TtyReceive(tty_id, tty[tty_id]->receivebuf, TERMINAL_MAX_LINE);
-    TracePrintf(3, "receivelen=%d\n", receivelen);
-    while (receivelen > 0 && (!isemptylist(tty[tty_id]->readerwaiting)))
-    {
 
-
+    while(!isemptylist(tty[tty_id]->readerwaiting)) {
         TracePrintf(3, "receive dereaderwaitingqueue\n");
         lstnode* node = dereaderwaitingqueue(tty[tty_id]->readerwaiting);
-        int rc;
-        insert_head(node, readyqueue);
-        switchproc();
-
-        // rc = KernelContextSwitch(MyTrueKCS, (void *) currProc, (void *) node);
-        // if (rc) TracePrintf(1,"MyTrueKCS in switchproc failed!\n");
-        // enreadyqueue(node, readyqueue);
-
+        enreadyqueue(node, readyqueue);
     }
-    switchproc();
+
     TracePrintf(2,"Exit TrapTtyReceive\n");
 }
 

@@ -170,6 +170,8 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
         }
         tty[i]->readerwaiting = listinit();
         tty[i]->writerwaiting = listinit();
+        tty[i]->bufferqueue = listinit();
+        tty[i]->LeftBufLen = 0;
     }
 
     //Initialize Idle Process    
@@ -203,6 +205,7 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     //Create first process  and load initial program to it
     if (NULL == cmd_args[0]){
         rc = LoadProgram("init", cmd_args, initProc);
+        TracePrintf(1, "Init Proc, cmd_args:%s\n", *cmd_args);
     } else {
         rc = LoadProgram(cmd_args[0], cmd_args, initProc); 
     }
