@@ -65,6 +65,8 @@ int kernelpiperead(UserContext *uctxt){
 		return ERROR;
 	}
 
+    bzero(buf, strlen(buf)); //Empty Buf before writing data into it
+
 	pipe_t *pipe = (pipe_t *) pipenode->content;
 
 	//if buffer < len, block the caller until there are enough bytes available
@@ -119,7 +121,9 @@ int kernelpipewrite(UserContext *uctxt){
 		TracePrintf(1, "Error! PIPE is full!\n");
 		return ERROR;
 	}
-	
+
+    bzero(buf, strlen(buf)); //Empty Buf before writing data into it
+
 	//read the buffer, and write the content to the pipe
 
 	int bufferLeft = PIPE_BUFFER_LEN - pipe->contentlen;

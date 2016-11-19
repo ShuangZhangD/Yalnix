@@ -51,9 +51,18 @@ typedef struct ProcessControlBlock{
 typedef struct Terminal{
     dblist* readerwaiting;
     dblist* writerwaiting;
+    dblist* bufferqueue;
+    int LeftBufLen;
     char transmitbuf[TERMINAL_MAX_LINE];
     char receivebuf[TERMINAL_MAX_LINE];
+
 } Tty;
+
+typedef struct Message{
+    char buf[TERMINAL_MAX_LINE];
+    int len;
+} msg_t;
+
 
 typedef struct pipe
 {

@@ -158,7 +158,7 @@ int kernelgetpid(){
 void TrapClock(UserContext *uctxt){
     TracePrintf(2, "TrapClock called\n");
 
-    TracePrintf(1, "freeframe_list size: %d\n", freeframe_list->size);
+    TracePrintf(2, "freeframe_list size: %d\n", freeframe_list->size);
 
     if (!isemptylist(waitingqueue)){
         lstnode *traverse = waitingqueue->head->next;
@@ -322,7 +322,7 @@ int switchnext()
 void terminateProcess(lstnode *procnode){
     TracePrintf(2, "Enter terminateProcess!\n");
 
-    TracePrintf(1, "OMG! Someone is TERMINATED here!\n");
+    TracePrintf(2, "OMG! Pid:%d is TERMINATED here!\n", currProc->id);
 
     int i, rc;
     pcb_t* proc = TurnNodeToPCB(procnode);
@@ -525,9 +525,9 @@ int enwaitsemqueue(lstnode* procnode,dblist* queue)
 lstnode* dewaitsemqueue(dblist* queue)
 {
     TracePrintf(3,"Enter dewaitcvarqueue\n");
-    TracePrintf(3,"Exit dewaitcvarqueue\n");     
-    return remove_head(queue);
-}
+    TracePrintf(3,"Exit dewaitcvarqueue\n"); 
+}   
+
 
 lstnode* TurnPCBToNode(pcb_t *pcb){
     lstnode *node = nodeinit(pcb->pid);
