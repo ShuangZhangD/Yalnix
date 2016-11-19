@@ -2,8 +2,8 @@
 #include "listcontrol.h"
 #include "processmanage.h"
 
-int kernelttywrite(UserContext *uctxt);
-int kernelttywrite(UserContext *uctxt);
+int KernelTtyWrite(UserContext *uctxt);
+int KernelTtyWrite(UserContext *uctxt);
 
 Tty* tty[NUM_TERMINALS];
 int receivelen;

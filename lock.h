@@ -2,11 +2,11 @@
 #include "listcontrol.h"
 #include "processmanage.h"
 
-int kernellockinit(UserContext *uctxt);
+int KernelLockInit(UserContext *uctxt);
 
-int kernelaquire(UserContext *uctxt);
+int KernelLockAcquire(UserContext *uctxt);
 
-int kernelrelease(UserContext *uctxt);
+int KernelLockRelease(UserContext *uctxt);
 
 int AcquireLock(int lock_id);
 

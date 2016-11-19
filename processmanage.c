@@ -16,8 +16,8 @@ extern dblist* freeframe_list;
 /*
     SYSCALL
 */
-int kernelfork(UserContext *uctxt){
-    TracePrintf(2,"Enter Kernelfork\n");
+int KernelFork(UserContext *uctxt){
+    TracePrintf(2,"Enter KernelFork\n");
     int rc;
 
     rc = CheckAvailableFrame(currProc);
@@ -70,13 +70,13 @@ int kernelfork(UserContext *uctxt){
     // 3.  Copy the current kernel context and content of kernel stack from parent to child 
     rc = KernelContextSwitch(MyForkKCS, (void*) parentProc, (void*)childProc);
     if (rc){
-        TracePrintf(1,"MyCloneKCS in kernelfork failed.\n");
+        TracePrintf(1,"MyCloneKCS in KernelFork failed.\n");
         return ERROR;
     }
 
     TracePrintf(3,"parent:%p, child:%p\n", parentPcb->usrPtb, childPcb->usrPtb);
 
-    TracePrintf(2,"Exit Kernelfork\n");
+    TracePrintf(2,"Exit KernelFork\n");
     //10. if current process is childprocess, return 0, otherwise return pid
     if(currProc == childProc) {
         return 0;
@@ -88,7 +88,7 @@ int kernelfork(UserContext *uctxt){
     return ERROR;
 }
 
-int kernelexec(UserContext *uctxt){
+int KernelExec(UserContext *uctxt){
     TracePrintf(2,"Enter KernelExec\n");
     lstnode* loadProc = currProc;
     pcb_t* loadPcb = TurnNodeToPCB(loadProc);
@@ -108,7 +108,7 @@ int kernelexec(UserContext *uctxt){
     return SUCCESS;
 }
 
-int kernelexit(UserContext *uctxt){
+int KernelExit(UserContext *uctxt){
     TracePrintf(2,"Enter KernelExit\n");
     int status = uctxt->regs[0];
 
@@ -118,13 +118,13 @@ int kernelexit(UserContext *uctxt){
     return ProcessExit();
 }
 
-int kernelwait(UserContext *uctxt){
-    TracePrintf(1,"Enter kernelwait\n");
+int KernelWait(UserContext *uctxt){
+    TracePrintf(1,"Enter KernelWait\n");
     pcb_t *proc = TurnNodeToPCB(currProc);
 
     int rc = InputSanityCheck(uctxt->regs[0]);
     if (rc){
-        TracePrintf(1, "Error!The status_ptr address:%d in kernelwait is not valid!\n", uctxt->regs[0]);
+        TracePrintf(1, "Error!The status_ptr address:%d in KernelWait is not valid!\n", uctxt->regs[0]);
         return ERROR;
     }
 
@@ -150,7 +150,7 @@ int kernelwait(UserContext *uctxt){
 
 
 
-int kernelgetpid(){
+int KernelGetPid(){
     return TurnNodeToPCB(currProc)->pid;
 }
 
@@ -183,7 +183,7 @@ void TrapClock(UserContext *uctxt){
     }
 }
 
-int kerneldelay(UserContext *uctxt){
+int KernelDelay(UserContext *uctxt){
     TracePrintf(2, "Enter KernelDelay\n");
 
     pcb_t *proc = TurnNodeToPCB(currProc);

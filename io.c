@@ -6,17 +6,17 @@
 
 
 extern lstnode* currProc;
-int g_isFinised = 1;
+// int g_isFinised = 1;
 
-int kernelttyread(UserContext *uctxt){
-    TracePrintf(2,"Enter kernelttyread\n");
+int KernelTtyRead(UserContext *uctxt){
+    TracePrintf(2,"Enter KernelTtyRead\n");
     int tty_id = uctxt->regs[0], rc;
     int len = uctxt->regs[2];
     void *buf = (void *) uctxt->regs[1];
 
     rc = InputSanityCheck((int *)buf);
     if (rc){
-        TracePrintf(1, "Error! The buffer address:%p in kernelttyread is not valid!\n",buf);
+        TracePrintf(1, "Error! The buffer address:%p in KernelTtyRead is not valid!\n",buf);
         return ERROR;
     }
 
@@ -60,7 +60,7 @@ int kernelttyread(UserContext *uctxt){
                 break;
             }
         } else if (bufMsg->len < 0){
-            TracePrintf(1, "Error! copy wrong size in kernelttyread!\n");
+            TracePrintf(1, "Error! copy wrong size in KernelTtyRead!\n");
             return ERROR;
         } else {
             memcpy(&bufMsg->buf,&bufMsg->buf[copylen],leftbuflen); 
@@ -70,15 +70,15 @@ int kernelttyread(UserContext *uctxt){
 
 }
 
-int kernelttywrite(UserContext *uctxt){
-    TracePrintf(2,"Enter kernelttywrite\n");
+int KernelTtyWrite(UserContext *uctxt){
+    TracePrintf(2,"Enter KernelTtyWrite\n");
     int tty_id = uctxt->regs[0];
     void *buf = (void*) uctxt->regs[1];
     int len = uctxt->regs[2];
 
     int rc = InputSanityCheck((int *)buf);
     if (rc){
-        TracePrintf(1, "Error! The buffer address:%p in kernelttywrite is not valid!\n", buf);
+        TracePrintf(1, "Error! The buffer address:%p in KernelTtyWrite is not valid!\n", buf);
         return;
     }
 
@@ -102,10 +102,10 @@ int kernelttywrite(UserContext *uctxt){
 
     while(leftlen > 0){
         int write_len = (len > TERMINAL_MAX_LINE) ? TERMINAL_MAX_LINE:len;
-        if (g_isFinised) {
-            TtyTransmit(tty_id, buf + len - leftlen, write_len);
-            g_isFinised = 0;
-        }
+        // if (g_isFinised) {
+        TtyTransmit(tty_id, buf + len - leftlen, write_len);
+            // g_isFinised = 0;
+        // }
         switchnext();
         leftlen -= write_len;
     }
@@ -118,7 +118,7 @@ int kernelttywrite(UserContext *uctxt){
         return ERROR;
     }
 
-    TracePrintf(2,"Exit kernelttywrite\n");
+    TracePrintf(2,"Exit KernelTtyWrite\n");
     return len;
 }
 
@@ -167,6 +167,6 @@ void TrapTtyReceive(UserContext *uctxt){
 //Capture TRAP_TTY_TRANSMIT
 void TrapTtyTransmit(UserContext *uctxt){
     TracePrintf(2,"Finish Transmit\n");
-    g_isFinised = 1;
+    // g_isFinised = 1;
     return;
 }

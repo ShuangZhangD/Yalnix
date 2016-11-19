@@ -3,8 +3,8 @@
 #include "processmanage.h"
 
 
-int kernelpipeinit(UserContext *uctxt);
+int KernelPipeInit(UserContext *uctxt);
 
-int kernelpiperead(UserContext *uctxt);
+int KernelPipeRead(UserContext *uctxt);
 
-int kernelpipewrite(UserContext *uctxt);
+int KernelPipeWrite(UserContext *uctxt);

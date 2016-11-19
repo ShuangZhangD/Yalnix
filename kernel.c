@@ -25,7 +25,7 @@ extern Tty* tty[NUM_TERMINALS];
 extern dblist* pipequeue;
 extern dblist* semqueue;
 
-int kernelreclaim(UserContext *uctxt)
+int KernelReclaim(UserContext *uctxt)
 {
     int id = uctxt->regs[0];
 

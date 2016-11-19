@@ -25,63 +25,63 @@ void TrapKernel(UserContext *uctxt){
     int rc;
     switch(uctxt->code){
         case YALNIX_FORK:
-            rc = kernelfork(uctxt);
+            rc = KernelFork(uctxt);
             break;
 
         case YALNIX_EXEC: 
-            rc = kernelexec(uctxt);
+            rc = KernelExec(uctxt);
             break;
 
         case YALNIX_EXIT:
-            rc = kernelexit(uctxt);
+            rc = KernelExit(uctxt);
             break;
 
         case YALNIX_WAIT:
-            rc = kernelwait(uctxt);
+            rc = KernelWait(uctxt);
             break;
 
         case YALNIX_GETPID:
-            rc = kernelgetpid(uctxt);
+            rc = KernelGetPid(uctxt);
             break;
 
         case YALNIX_BRK:
-            rc = kernelbrk(uctxt);
+            rc = KernelBrk(uctxt);
             break;
 
         case YALNIX_DELAY:
-            rc = kerneldelay(uctxt);
+            rc = KernelDelay(uctxt);
             break;
 
         case YALNIX_TTY_READ:
-            rc = kernelttyread(uctxt);
+            rc = KernelTtyRead(uctxt);
             break;
 
         case YALNIX_TTY_WRITE:
-            rc = kernelttywrite(uctxt);
+            rc = KernelTtyWrite(uctxt);
             break;
 
         case YALNIX_PIPE_INIT:
-            rc = kernelpipeinit(uctxt);
+            rc = KernelPipeInit(uctxt);
             break;
 
         case YALNIX_PIPE_READ:
-            rc = kernelpiperead(uctxt);
+            rc = KernelPipeRead(uctxt);
             break;
 
         case YALNIX_PIPE_WRITE:
-            rc = kernelpipewrite(uctxt);
+            rc = KernelPipeWrite(uctxt);
             break;
 
         case YALNIX_LOCK_INIT:
-            rc = kernellockinit(uctxt);
+            rc = KernelLockInit(uctxt);
             break;
 
         case YALNIX_LOCK_ACQUIRE:
-            rc = kernelaquire(uctxt);
+            rc = KernelLockAcquire(uctxt);
             break;
 
         case YALNIX_LOCK_RELEASE:
-            rc = kernelrelease(uctxt);
+            rc = KernelLockRelease(uctxt);
             break;
 
         case YALNIX_CVAR_INIT:
@@ -109,7 +109,7 @@ void TrapKernel(UserContext *uctxt){
             rc = KernelSemDown(uctxt);
             break;
         case YALNIX_RECLAIM:
-            rc = kernelreclaim(uctxt);
+            rc = KernelReclaim(uctxt);
             break;
 
         default:

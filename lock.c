@@ -6,14 +6,14 @@ dblist *lockqueue;
 extern lstnode *currProc;
 extern dblist* readyqueue;
 
-int kernellockinit(UserContext *uctxt){
+int KernelLockInit(UserContext *uctxt){
 
 	int id = getMutexId();
 	int *lock_idp =(int *) uctxt->regs[0];
 
     int rc = InputSanityCheck(lock_idp);
     if (rc){
-        TracePrintf(1, "Error!The lock_idp address:%d in kernellockinit is not valid!\n", lock_idp);
+        TracePrintf(1, "Error!The lock_idp address:%d in KernelLockInit is not valid!\n", lock_idp);
         return ERROR;
     }
 
@@ -24,7 +24,7 @@ int kernellockinit(UserContext *uctxt){
 
 	lock_t *lock = (lock_t*)MallocCheck(sizeof(lock_t));
 	if (NULL == lock){
-		TracePrintf(1, "Malloc Failed! Get a NULL lock in kernellockinit!\n");  
+		TracePrintf(1, "Malloc Failed! Get a NULL lock in KernelLockInit!\n");  
 		return ERROR;
 	}
 
@@ -40,7 +40,7 @@ int kernellockinit(UserContext *uctxt){
     return SUCCESS;
 }
 
-int kernelaquire(UserContext *uctxt){
+int KernelLockAcquire(UserContext *uctxt){
     
     //try to acquire the lock with the lock_id
     //if the lock is available, get the lock
@@ -51,7 +51,7 @@ int kernelaquire(UserContext *uctxt){
     return AcquireLock(lockId);
 }
 
-int kernelrelease(UserContext *uctxt){
+int KernelLockRelease(UserContext *uctxt){
 	
 	//try to release the lock with the lock_id
 	//if the lock is owned by itslef, release the lock

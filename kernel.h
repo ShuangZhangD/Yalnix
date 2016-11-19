@@ -35,7 +35,7 @@ int kernelreadsector(UserContext *uctxt);
 
 int kernelwritesector(UserContext *uctxt);
 
-int kernelreclaim(UserContext *uctxt);
+int KernelReclaim(UserContext *uctxt);
 
 void SetKernelData(void *_KernelDataStart ,void *_KernelDataEnd);
 

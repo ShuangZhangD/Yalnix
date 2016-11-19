@@ -1,7 +1,7 @@
 #include "selfdefinedstructure.h"
 #include "processmanage.h"
 
-int kernelbrk(UserContext *uctxt);
+int KernelBrk(UserContext *uctxt);
 
 void TrapMemory(UserContext *uctxt);
 

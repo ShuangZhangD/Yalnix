@@ -8,19 +8,19 @@ dblist* waitingqueue;
 dblist* readyqueue;
 dblist* blockqueue;
 
-int kerneldelay(UserContext *uctxt);
+int KernelDelay(UserContext *uctxt);
 
-int kernelfork(UserContext *uctxt);
+int KernelFork(UserContext *uctxt);
 
-int kernelexec(UserContext *uctxt);
+int KernelExec(UserContext *uctxt);
 
-int kernelexit(UserContext *uctxt);
+int KernelExit(UserContext *uctxt);
 
-int kernelwait(UserContext *uctxt);
+int KernelWait(UserContext *uctxt);
 
-int kernelgetpid();
+int KernelGetPid();
 
-int kerneldelay(UserContext *uctxt);
+int KernelDelay(UserContext *uctxt);
 
 void TrapClock(UserContext *uctxt);
 

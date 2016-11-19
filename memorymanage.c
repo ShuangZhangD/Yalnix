@@ -6,7 +6,7 @@ extern dblist* freeframe_list;
 extern lstnode* currProc;
 
 
-int kernelbrk(UserContext *uctxt){
+int KernelBrk(UserContext *uctxt){
     pcb_t *proc = TurnNodeToPCB(currProc);
 
     int i,rc;    
@@ -26,12 +26,12 @@ int kernelbrk(UserContext *uctxt){
     if(newBrkPage >= stacklimitpage - 1){
         return ERROR;
     } else if (newBrkPage > oldBrkPage){
-        TracePrintf(2, "Grow New Brk in kernelbrk\n");        
+        TracePrintf(2, "Grow New Brk in KernelBrk\n");        
         writepagetable(proc->usrPtb, oldBrkPage, newBrkPage, VALID, (PROT_READ | PROT_WRITE));
         //Flush Tlb!
         WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
     } else if (newBrkPage < oldBrkPage){
-        TracePrintf(2, "Lower Brk in kernelbrk\n");
+        TracePrintf(2, "Lower Brk in KernelBrk\n");
         if (newBrkPage <= dataPage) return ERROR;
         //Remap  Add this frame back to free frame tracker
         ummap(proc->usrPtb, newBrkPage, oldBrkPage, INVALID, PROT_NONE);
