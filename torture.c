@@ -68,9 +68,7 @@ void MallocMan(void)
 	ptr = malloc(PAGESIZE*npg);
 	Delay(3);	
 	TtyPrintf(2, "MallocMan: freeing the stuff I just malloc'ed\n");
-	TracePrintf(1, "Before free\n");
 	free(ptr);
-	TracePrintf(1, "After free\n");
     }
     TtyPrintf(1, "*** I SHOULDN'T BE HERE!!!\n");
     Exit(-1);

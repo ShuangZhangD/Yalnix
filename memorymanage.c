@@ -66,29 +66,29 @@ void TrapMemory(UserContext *uctxt){
         case (YALNIX_MAPERR):
             if (newStackPage > proc->stack_limit_page){
                 TracePrintf(1, "Error! The new Stack Address:%d is INVALID!\n",uctxt->addr);
-                terminateProcess(currProc);
+                ProcessExit();
                 return;
             }
 
             if (newStackPage < proc->brk_page){
                 TracePrintf(1, "Error! The new Stack Address:%d is INVALID!\n",uctxt->addr);
-                terminateProcess(currProc);
+                ProcessExit();
                 return;
             }
 
             rc = GrowUserStack(currProc,newStackPage);
             TracePrintf(3, "The new Stack Address is: %d\n",uctxt->addr);
             if (rc){
-                terminateProcess(currProc);
+                ProcessExit();
                 return;
             }
             break;
         case (YALNIX_ACCERR):
             TracePrintf(1, "Error! Touch Illegal Address!\n");
-            terminateProcess(currProc);
+            ProcessExit();
             break;
         default:
-            terminateProcess(currProc);
+            ProcessExit();
             break;
     }
 

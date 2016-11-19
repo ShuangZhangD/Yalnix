@@ -9,9 +9,12 @@ void main(int argc, char const *argv[])
 		TracePrintf(1,"I am child, code = %d\n", code);
 		int pid = GetPid();
 		TracePrintf(1,"Child Pid = %d\n", pid);
-    	char *arglist[1];
-    	arglist[0] = "testexec";
-		Exec(arglist[0],arglist);
+    	char *args[1];
+    	args[0] = "testexec";
+		rc = Exec(args[0],args);
+		if (rc){
+			TracePrintf(1, "Exec Failed!\n");
+		}
 	} else {
 		int *status_ptr;
 		TracePrintf(1,"Before Waiting\n");

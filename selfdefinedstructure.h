@@ -62,7 +62,6 @@ typedef struct pipe
     int contentlen;
     char buffer[PIPE_BUFFER_LEN];
     dblist* readers;
-    dblist* writers; 
 } pipe_t;
 
 typedef struct lock{
@@ -75,6 +74,13 @@ typedef struct cvar{
     int cvar_id;
     dblist* cvarwaiting;
 } cvar_t;
+
+typedef struct semaphore{
+    int sem_id;
+    int ownerid;
+    int sem_val;
+    dblist* semwaitlist;
+} sem_t;
 
 
 typedef void (*trapvector_t) (UserContext*);

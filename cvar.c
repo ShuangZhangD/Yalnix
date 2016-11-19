@@ -14,6 +14,7 @@ int KernelCvarInit(UserContext *uctxt){
     int rc = InputSanityCheck(cvar_idp);
     if (rc){
         TracePrintf(1, "Error!The cvar_idp address:%d in kernellockinit is not valid!\n", cvar_idp);
+        return ERROR;
     }
 
 	//Create a new cvar

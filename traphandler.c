@@ -10,7 +10,7 @@
 #include "traphandler.h"
 #include "kernel.h"
 #include "listcontrol.h"
-
+#include "semaphore.h"
 
 extern lstnode* currProc;
 extern dblist* freeframe_list;
@@ -99,7 +99,15 @@ void TrapKernel(UserContext *uctxt){
         case YALNIX_CVAR_WAIT:
             rc = KernelCvarWait(uctxt);
             break;
-
+        case YALNIX_SEM_INIT:
+            rc = KernelSemInit(uctxt);
+            break;
+        case YALNIX_SEM_UP:
+            rc = KernelSemUp(uctxt);
+            break;
+        case YALNIX_SEM_DOWN:
+            rc = KernelSemDown(uctxt);
+            break;
         case YALNIX_RECLAIM:
             rc = kernelreclaim(uctxt);
             break;
@@ -116,11 +124,10 @@ void TrapKernel(UserContext *uctxt){
 void TrapIllegal(UserContext *uctxt){
     /*
        Abort current process
-
-       Rearrange quque 
      */
-    kernelexit(uctxt);
-
+    TracePrintf(2, "Enter TrapIllegal\n");
+    ProcessExit();
+    return;
 }
 
 
@@ -128,10 +135,10 @@ void TrapIllegal(UserContext *uctxt){
 void TrapMath(UserContext *uctxt){
     /*
        Abort current process
-       Rearrange queue
      */ 
-    kernelexit(uctxt);
-
+    TracePrintf(2, "Enter TrapMath\n");
+    ProcessExit();
+    return;
 }
 
 

@@ -32,11 +32,7 @@ int switchproc();
 
 int switchnext();
 
-// int traverseParent(lstnode *procnode);              //Traverse through its parent
-// int traverseChildren(lstnode *procnode);            //Traverse through its 
-// int apppendProcess(lstnode *procnode, pcb_t *src);     //Add a process in PCB list
-// int removeProcessBypid(pcb_t *des, int pid);   //Remove a process from PCB by PID
-// int findProcessBypid(pcb_t *des, int pid);      //Find a process by PID
+int ProcessExit();
 
 int enreadyqueue(lstnode *procnode,dblist* queue);
 lstnode* dereadyqueue(dblist* queue);

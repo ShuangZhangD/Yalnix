@@ -11,6 +11,7 @@ extern int g_pageNumOfStack;
 
 extern dblist* lockqueue;
 extern dblist* cvarqueue;
+extern dblist* freeframe_list;
 
 /*
     SYSCALL
@@ -99,7 +100,7 @@ int kernelexec(UserContext *uctxt){
     if (rc == ERROR) {
         return ERROR;
     } else if (rc == KILL){
-        terminateProcess(loadProc);
+        ProcessExit();
         return ERROR;
     }
 
@@ -114,15 +115,7 @@ int kernelexit(UserContext *uctxt){
     pcb_t* currPcb = TurnNodeToPCB(currProc);
     currPcb->exitstatus = status;
 
-    // If the initProcess Exit, halt the program
-    if(currPcb->pid == 2) {
-        Halt();
-        return ERROR;
-    }
-
-    terminateProcess(currProc);
-    TracePrintf(1,"Error! A process should never return from KernelExit\n");
-    return ERROR;
+    return ProcessExit();
 }
 
 int kernelwait(UserContext *uctxt){
@@ -132,6 +125,7 @@ int kernelwait(UserContext *uctxt){
     int rc = InputSanityCheck(uctxt->regs[0]);
     if (rc){
         TracePrintf(1, "Error!The status_ptr address:%d in kernelwait is not valid!\n", uctxt->regs[0]);
+        return ERROR;
     }
 
     if (isemptylist(proc->children) && isemptylist(proc->terminatedchild)){
@@ -161,6 +155,8 @@ int kernelgetpid(){
 //Capture TRAP_CLOCK
 void TrapClock(UserContext *uctxt){
     TracePrintf(2, "TrapClock called\n");
+
+    TracePrintf(1, "freeframe_list size: %d\n", freeframe_list->size);
 
     if (!isemptylist(waitingqueue)){
         lstnode *traverse = waitingqueue->head->next;
@@ -213,6 +209,20 @@ int kerneldelay(UserContext *uctxt){
 /*
     SYSCALL END
 */
+
+int ProcessExit(){
+    pcb_t* currPcb = TurnNodeToPCB(currProc);
+    
+    // If the initProcess Exit, halt the program
+    if(currPcb->pid == 2) {
+        Halt();
+        return ERROR;
+    }
+
+    terminateProcess(currProc);
+    TracePrintf(1,"Error! A process should never return from KernelExit\n");
+    return ERROR;
+}
 
 
 int CheckAvailableFrame(lstnode *cur_p){
@@ -308,6 +318,10 @@ int switchnext()
 }
 
 void terminateProcess(lstnode *procnode){
+    TracePrintf(2, "Enter terminateProcess!\n");
+
+    TracePrintf(1, "OMG! Someone is TERMINATED here!\n");
+
     int i, rc;
     pcb_t* proc = TurnNodeToPCB(procnode);
     proc->procState = TERMINATED;

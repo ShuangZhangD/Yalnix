@@ -26,19 +26,19 @@ BUILD_PATH = ~/Desktop/coredump
 ###
 
 #List all kernel source files here.  
-KERNEL_SRCS = kernel.c traphandler.c listcontrol.c processmanage.c io.c lock.c pipe.c cvar.c memorymanage.c loadprogram.c testutil.c
+KERNEL_SRCS = kernel.c traphandler.c listcontrol.c processmanage.c io.c lock.c pipe.c cvar.c memorymanage.c loadprogram.c testutil.c semaphore.c
 #List the objects to be formed form the kernel source files here.  Should be the same as the prvious list, replacing ".c" with ".o"
-KERNEL_OBJS = kernel.o traphandler.o listcontrol.o processmanage.o io.o lock.o pipe.o cvar.o memorymanage.o loadprogram.o testutil.o
+KERNEL_OBJS = kernel.o traphandler.o listcontrol.o processmanage.o io.o lock.o pipe.o cvar.o memorymanage.o loadprogram.o testutil.o semaphore.o
 #List all of the header files necessary for your kernel
-KERNEL_INCS = kernel.h traphandler.h listcontrol.h processmanage.h io.h lock.h pipe.h cvar.h memorymanage.h loadprogram.h testutil.h selfdefinedstructure.h  
+KERNEL_INCS = kernel.h traphandler.h listcontrol.h processmanage.h io.h lock.h pipe.h cvar.h memorymanage.h loadprogram.h testutil.h semaphore.h selfdefinedstructure.h  
 
 
 #List all user programs here.
-USER_APPS = init testbrk bigstack testfork testio testcvar torture testpipe
+USER_APPS = init testbrk bigstack testfork testexec testttywrite testcvar testttyread torture testpipe zero
 #List all user program source files here.  SHould be the same as the previous list, with ".c" added to each file
-USER_SRCS = init.c testbrk.c bigstack.c testfork.c testio.c testcvar.c torture.c testpipe.c
+USER_SRCS = init.c testbrk.c bigstack.c testfork.c testexec.c testttywrite.c testttyread.c testcvar.c torture.c testpipe.c zero.c
 #List the objects to be formed form the user  source files here.  Should be the same as the prvious list, replacing ".c" with ".o"
-USER_OBJS = init.o testbrk.o bigstack.o testfork.o testio.o testcvar.o  torture.o testpipe.o
+USER_OBJS = init.o testbrk.o bigstack.o testfork.o testexec.o testttywrite.o testttyread.o testcvar.o  torture.o testpipe.o zero.o
 #List all of the header files necessary for your user programs
 USER_INCS = 
 

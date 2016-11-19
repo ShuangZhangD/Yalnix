@@ -14,6 +14,7 @@ int kernellockinit(UserContext *uctxt){
     int rc = InputSanityCheck(lock_idp);
     if (rc){
         TracePrintf(1, "Error!The lock_idp address:%d in kernellockinit is not valid!\n", lock_idp);
+        return ERROR;
     }
 
 	lstnode *lockNode = nodeinit(id);

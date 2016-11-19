@@ -23,6 +23,7 @@ extern dblist* lockqueue;
 extern dblist* cvarqueue;
 extern Tty* tty[NUM_TERMINALS];
 extern dblist* pipequeue;
+extern dblist* semqueue;
 
 int kernelreclaim(UserContext *uctxt)
 {
@@ -35,11 +36,7 @@ int kernelreclaim(UserContext *uctxt)
         if(pipe->readers != NULL)
         {
             free(pipe->readers);
-        }
-        if(pipe->writers != NULL)
-        {
-            free(pipe->writers);
-        }        
+        }    
         free(pipe);
         free(pipenode);
 
@@ -162,6 +159,7 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     cvarqueue = listinit();
     pipequeue = listinit();
     blockqueue = listinit();
+    semqueue = listinit();
 
     for (i = 0; i < NUM_TERMINALS; i++)
     {
@@ -210,9 +208,8 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
     } else {
         rc = LoadProgram(cmd_args[0], cmd_args, initProc); 
     }
-
-    if (rc == KILL){
-        terminateProcess(initProc);
+    if (rc){
+        Halt();
         return;
     }
 
@@ -223,7 +220,6 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
 
     TracePrintf(3,"idle:%p, init:%p\n", idlePcb->usrPtb, TurnNodeToPCB(initProc)->usrPtb);
     rc = KernelContextSwitch(MyCloneKCS, (void *)idleProc, (void *)initProc);
-
     if (rc) {
         TracePrintf(1, "Context Switch in KernelStart goes wrong.\n");
     }

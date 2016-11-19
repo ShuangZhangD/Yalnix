@@ -14,6 +14,7 @@ int kernelpipeinit(UserContext *uctxt){
     int rc = InputSanityCheck(pipe_idp);
 	if (rc){
         TracePrintf(1, "Error!The pipe_idp address:%d in kernelpipeinit is not valid!\n", pipe_idp);
+        return ERROR;
     }
 
 	//Create a new pipe
@@ -32,7 +33,6 @@ int kernelpipeinit(UserContext *uctxt){
 	pipe->id = g_mutex_id;
 	pipe->contentlen = 0;
 	pipe->readers = listinit();
-	pipe->writers = listinit();
 	pipenode->content = (void *) pipe;
 	insert_tail(pipenode, pipequeue);
 
