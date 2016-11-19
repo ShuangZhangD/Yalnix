@@ -104,7 +104,7 @@ int KernelTtyWrite(UserContext *uctxt){
         int write_len = (len > TERMINAL_MAX_LINE) ? TERMINAL_MAX_LINE:len;
         // if (g_isFinised) {
         TtyTransmit(tty_id, buf + len - leftlen, write_len);
-            // g_isFinised = 0;
+        //     g_isFinised = 0;
         // }
         switchnext();
         leftlen -= write_len;

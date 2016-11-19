@@ -121,8 +121,9 @@ int KernelExit(UserContext *uctxt){
 int KernelWait(UserContext *uctxt){
     TracePrintf(1,"Enter KernelWait\n");
     pcb_t *proc = TurnNodeToPCB(currProc);
+    int *status_ptr = (int *) uctxt->regs[0];
 
-    int rc = InputSanityCheck(uctxt->regs[0]);
+    int rc = InputSanityCheck(status_ptr);
     if (rc){
         TracePrintf(1, "Error!The status_ptr address:%d in KernelWait is not valid!\n", uctxt->regs[0]);
         return ERROR;
@@ -140,7 +141,7 @@ int KernelWait(UserContext *uctxt){
     if (!isemptylist(proc->terminatedchild)){
         lstnode* remove = remove_head(proc->terminatedchild);
         pcb_t* removeproc = TurnNodeToPCB(remove);
-        uctxt->regs[0] = removeproc->exitstatus;
+        *status_ptr = removeproc->exitstatus;
         free(remove);
         return removeproc->pid;
     }

@@ -3,7 +3,7 @@
 #include "processmanage.h"
 
 int KernelTtyWrite(UserContext *uctxt);
-int KernelTtyWrite(UserContext *uctxt);
+int KernelTtyRead(UserContext *uctxt);
 
 Tty* tty[NUM_TERMINALS];
 int receivelen;
