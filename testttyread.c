@@ -16,7 +16,6 @@ int main(int argc, char const *argv[])
 
 		Exit(1);
 	} else {
-
 		Delay(10);
 		len = TtyRead(1, buf, 26);
 		if (rc == -1){

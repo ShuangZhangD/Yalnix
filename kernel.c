@@ -170,8 +170,6 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
         }
         tty[i]->readerwaiting = listinit();
         tty[i]->writerwaiting = listinit();
-        //tty[i]->receivebuf = (char*) malloc(sizeof(char) * TERMINAL_MAX_LINE);
-        //tty[i]->transmitbuf = (char*) malloc(sizeof(char) * TERMINAL_MAX_LINE);
     }
 
     //Initialize Idle Process    
