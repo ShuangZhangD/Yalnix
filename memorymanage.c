@@ -178,30 +178,14 @@ int InputSanityCheck(int *addr){
     int ad = (int) addr;
     int page = (ad - VMEM_1_BASE) >> PAGESHIFT;
 
-    if (page > MAX_PT_LEN){
-        return ERROR;
-    }
 
-    if (page <  TurnNodeToPCB(currProc)->stack_limit_page){
-        return ERROR;
-    } 
+    if (ad < VMEM_1_BASE) return ERROR;
 
-    return SUCCESS;
-}
+    if (page > MAX_PT_LEN) return ERROR;
 
-int IOSanityCheck(int *addr){
-    int ad = (int) addr;
-    int page = (ad - VMEM_1_BASE) >> PAGESHIFT;
-
-    if (page > MAX_PT_LEN){
-        return ERROR;
-    }
-
-    if (TurnNodeToPCB(currProc)->data_page < page && page <  TurnNodeToPCB(currProc)->stack_limit_page){
-        return ERROR;
-    } 
+    // if (TurnNodeToPCB(currProc)->data_page < page && page <  TurnNodeToPCB(currProc)->stack_limit_page){
+    //     return ERROR;
+    // } 
 
     return SUCCESS;
-
-
 }

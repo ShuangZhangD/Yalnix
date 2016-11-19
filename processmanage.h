@@ -59,6 +59,11 @@ lstnode* dewaitcvarqueue(dblist* queue);
 int enwaitsemqueue(lstnode* procnode,dblist* queue);
 lstnode* dewaitsemqueue(dblist* queue);
 
+
+int enbufferqueue(lstnode* procnode,dblist* queue);
+lstnode* debufferqueue(dblist* queue);  
+
+
 lstnode* TurnPCBToNode(pcb_t *pcb);
 pcb_t* TurnNodeToPCB(lstnode *node);
 

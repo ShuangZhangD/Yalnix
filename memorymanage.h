@@ -16,5 +16,3 @@ int GrowUserStack(lstnode *procnode, int addrPage);
 void* MallocCheck(int size);
 
 int InputSanityCheck(int *addr);
-
-int IOSanityCheck(int *addr);

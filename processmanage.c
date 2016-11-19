@@ -529,6 +529,22 @@ lstnode* dewaitsemqueue(dblist* queue)
 }   
 
 
+int enbufferqueue(lstnode* procnode,dblist* queue)
+{
+    TracePrintf(3, "Enter enbufferqueue\n");    
+    insert_tail(procnode, queue);
+    TracePrintf(3, "Exit enbufferqueue\n"); 
+    return SUCCESS;
+}
+
+lstnode* debufferqueue(dblist* queue)
+{
+    TracePrintf(3,"Enter debufferqueue\n");
+    TracePrintf(3,"Exit debufferqueue\n"); 
+    return remove_head(queue);
+}   
+
+
 lstnode* TurnPCBToNode(pcb_t *pcb){
     lstnode *node = nodeinit(pcb->pid);
     node->content = (void *) pcb;

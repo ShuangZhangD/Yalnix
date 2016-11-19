@@ -76,7 +76,7 @@ int kernelttywrite(UserContext *uctxt){
     void *buf = (void*) uctxt->regs[1];
     int len = uctxt->regs[2];
 
-    int rc = IOSanityCheck((int *)buf);
+    int rc = InputSanityCheck((int *)buf);
     if (rc){
         TracePrintf(1, "Error! The buffer address:%p in kernelttywrite is not valid!\n", buf);
         return;
@@ -89,8 +89,6 @@ int kernelttywrite(UserContext *uctxt){
     if (tty_id < 0 || tty_id >= NUM_TERMINALS) {
         return ERROR;
     }
-
-    bzero(buf, strlen(buf)); //Empty Buf before writing data into it
     
     pcb_t* currPcb = TurnNodeToPCB(currProc);
 
