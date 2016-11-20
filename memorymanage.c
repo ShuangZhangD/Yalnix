@@ -37,7 +37,7 @@ int KernelBrk(UserContext *uctxt){
     } else if (newBrkPage > oldBrkPage){
         TracePrintf(3, "Grow New Brk in KernelBrk\n");        
         
-        rc = WritePageTable(proc->usrPtb, oldBrkPage, newBrkPage, VALID, (PROT_READ | PROT_WRITE));
+        rc = WritePageTable(proc->usrPtb, oldBrkPage, newBrkPage - 1, VALID, (PROT_READ | PROT_WRITE));
         if (rc){
             TracePrintf(1, "Error! WritePageTable Failed in KernelBrk\n");
             return ERROR;
