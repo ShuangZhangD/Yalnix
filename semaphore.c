@@ -27,7 +27,6 @@ int KernelSemInit(UserContext *uctxt){
 	}
 
 	sem->sem_id = id;
-	sem->ownerid = -1;
 	sem->sem_val = semval;
 
 	sem->semwaitlist = listinit();
@@ -71,13 +70,6 @@ int KernelSemDown(UserContext *uctxt){
 	sem_t* sem = (sem_t*)semNode->content;
 
 	pcb_t* proc =(pcb_t*) currProc->content;
-	if(sem->ownerid == -1)
-	{
-		sem->sem_id = proc->pid;
-	}else if(sem->ownerid != proc->pid)
-	{
-		return ERROR;
-	}
 	
 	
 	while (sem->sem_val <= 0)

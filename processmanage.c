@@ -527,6 +527,8 @@ lstnode* dewaitsemqueue(dblist* queue)
 {
     TracePrintf(3,"Enter dewaitcvarqueue\n");
     TracePrintf(3,"Exit dewaitcvarqueue\n"); 
+    return remove_head(queue);
+
 }   
 
 
