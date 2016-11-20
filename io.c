@@ -4,7 +4,8 @@
 #include "kernel.h"
 #include "testutil.h"
 
-
+//Global Variable
+Tty* tty[NUM_TERMINALS];
 extern lstnode* currProc;
 // int g_isFinised = 1;
 
@@ -66,6 +67,8 @@ int KernelTtyRead(UserContext *uctxt){
             memcpy(&bufMsg->buf,&bufMsg->buf[copylen],leftbuflen); 
         }
     }
+    TracePrintf(2,"Exit KernelTtyRead\n");
+
     return len;
 
 }
@@ -92,14 +95,17 @@ int KernelTtyWrite(UserContext *uctxt){
     
     pcb_t* currPcb = TurnNodeToPCB(currProc);
 
+    //Initialize shadow nodes
     int leftlen = len;	
     lstnode *shadowNode = nodeinit(currProc->id);
     enwriterwaitingqueue(shadowNode, tty[tty_id]->writerwaiting);
 
+    //Compare the first shadow node with current process to see whether a process could write ( dynamic blocking)
     while(firstnode(tty[tty_id]->writerwaiting)->id != currProc->id){
         switchnext();
     }
 
+    //Write data until all the data have been written
     while(leftlen > 0){
         int write_len = (len > TERMINAL_MAX_LINE) ? TERMINAL_MAX_LINE:len;
         // if (g_isFinised) {
@@ -110,6 +116,7 @@ int KernelTtyWrite(UserContext *uctxt){
         leftlen -= write_len;
     }
 
+    //Free Shadow node
     if (!isemptylist(tty[tty_id]->writerwaiting)) {
         lstnode* node = dewriterwaitingqueue(tty[tty_id]->writerwaiting);
         free(node);
@@ -129,9 +136,13 @@ void TrapTtyReceive(UserContext *uctxt){
     int tty_id = uctxt->code;
 
     while (1){
+        //Get data from hardware
         int len = TtyReceive(tty_id, tty[tty_id]->receivebuf, TERMINAL_MAX_LINE);
 
+        //If we read all the data, break the loop
         if (len<=0) break;
+
+        //initialize message nodes
         lstnode *msgNode = nodeinit(0);
         if (NULL == msgNode){
             free(tty[tty_id]->bufferqueue);
@@ -146,15 +157,20 @@ void TrapTtyReceive(UserContext *uctxt){
             return;   
         }
         msg->len = len;
+
+        //Copy the data into buffer of message node
         memcpy(msg->buf, tty[tty_id]->receivebuf, len);
+
+        //Zero out receivebuf
         bzero(tty[tty_id]->receivebuf, TERMINAL_MAX_LINE);
 
+        //Save message nodes into a queue
         msgNode->content = (void *) msg;
         enbufferqueue(msgNode, tty[tty_id]->bufferqueue);
         tty[tty_id]->LeftBufLen+=len;
     }
 
-
+    //Pull all waiting queue out and put them into ready queue to read IO input
     while(!isemptylist(tty[tty_id]->readerwaiting)) {
         TracePrintf(3, "receive dereaderwaitingqueue\n");
         lstnode* node = dereaderwaitingqueue(tty[tty_id]->readerwaiting);

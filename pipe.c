@@ -43,6 +43,8 @@ int KernelPipeInit(UserContext *uctxt){
 }
 
 int KernelPipeRead(UserContext *uctxt){
+	TracePrintf(2, "Enter KernelPipeRead\n");
+
 	int pipe_id = uctxt->regs[0];
 	void* buf =(void*) uctxt->regs[1];
 	int len = uctxt->regs[2];
@@ -65,22 +67,23 @@ int KernelPipeRead(UserContext *uctxt){
 		return ERROR;
 	}
 
-    // bzero(buf, strlen(buf)); //Empty Buf before writing data into it
-
 	pipe_t *pipe = (pipe_t *) pipenode->content;
 
 	//if buffer < len, block the caller until there are enough bytes available
-
 	while (len > pipe->contentlen) {
 		enreaderwaitingqueue(currProc, pipe->readers);
 		switchnext();			
 	}
 	
 	memcpy(buf, &pipe->buffer, len);
-
+	/*
+		if user read all the pipe at once => memcpy and bzero all the buffers
+		else pull the unread data to the front end of the pipe
+	*/
 	int leftbuflen = pipe->contentlen - len;
 	if (len == PIPE_BUFFER_LEN){
 		bzero(pipe->buffer, PIPE_BUFFER_LEN);
+		pipe->contentlen = 0;
 	} else {
 		// TracePrintf(1, "Touch Address: %p\n", pipe->buffer);
 		memcpy(&pipe->buffer, &pipe->buffer[len], leftbuflen);
@@ -89,11 +92,15 @@ int KernelPipeRead(UserContext *uctxt){
 		pipe->contentlen = leftbuflen;
 	}
 	TracePrintf(3, "The content of buffer in KernelPipeRead = %s\n", pipe->buffer);
+
+	TracePrintf(2, "Exit KernelPipeRead\n");	
 	//if success, return the number of bytes read
 	return len;
 }
 
 int KernelPipeWrite(UserContext *uctxt){
+ 	TracePrintf(2, "Enter KernelPipeWrite\n");
+
 	int pipe_id = uctxt->regs[0];
 	unsigned int *buf = (unsigned int *) uctxt->regs[1];
 	int len = uctxt->regs[2];
@@ -116,6 +123,7 @@ int KernelPipeWrite(UserContext *uctxt){
 		return ERROR;
 	}
 
+	//Cannot write into pipe when pipe is full
 	pipe_t *pipe = (pipe_t *) pipenode->content;
 	if (pipe->contentlen == PIPE_BUFFER_LEN){
 		TracePrintf(1, "Error! PIPE is full!\n");
@@ -124,20 +132,37 @@ int KernelPipeWrite(UserContext *uctxt){
 
 	//read the buffer, and write the content to the pipe
 	int bufferLeft = PIPE_BUFFER_LEN - pipe->contentlen;
-	if (len > bufferLeft){
-		TracePrintf(1, "Error! PIPE buffer only has %d bytes left, can't write %d bytes!!\n", bufferLeft, len);
-		return ERROR;
-	} else {
-		int cpStInx = pipe->contentlen;
-		memcpy(&pipe->buffer[cpStInx],buf,len);	
-		pipe->contentlen+=len;
 
-		if(!isemptylist(pipe->readers)){ 
-			lstnode *node = dereaderwaitingqueue(pipe->readers);
-			enreadyqueue(node, readyqueue);
-		}
+	int writelen = (len > bufferLeft)? bufferLeft:len;
+	int cpStInx = pipe->contentlen;
+	memcpy(&pipe->buffer[cpStInx],buf,writelen);	
+	pipe->contentlen+=writelen;
+
+	if(!isemptylist(pipe->readers)){ 
+		lstnode *node = dereaderwaitingqueue(pipe->readers);
+		enreadyqueue(node, readyqueue);
 	}
+
+	// if (len > bufferLeft){
+	// 	int cpStInx = pipe->contentlen;
+	// 	memcpy(&pipe->buffer[cpStInx],buf,bufferLeft);	
+	// 	pipe->contentlen+=bufferLeft;
+	// 	// TracePrintf(1, "Error! PIPE buffer only has %d bytes left, can't write %d bytes!!\n", bufferLeft, len);
+	// 	// return ERROR;
+	// } else {
+	// 	int cpStInx = pipe->contentlen;
+	// 	memcpy(&pipe->buffer[cpStInx],buf,len);	
+	// 	pipe->contentlen+=len;
+
+	// 	if(!isemptylist(pipe->readers)){ 
+	// 		lstnode *node = dereaderwaitingqueue(pipe->readers);
+	// 		enreadyqueue(node, readyqueue);
+	// 	}
+	// }
 	TracePrintf(3, "The content of buffer in KernelPipeWrite= %s\n", pipe->buffer);
+
+ 	TracePrintf(2, "Exit KernelPipeWrite\n");
+
 	//if success, return the number of bytes written
-	return len;
+	return writelen;
 }

@@ -14,8 +14,8 @@ extern dblist* cvarqueue;
 extern dblist* freeframe_list;
 
 /*
-    SYSCALL
-*/
+   SYSCALL
+ */
 int KernelFork(UserContext *uctxt){
     TracePrintf(2,"Enter KernelFork\n");
     int rc;
@@ -25,49 +25,52 @@ int KernelFork(UserContext *uctxt){
         TracePrintf(1, "Error! There is no enough Free Frames!\n");
         return ERROR;
     }
-    /*
-        1. Initialize Empty Child Process (including initialize user page table, allocate free frame to it)
-    */
+
+    //Initialize Empty Child Process (including initialize user page table, allocate free frame to it)
     lstnode* childProc = InitProc(); //Empty Process
     lstnode* parentProc = currProc;
 
     pcb_t* childPcb = TurnNodeToPCB(childProc);
     pcb_t* parentPcb = TurnNodeToPCB(parentProc);
 
-    //  2. Record the current user context
+    //Record the current user context
     parentPcb->uctxt = *uctxt;
     childPcb->uctxt = *uctxt;
 
+    //Temporary Save Variables of child process
     int childPid = childPcb->pid;
     pte_t *childPtb = childPcb->usrPtb;
     pte_t *childKernelPtb = childPcb->krnlStackPtb;
     dblist* childTermChild = childPcb->terminatedchild;
     dblist* childChildren = childPcb->children;
 
+    //Copy the whole PCB from Parent to child
     memcpy((void*) childPcb, (void*) parentPcb, sizeof(pcb_t));
+
+    //Restore variables to child process
     childPcb->pid = childPid;
     childPcb->usrPtb = childPtb;
     childPcb->krnlStackPtb = childKernelPtb;
     childPcb->terminatedchild = childTermChild;
     childPcb->children = childChildren;
 
-    //5. Duplicate the content of the frames used by parent to the free frames of a child
+    //Duplicate the content of the frames used by parent to the free frames of a child
     CopyUserProcess(parentPcb->usrPtb, childPcb->usrPtb);
 
-    //6. Put child into parent's children queue
+    //Put child into parent's children queue
     lstnode* childNode = TurnPCBToNode(childPcb);
     insert_tail(childNode,parentPcb->children);
 
-    //7. Assign the address of the parent process to the child 
+    //Assign the address of the parent process to the child 
     childPcb->parent = parentProc;
 
-    //8. Put child proc into readyqueue
+    //Put child proc into readyqueue
     enreadyqueue(childProc,readyqueue);
 
     //Flush All TLB because 1. Kernel Stack Mapping has changed 2. User Page Table has been written into register
     WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_ALL);
 
-    // 3.  Copy the current kernel context and content of kernel stack from parent to child 
+    //Copy the current kernel context and content of kernel stack from parent to child 
     rc = KernelContextSwitch(MyForkKCS, (void*) parentProc, (void*)childProc);
     if (rc){
         TracePrintf(1,"MyCloneKCS in KernelFork failed.\n");
@@ -77,7 +80,8 @@ int KernelFork(UserContext *uctxt){
     TracePrintf(3,"parent:%p, child:%p\n", parentPcb->usrPtb, childPcb->usrPtb);
 
     TracePrintf(2,"Exit KernelFork\n");
-    //10. if current process is childprocess, return 0, otherwise return pid
+
+    //If current process is childprocess, return 0, otherwise return pid
     if(currProc == childProc) {
         return 0;
     }
@@ -105,6 +109,8 @@ int KernelExec(UserContext *uctxt){
     }
 
     *uctxt = loadPcb->uctxt;
+
+    TracePrintf(2,"Exit KernelExec\n");
     return SUCCESS;
 }
 
@@ -115,6 +121,7 @@ int KernelExit(UserContext *uctxt){
     pcb_t* currPcb = TurnNodeToPCB(currProc);
     currPcb->exitstatus = status;
 
+    TracePrintf(2,"Exit KernelExit\n");
     return ProcessExit();
 }
 
@@ -133,11 +140,13 @@ int KernelWait(UserContext *uctxt){
         return ERROR;
     }
 
+    //If there is not child terminated, block itself
     if (isemptylist(proc->terminatedchild)){
         enblockqueue(currProc,blockqueue);
         switchproc();        
     }
 
+    //"Reap" the terminated child and return its pid
     if (!isemptylist(proc->terminatedchild)){
         lstnode* remove = remove_head(proc->terminatedchild);
         pcb_t* removeproc = TurnNodeToPCB(remove);
@@ -161,6 +170,7 @@ void TrapClock(UserContext *uctxt){
 
     TracePrintf(2, "freeframe_list size: %d\n", freeframe_list->size);
 
+    //Dealing with syscall--Delay
     if (!isemptylist(waitingqueue)){
         lstnode *traverse = waitingqueue->head->next;
         while(traverse != NULL && traverse->id != -1) {               
@@ -176,12 +186,14 @@ void TrapClock(UserContext *uctxt){
 
             traverse = traverse->next;   
         }
-        
+
     }
 
     if (!isemptylist(readyqueue)){
         switchproc();
     }
+
+    return;
 }
 
 int KernelDelay(UserContext *uctxt){
@@ -202,20 +214,18 @@ int KernelDelay(UserContext *uctxt){
         enwaitingqueue(currProc,waitingqueue);
         proc->clock = clock_ticks;
 
-        rc = switchproc();
-        if (rc) {
-            return ERROR;
-        }
+        switchproc();
     }
+    TracePrintf(2, "Exit KernelDelay\n");
 }
 
 /*
-    SYSCALL END
-*/
+   SYSCALL END
+ */
 
 int ProcessExit(){
     pcb_t* currPcb = TurnNodeToPCB(currProc);
-    
+
     // If the initProcess Exit, halt the program
     if(currPcb->pid == 2) {
         Halt();
@@ -239,6 +249,7 @@ int CheckAvailableFrame(lstnode *cur_p){
     }
 
     if (freeframe_list->size <= cnt){
+        TracePrintf(1, "Error! There is no enough free frames!\n");
         return ERROR;
     }
 
@@ -255,64 +266,62 @@ void CopyUserProcess (pte_t* parentPtb, pte_t* childPtb){
         if (VALID == parentPtb[i].valid){
             childPtb[i].valid = parentPtb[i].valid;
 
+            //Temporary make it writable to copy things in the memory
             childPtb[i].prot = PROT_WRITE;
-            
+
             //allocate a free frame to it
             lstnode *first = remove_head(freeframe_list);
             if (NULL == first) TracePrintf(1, "Remove_head in CopyUserProcess failed!");
             childPtb[i].pfn = first->id;
-            
+
+            //Use SAFETY_MARGIN_PAGE as buffer to copy
             g_pageTableR0[SAFETY_MARGIN_PAGE].pfn = childPtb[i].pfn;
 
             WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_0);
 
+            //Calculate Destination and Source Addresses
             unsigned int desAddr = SAFETY_MARGIN_PAGE << PAGESHIFT;
             unsigned int srcAddr = (i << PAGESHIFT) + VMEM_1_BASE;
 
             memcpy((void *)desAddr, (void *)srcAddr, PAGESIZE);
 
+            //Restore the TRUE Protection!
             childPtb[i].prot = parentPtb[i].prot;
         }
     }
-  
+
     //Restore the buffer.
     g_pageTableR0[SAFETY_MARGIN_PAGE].valid = INVALID;
     g_pageTableR0[SAFETY_MARGIN_PAGE].prot = PROT_NONE;
     g_pageTableR0[SAFETY_MARGIN_PAGE].pfn = UNALLOCATED;
 
-    WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_0);
+    WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_ALL);
 
     return;
 }
 
 int switchproc()
 {
-        TracePrintf(2,"Enter switchproc.\n");
-        int rc = 0;
+    TracePrintf(2,"Enter switchproc.\n");
+    int rc = SUCCESS;
 
-        // lstnode *switchOut = dereadyqueue(readyqueue);
-        // if (switchOut != currProc){
-        //     TracePrintf(1, "The first node of readyqueue should be the current process!\n");
-        //     return;
-        // }
+    lstnode *switchIn = firstnode(readyqueue);
 
-        lstnode *switchIn = firstnode(readyqueue);
-        
-        if (TERMINATED ==  TurnNodeToPCB(currProc)->procState){
-            rc = KernelContextSwitch(MyTerminateKCS, (void *) currProc, (void *) switchIn);
-            if (rc) TracePrintf(1,"Error! MyTerminateKCS in switchproc failed!\n");  
+    if (TERMINATED ==  TurnNodeToPCB(currProc)->procState){
+        rc = KernelContextSwitch(MyTerminateKCS, (void *) currProc, (void *) switchIn);
+        if (rc) TracePrintf(1,"Error! MyTerminateKCS in switchproc failed!\n");  
 
-        } else if (!isemptylist(readyqueue)){
-            TracePrintf(3, "currProc->id%d\n", TurnNodeToPCB(currProc)->pid );
-            TracePrintf(3, "switchIn->id%d\n" ,TurnNodeToPCB(switchIn)->pid);
-            rc = KernelContextSwitch(MyTrueKCS, (void *) currProc, (void *) switchIn);
-            if (rc) TracePrintf(1,"Error! MyTrueKCS in switchproc failed!\n");
-        }
-        else{
-            rc =  1;
-        }	
+    } else if (!isemptylist(readyqueue)){
+        TracePrintf(3, "currProc->id%d\n", TurnNodeToPCB(currProc)->pid );
+        TracePrintf(3, "switchIn->id%d\n" ,TurnNodeToPCB(switchIn)->pid);
+        rc = KernelContextSwitch(MyTrueKCS, (void *) currProc, (void *) switchIn);
+        if (rc) TracePrintf(1,"Error! MyTrueKCS in switchproc failed!\n");
+    }
+    else{
+        rc =  ERROR;
+    }	
 
-        return rc;
+    return rc;
 }
 
 int switchnext()
@@ -330,50 +339,48 @@ void terminateProcess(lstnode *procnode){
     proc->procState = TERMINATED;
 
     switchproc();
-
-    //TODO Delete process or relocate process pool
     return;
 }
 
 int enreadyqueue(lstnode* procnode,dblist* queue)
 {	
     TracePrintf(3, "Enter enreadyqueue\n");    
-	pcb_t* proc = TurnNodeToPCB(procnode);
+    pcb_t* proc = TurnNodeToPCB(procnode);
 
-	if (proc == NULL){
-		return ERROR;
-	}
-	proc->procState = READY;
+    if (proc == NULL){
+        return ERROR;
+    }
+    proc->procState = READY;
     insert_tail(procnode,queue);
 
-	return 0;
+    return 0;
 }
 
 lstnode* dereadyqueue(dblist* queue)
 {
-	return remove_head(queue);
+    return remove_head(queue);
 }
 
 int enwaitingqueue(lstnode* procnode,dblist* queue)
 {
     TracePrintf(3, "Enter enwaitingqueue\n");    
-	pcb_t* proc = TurnNodeToPCB(procnode);
+    pcb_t* proc = TurnNodeToPCB(procnode);
 
-	if (proc == NULL){
-		return ERROR;
-	}
-	proc->procState = WAITING;
-	insert_tail(procnode, queue);
+    if (proc == NULL){
+        return ERROR;
+    }
+    proc->procState = WAITING;
+    insert_tail(procnode, queue);
 
     TracePrintf(3, "Exit enwaitingqueue\n"); 
-	return 0;
+    return 0;
 }
 
 lstnode* dewaitingqueue(lstnode* waitingnode,dblist* queue)
 {
     TracePrintf(3,"Enter dewaitingqueue\n");
     TracePrintf(3,"Exit dewaitingqueue\n");   	
-	return remove_node(TurnNodeToPCB(waitingnode)->pid,queue);
+    return remove_node(TurnNodeToPCB(waitingnode)->pid,queue);
 }
 
 int enblockqueue(lstnode* procnode,dblist* queue)
@@ -556,7 +563,7 @@ lstnode* TurnPCBToNode(pcb_t *pcb){
 }
 
 pcb_t* TurnNodeToPCB(lstnode *node){
-    
+
     pcb_t *pcb = (pcb_t *) node->content;
     if (!pcb) TracePrintf(1, "Turn Node To PCB Error!\n");
     return pcb;

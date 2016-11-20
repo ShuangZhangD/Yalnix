@@ -16,34 +16,34 @@ void main(int argc, char const *argv[])
 	for (i = 0; i < maxi; i++){
 		pid = Fork();
 		if (0 == pid){
-			rc = PipeRead(pipe_idp, buf, 10);
+			rc = PipeRead(pipe_idp, buf, 100);
 			if (rc == -1){
 				TracePrintf(1, "PipeRead Failed!\n");
 				Exit(-1);
 			}
 			TracePrintf(1, "You Shouldn't come here before reading from Parent\n");
-			TracePrintf(1, "ReadLen = %d, buf = %s\n", rc, buf);
+			TracePrintf(1, "ReadLen = %d, buf = %s, pid=%d\n", rc, buf, GetPid());
 
-			rc = PipeRead(pipe_idp, buf, 20);
+			rc = PipeRead(pipe_idp, buf, 200);
 			if (rc == -1){
 				TracePrintf(1, "PipeRead Failed!\n");
 				Exit(-1);
 			}
-			TracePrintf(1, "ReadLen = %d, buf = %s\n", rc, buf);
+			TracePrintf(1, "ReadLen = %d, buf = %s, pid=%d\n", rc, buf, GetPid());
 
 			Exit(1);
 		} else {
 			Delay(10);
 
 			rc = PipeWrite(pipe_idp, test, 26);
-			TracePrintf(1, "WriteLen = %d\n", rc);
+			TracePrintf(1, "WriteLen = %d, pid=%d\n", rc, GetPid());
 			if (rc == -1){
 				TracePrintf(1, "PipeWrite Failed!\n");
 				Exit(-1);
 			}
 
 			rc = PipeWrite(pipe_idp, test, 230);
-			TracePrintf(1, "WriteLen = %d\n", rc);
+			TracePrintf(1, "WriteLen = %d, pid=%d\n", rc, GetPid());
 			if (rc == -1){
 				TracePrintf(1, "PipeWrite Failed!\n");
 				Exit(-1);

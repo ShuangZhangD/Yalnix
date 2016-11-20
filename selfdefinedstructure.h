@@ -30,21 +30,21 @@ typedef struct lst
 typedef struct pte pte_t;
 
 typedef struct ProcessControlBlock{
-    int procState;                       //State of Process   
+    int procState;                          //State of Process   
     int pid;                                //Process ID
     UserContext uctxt;                      //Snapshot of user context
     KernelContext kctxt;                    //Snapshot of kernel context
-    pte_t *usrPtb;               //PageTable for Userland
-    pte_t *krnlStackPtb;                         //Pointer to Kernel Page Table
-    int krnlStackPtbSize;
-    lstnode *parent;                            //A pointer to parent process
-    dblist *children;                        //A pointer to mulitple child processes
-    dblist *terminatedchild;
-    int stack_limit_page;
-    int brk_page; 
-    int data_page;
-    int clock;
-    int exitstatus;
+    pte_t *usrPtb;                          //PageTable for Userland
+    pte_t *krnlStackPtb;                    //Pointer to Kernel Page Table
+    int krnlStackPtbSize;                   //Size of kernel stack page table
+    lstnode *parent;                        //A pointer to parent process
+    dblist *children;                       //A pointer to mulitple child processes
+    dblist *terminatedchild;                //A pointer to terminated child 
+    int stack_limit_page;                   //Lowest page of user stack 
+    int brk_page;                           //Break page
+    int data_page;                          //Data page
+    int clock;                              //Clock Count Down for syscall:Delay();
+    int exitstatus;                         //Exit Status
 
 } pcb_t;
 
@@ -86,7 +86,6 @@ typedef struct cvar{
 
 typedef struct semaphore{
     int sem_id;
-    // int ownerid;
     int sem_val;
     dblist* semwaitlist;
 } sem_t;

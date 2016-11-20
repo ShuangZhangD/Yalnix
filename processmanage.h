@@ -4,10 +4,14 @@
 #include "listcontrol.h"
 #include "kernel.h"
 
+//Global variables!
 dblist* waitingqueue;
 dblist* readyqueue;
 dblist* blockqueue;
 
+/*
+	Syscalls & Traps
+*/
 int KernelDelay(UserContext *uctxt);
 
 int KernelFork(UserContext *uctxt);
@@ -24,6 +28,10 @@ int KernelDelay(UserContext *uctxt);
 
 void TrapClock(UserContext *uctxt);
 
+/*
+	Syscalls & Traps
+*/
+
 int CheckAvailableFrame(lstnode *cur_p);
 
 void CopyUserProcess (pte_t* parentPtb, pte_t* childPtb);
@@ -36,6 +44,7 @@ int ProcessExit();
 
 int enreadyqueue(lstnode *procnode,dblist* queue);
 lstnode* dereadyqueue(dblist* queue);
+
 int enwaitingqueue(lstnode *procnode,dblist* queue);
 lstnode* dewaitingqueue(lstnode* waitingnode,dblist* queue);
 
@@ -59,10 +68,8 @@ lstnode* dewaitcvarqueue(dblist* queue);
 int enwaitsemqueue(lstnode* procnode,dblist* queue);
 lstnode* dewaitsemqueue(dblist* queue);
 
-
 int enbufferqueue(lstnode* procnode,dblist* queue);
 lstnode* debufferqueue(dblist* queue);  
-
 
 lstnode* TurnPCBToNode(pcb_t *pcb);
 pcb_t* TurnNodeToPCB(lstnode *node);

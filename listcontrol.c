@@ -8,7 +8,7 @@ lstnode* nodeinit(int i)
 {
 	lstnode* node = (lstnode *)MallocCheck(sizeof(lstnode));
 	if (NULL == node){
-		TracePrintf(1, "Malloc Failed in nodeinit! node is NULL!\n");
+		TracePrintf(1, "Error! Malloc Failed in nodeinit! node is NULL!\n");
 		return NULL;
 	}
 	node->id = i;
@@ -22,13 +22,13 @@ dblist* listinit()
 	
 	dblist* list = (dblist* ) MallocCheck(sizeof(dblist));
 	if (NULL == list){
-		TracePrintf(1, "Malloc Failed in nodeinit! list is NULL!\n");
+		TracePrintf(1, "Error! Malloc Failed in nodeinit! list is NULL!\n");
 		return NULL;
 	}
 
 	list->head = (lstnode *) MallocCheck(sizeof(lstnode));
 	if (NULL == list->head){
-		TracePrintf(1, "Malloc Failed in listinit! list->head is NULL!\n");
+		TracePrintf(1, "Error! Malloc Failed in listinit! list->head is NULL!\n");
 		return NULL;
 	}
 	list->head->id = -1;
@@ -36,7 +36,7 @@ dblist* listinit()
 	list->head->next = NULL;
 	list->tail = (lstnode *) MallocCheck(sizeof(lstnode));
 	if (NULL == list->tail){
-		TracePrintf(1, "Malloc Failed in listinit! list->tail is NULL!\n");
+		TracePrintf(1, "Error! Malloc Failed in listinit! list->tail is NULL!\n");
 		return NULL;
 	}
 
@@ -61,7 +61,6 @@ lstnode* firstnode(dblist* list)
 
 int isemptylist(dblist* list)
 {
-	// TracePrintf(1, "list->size:%d\n", list->size);
 	if (list->size == 0)
 	{
 		return 1;
@@ -110,7 +109,7 @@ lstnode* remove_tail(dblist* list)
 	lstnode* tnode = list->tail->pre;
 	if(isemptylist(list))
 	{
-		printf("%s\n", "error");
+		TracePrintf(1, "Error! There is no tail to be removed!\n");
 		return NULL;
 	}
 	else if(list->tail->pre->pre == NULL){
@@ -132,7 +131,7 @@ lstnode* remove_head(dblist* list)
 	lstnode* hnode = list->head->next;
 	if(isemptylist(list))
 	{
-		printf("%s\n", "error");
+		TracePrintf(1, "Error! There is no node to be removed!\n");
 		return NULL;
 	}
 	else if(list->head->next->next == NULL){
@@ -167,12 +166,12 @@ lstnode* remove_node(int i, dblist* list)
 {
 	if(isemptylist(list))
 	{
-		TracePrintf(1, "No node to remove!\n");
+		TracePrintf(1, "Error! No node to be removed!\n");
 	}
 	else{
 		lstnode *remove = search_node(i,list);
 		if (NULL == remove){
-			TracePrintf(1, "Cannot find node in list!\n");
+			TracePrintf(1, "Error! Cannot find node in list!\n");
 			return NULL;
 		}
 		remove->pre->next = remove->next;

@@ -7,6 +7,7 @@ dblist *cvarqueue;
 extern lstnode* currProc;
 
 int KernelCvarInit(UserContext *uctxt){
+	TracePrintf(2, "Enter KernelCvarInit\n");	
 
 	//Create a new condition variable
 	int *cvar_idp = (int *) uctxt->regs[0];
@@ -37,13 +38,13 @@ int KernelCvarInit(UserContext *uctxt){
 
 	//save its identifier at *cvar_idp
 	*cvar_idp = cvar->cvar_id;
-	
+
+	TracePrintf(2, "Exit KernelCvarInit\n");	
 	return SUCCESS;
-
-
 }
 
 int KernelCvarSignal(UserContext *uctxt){
+	TracePrintf(2, "Enter KernelCvarSignal\n");
 
 	//if the cvar with cvar_id is not initialized, return ERROR
 	int cvar_id = uctxt->regs[0];
@@ -62,10 +63,12 @@ int KernelCvarSignal(UserContext *uctxt){
 		return ERROR;
 	}
 	
+	TracePrintf(2, "Exit KernelCvarSignal\n");
     return SUCCESS;
 }
 
 int KernelCvarBroadcast(UserContext *uctxt){
+	TracePrintf(2, "Enter KernelCvarBroadcast\n");
 
 	//if the cvar with cvar_id is not initialized, return ERROR
 	int cvar_id = uctxt->regs[0];	
@@ -83,11 +86,12 @@ int KernelCvarBroadcast(UserContext *uctxt){
 	}
 	//broadcast all threads waiting for the cvar
 
+	TracePrintf(2, "Exit KernelCvarBroadcast\n");
     return SUCCESS;
 }
 
 int KernelCvarWait(UserContext *uctxt){
-	TracePrintf(2, "Enter kernelcvarwait\n");
+	TracePrintf(2, "Enter KernelCvarWait\n");
 	//if the cvar with cvar_id is not initialized, return ERROR
 	int rc;
 	int cvar_id = uctxt->regs[0];
@@ -117,6 +121,6 @@ int KernelCvarWait(UserContext *uctxt){
 		TracePrintf(1, "AcquireLock in KernelCvarWait Failed!\n");
 	}
 
-	TracePrintf(2, "Exit kernelcvarwait\n");
+	TracePrintf(2, "Exit KernelCvarWait\n");
     return SUCCESS;
 }

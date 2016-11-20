@@ -18,7 +18,7 @@ extern dblist* lockqueue;
 extern dblist* cvarqueue;
 extern dblist* pipequeue;
 
-//capture TRAP_CLOCK
+//capture TRAP_Kernel
 void TrapKernel(UserContext *uctxt){
     TracePrintf(2, "TrapKernel called\n");
     TurnNodeToPCB(currProc)->uctxt = *uctxt;
@@ -119,7 +119,6 @@ void TrapKernel(UserContext *uctxt){
     uctxt->regs[0] = rc;
 }
 
-
 //Capture TRAP_ILLEGAL
 void TrapIllegal(UserContext *uctxt){
     /*
@@ -129,7 +128,6 @@ void TrapIllegal(UserContext *uctxt){
     ProcessExit();
     return;
 }
-
 
 //Capture TRAP_MATH
 void TrapMath(UserContext *uctxt){
@@ -141,7 +139,6 @@ void TrapMath(UserContext *uctxt){
     return;
 }
 
-
 //Capture TRAP_DISK
 void TrapDisk(UserContext *uctxt){
     /*
@@ -149,12 +146,10 @@ void TrapDisk(UserContext *uctxt){
      */
 }
 
-
-
 void InitInterruptTable(){
 
     //Allocate memory to interupt vector table 
-    intrptTb = (trapvector_t *) malloc(TRAP_VECTOR_SIZE * sizeof(trapvector_t));
+    intrptTb = (trapvector_t *) MallocCheck(TRAP_VECTOR_SIZE * sizeof(trapvector_t));
 
     //Fill interrupt vector table
     intrptTb[TRAP_KERNEL] = &TrapKernel; 
