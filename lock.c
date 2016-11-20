@@ -18,25 +18,30 @@ int KernelLockInit(UserContext *uctxt){
         TracePrintf(1, "Error! The lock_idp address:%d in KernelLockInit is not valid!\n", lock_idp);
         return ERROR;
     }
-
+    //initialize a lock node
 	lstnode *lockNode = nodeinit(id);
 	if (NULL == lockNode){
 		return ERROR;
 	}
 
 	lock_t *lock = (lock_t*) MallocCheck(sizeof(lock_t));
+
 	if (NULL == lock){
 		TracePrintf(1, "Error! Malloc Failed! Get a NULL lock in KernelLockInit!\n");  
 		return ERROR;
 	}
-
+	//initialize the lock
 	lock->lock_id = id;
 	lock->ownerid = -1;
 
 	lock->waitlist = listinit();
 
+	// Put Cvar node into Cvar queue
+
 	lockNode->content = (void *) lock;
 	insert_tail(lockNode, lockqueue);
+	//save its identifier at *lock_idp
+
 	*lock_idp = lock->lock_id;
 
     TracePrintf(2, "Exit KernelLockInit\n");
@@ -45,7 +50,6 @@ int KernelLockInit(UserContext *uctxt){
 
 int KernelLockAcquire(UserContext *uctxt){
     TracePrintf(2, "Enter KernelLockAcquire\n");
-    //try to acquire the lock with the lock_id
 	int lockId = uctxt->regs[0];
     return AcquireLock(lockId);
 }
@@ -63,6 +67,7 @@ int KernelLockRelease(UserContext *uctxt){
 }
 
 int AcquireLock(int lock_id){
+    //get the lock with the lock_id	
 	lstnode *locknode = search_node(lock_id, lockqueue);
 	if (locknode == NULL){
 		return ERROR;
@@ -78,15 +83,18 @@ int AcquireLock(int lock_id){
 
     //if the lock is available, get the lock
 	TracePrintf(3, "Owner Id:%d, currProc:%d\n",lock->ownerid, currProc->id);
+    //if the lock is available, get the lock
+
 	if (lock->ownerid == -1){
 		lock->ownerid = currProc->id;
 		return SUCCESS;
 	} 
+    //if the lock is owned by itself, return message
 
 	TracePrintf(1, "Error! Unexpected Behaviour in AcquireLock\n");
 	return ERROR;
 }
-
+	
 
 int ReleaseLock(int lock_id){
 
@@ -98,12 +106,14 @@ int ReleaseLock(int lock_id){
 
 	//if the lock is owned by others, return error
 	lock_t *lock = (lock_t *) locknode->content;
+
+	//if the lock is owned by others, return error
+
 	if (lock->ownerid != currProc->id){
 		return ERROR;
 	}
 	//if the lock is owned by itself, release the lock
 	lock->ownerid = -1;
-	
 	//check the waitlist to see if someone is trying to get the lock
 	if (!isemptylist(lock->waitlist)){
 		lstnode* node = dewaitlockqueue(lock->waitlist);
