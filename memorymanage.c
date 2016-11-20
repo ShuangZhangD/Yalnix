@@ -27,7 +27,7 @@ int KernelBrk(UserContext *uctxt){
         return ERROR;
     } else if (newBrkPage > oldBrkPage){
         TracePrintf(2, "Grow New Brk in KernelBrk\n");        
-        writepagetable(proc->usrPtb, oldBrkPage, newBrkPage, VALID, (PROT_READ | PROT_WRITE));
+        WritePageTable(proc->usrPtb, oldBrkPage, newBrkPage, VALID, (PROT_READ | PROT_WRITE));
         //Flush Tlb!
         WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
     } else if (newBrkPage < oldBrkPage){
@@ -109,9 +109,7 @@ void TrapMemory(UserContext *uctxt){
      */
 }
 
-
-//TODO return code
-void writepagetable(pte_t *pagetable, int startPage, int endPage, int valid, int prot){
+int WritePageTable(pte_t *pagetable, int startPage, int endPage, int valid, int prot){
  	int i;
  	if (!isemptylist(freeframe_list)){
 		for (i=startPage; i<=endPage; i++){
@@ -122,9 +120,10 @@ void writepagetable(pte_t *pagetable, int startPage, int endPage, int valid, int
 	        pagetable[i].pfn = first->id;
 		}
 	} else {	
-		//TODO
+        TracePrintf(1, "Error! There is no free frame to WritePageTable\n");
+		return ERROR;
 	}
-	return;
+	return SUCCESS;
 }
 
 void ummap(pte_t *pagetable, int startPage, int endPage, int valid, int prot){
@@ -157,14 +156,14 @@ int GrowUserStack(lstnode *procnode, int addrPage){
 	
 	//Check How Many FreeFrame do we have, plus 1 for safety margin
 	if (freeframe_list->size < newStackPage-oldStackPage+1){
-		return -1;
+		return ERROR;
 	}
 
-	writepagetable(proc->usrPtb, oldStackPage, newStackPage, VALID, (PROT_READ | PROT_WRITE));
+	WritePageTable(proc->usrPtb, oldStackPage, newStackPage, VALID, (PROT_READ | PROT_WRITE));
     WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_1);
 	proc->stack_limit_page = newStackPage;
 
-	return 0;
+	return SUCCESS;
 }
 
 void* MallocCheck(int size){

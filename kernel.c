@@ -6,90 +6,29 @@
 #include "io.h"
 
 //Global Variables
-int m_enableVM = 0; //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)
-int g_pid = 1;
-int g_isInitial = 1;
-int g_mutex_id = 0;
-int const g_pageNumOfStack = KERNEL_STACK_MAXSIZE / PAGESIZE;
-int const g_kStackStPage = KERNEL_STACK_BASE >> PAGESHIFT;
-int const g_kStackEdPage = (KERNEL_STACK_LIMIT - 1) >> PAGESHIFT;
+int m_enableVM = 0;                                                     //A flag to check whether Virtual Memory is enabled(1:enabled, 0:not enabled)
+int g_pid = 1;                                                          //PID                             
+int g_mutex_id = 0;                                                     //ID for CVar, Lock, Pipe, Semaphores.....
+// int g_isInitial = 1;
+int const g_pageNumOfStack = KERNEL_STACK_MAXSIZE / PAGESIZE;           //Number of Pages of Kernel Stack
+int const g_kStackStPage = KERNEL_STACK_BASE >> PAGESHIFT;              //Kerenl Stack Start Page
+int const g_kStackEdPage = (KERNEL_STACK_LIMIT - 1) >> PAGESHIFT;       //Kerenl Stack End age
 
-lstnode* currProc;
-dblist* freeframe_list;
+unsigned int m_kernel_brk;                                              //Page of Kernel Brk
+unsigned int m_kernel_data_start;                                       //Page of Kernel Data Start Page
+unsigned int m_kernel_data_end;                                         //page of Kernel Data End Page
 
-extern dblist* waitingqueue;
-extern dblist* readyqueue;
-extern dblist* lockqueue;
-extern dblist* cvarqueue;
-extern Tty* tty[NUM_TERMINALS];
-extern dblist* pipequeue;
-extern dblist* semqueue;
 
-int KernelReclaim(UserContext *uctxt)
-{
-    int id = uctxt->regs[0];
+lstnode* currProc;                                                      //Current Process, not belonging to any queue, we will put it into queue only before or in the Context Switch
+dblist* freeframe_list;                                                 //FreeFrameList
 
-    if (search_node(id , pipequeue)!= NULL)
-    {
-        lstnode* pipenode = remove_node(id , pipequeue);
-        pipe_t* pipe = pipenode->content;
-        if(pipe->readers != NULL)
-        {
-            free(pipe->readers);
-        }    
-        free(pipe);
-        free(pipenode);
-
-        return SUCCESS;
-    } 
-
-    if (search_node(id , lockqueue) != NULL)
-    {
-        int id = uctxt->regs[0];
-        lstnode* locknode = remove_node(id , lockqueue);
-        lock_t* lock = locknode->content;
-
-        if(lock->waitlist != NULL)
-        {
-            free(lock->waitlist);
-        }
-        free(lock);
-        free(locknode); 
-
-        return SUCCESS;          
-    } 
-
-    if (search_node(id , cvarqueue) != NULL)
-    {
-        int id = uctxt->regs[0];
-        lstnode* cvarnode = remove_node(id , cvarqueue);
-        cvar_t* cvar = cvarnode->content;
-        if(cvar->cvarwaiting != NULL){
-            free(cvar->cvarwaiting);
-        }
-        free(cvar);
-        free(cvarnode);
-
-        return SUCCESS;
-        
-    }
-
-    if (search_node(id , semqueue) != NULL)
-    {
-        int id = uctxt->regs[0];
-        lstnode* semnode = remove_node(id , semqueue);
-        sem_t* sem = semnode->content;
-        if(sem->semwaitlist != NULL){
-            free(sem->semwaitlist);
-        }
-        free(sem);
-        free(semnode);
-
-        return SUCCESS;
-        
-    }
-    return ERROR;
-}
+extern dblist* waitingqueue;                                            //Queue for Blocked Process (due to delay)
+extern dblist* readyqueue;                                              //Queue for ready to be scheduled processes
+extern dblist* lockqueue;                                               //Queue for storing different Lock
+extern dblist* cvarqueue;                                               //Queue for storing different Cvar
+extern dblist* pipequeue;                                               //Queue for storing different pipes
+extern dblist* semqueue;                                                //Queue for storing different semaphores
+extern Tty* tty[NUM_TERMINALS];                                         //TTy Terminals for Input / Output 
 
 /*
    Kernel Initiailization functions
@@ -115,17 +54,24 @@ int SetKernelBrk(void *addr){
     int oldBrkPage = m_kernel_brk >> PAGESHIFT;
     if (m_enableVM){
 
-        rc = checkPageStatus(newBrk);
-        if (rc) return -1;
+        rc = CheckPageStatus(newBrk);
+        if (rc) {
+            TracePrintf(1, "Error! \n");
+            return ERROR;
+        }
 
         if (newBrk > m_kernel_brk){
-            writepagetable(g_pageTableR0, oldBrkPage, newBrkPage, VALID, (PROT_READ | PROT_WRITE));
+            rc = WritePageTable(g_pageTableR0, oldBrkPage, newBrkPage - 1, VALID, (PROT_READ | PROT_WRITE));
+            if (rc){
+
+                return ERROR;
+            }
             //Flush Tlb!
             WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_0);
 
         }else if (newBrk < m_kernel_brk){
             //Remap  Add this frame back to free frame tracker
-            ummap(g_pageTableR0, newBrkPage, oldBrkPage, INVALID, PROT_NONE);
+            ummap(g_pageTableR0, newBrkPage, oldBrkPage - 1, INVALID, PROT_NONE);
             //FLUSH!!!
             WriteRegister(REG_TLB_FLUSH, TLB_FLUSH_0);
         }
@@ -134,7 +80,7 @@ int SetKernelBrk(void *addr){
     //Let addr be the new kernel break
     m_kernel_brk = newBrk;
     TracePrintf(2, "New Brk! m_kernel_brk = %x\n", m_kernel_brk);
-    return 0;
+    return SUCCESS;
 }
 
 
@@ -208,7 +154,7 @@ void KernelStart(char *cmd_args[],unsigned int pmem_size, UserContext *uctxt){
 
     idlePcb->uctxt = *uctxt;
     lstnode *idleProc = TurnPCBToNode(idlePcb);
-    
+
     //Initialize Init Process
     lstnode *initProc = InitProc();
     if (NULL == initProc){
@@ -354,8 +300,8 @@ lstnode *InitProc(){
 
     proc->krnlStackPtb = (pte_t *) MallocCheck(g_pageNumOfStack * sizeof(pte_t));
     if (NULL == proc->krnlStackPtb){
-         TracePrintf(1, "Malloc Failed! Get a NULL krnlStackPtb in InitProc!\n");  
-         return NULL;     
+        TracePrintf(1, "Malloc Failed! Get a NULL krnlStackPtb in InitProc!\n");  
+        return NULL;     
     }
     proc->krnlStackPtbSize = g_pageNumOfStack;
 
@@ -387,11 +333,11 @@ pcb_t *InitIdleProc(UserContext *uctxt){
     proc->procState = READY;
     proc->pid = g_pid++;
     proc->uctxt = *uctxt;
-    
+
     proc->krnlStackPtb = (pte_t *) MallocCheck(g_pageNumOfStack * sizeof(pte_t));
     if (NULL == proc->krnlStackPtb){
-         TracePrintf(1, "Malloc Failed! Get a NULL krnlStackPtb in InitIdleProc!\n");
-         return NULL;       
+        TracePrintf(1, "Malloc Failed! Get a NULL krnlStackPtb in InitIdleProc!\n");
+        return NULL;       
     }
     proc->krnlStackPtbSize = g_pageNumOfStack;
 
@@ -406,22 +352,89 @@ pcb_t *InitIdleProc(UserContext *uctxt){
 }
 
 
-int checkPageStatus(unsigned int addr){
+int CheckPageStatus(unsigned int addr){
     unsigned int i, pageAddr = (addr >> PAGESHIFT),rc = 0;
 
     //make sure addresses from [addr] to [VMEM_BASE] are valid
     for (i = (VMEM_BASE >> PAGESHIFT); i < pageAddr; i++){
-        if (0 == g_pageTableR0[i].valid) return -1;
+        if (0 == g_pageTableR0[i].valid) return ERROR;
     }
 
     //check no virtual memory in Region 0 out of range are valid
     for (i = pageAddr; i <= SAFETY_MARGIN_PAGE; i++){
-        if (1 == g_pageTableR0[i].valid) return -1;
+        if (1 == g_pageTableR0[i].valid) return ERROR;
     }
 
-    if (addr < m_kernel_data_end) return -1;
+    if (addr < m_kernel_data_end) return ERROR;
 
-    return 0;
+    return SUCCESS;
+}
+
+int KernelReclaim(UserContext *uctxt)
+{
+    int id = uctxt->regs[0];
+
+    if (search_node(id , pipequeue)!= NULL)
+    {
+        lstnode* pipenode = remove_node(id , pipequeue);
+        pipe_t* pipe = pipenode->content;
+        if(pipe->readers != NULL)
+        {
+            free(pipe->readers);
+        }    
+        free(pipe);
+        free(pipenode);
+
+        return SUCCESS;
+    } 
+
+    if (search_node(id , lockqueue) != NULL)
+    {
+        int id = uctxt->regs[0];
+        lstnode* locknode = remove_node(id , lockqueue);
+        lock_t* lock = locknode->content;
+
+        if(lock->waitlist != NULL)
+        {
+            free(lock->waitlist);
+        }
+        free(lock);
+        free(locknode); 
+
+        return SUCCESS;          
+    } 
+
+    if (search_node(id , cvarqueue) != NULL)
+    {
+        int id = uctxt->regs[0];
+        lstnode* cvarnode = remove_node(id , cvarqueue);
+        cvar_t* cvar = cvarnode->content;
+        if(cvar->cvarwaiting != NULL){
+            free(cvar->cvarwaiting);
+        }
+        free(cvar);
+        free(cvarnode);
+
+        return SUCCESS;
+
+    }
+
+    if (search_node(id , semqueue) != NULL)
+    {
+        int id = uctxt->regs[0];
+        lstnode* semnode = remove_node(id , semqueue);
+        sem_t* sem = semnode->content;
+        if(sem->semwaitlist != NULL){
+            free(sem->semwaitlist);
+        }
+        free(sem);
+        free(semnode);
+
+        return SUCCESS;
+        
+    }
+
+    return ERROR;
 }
 
 void CopyKernelStack (pte_t* pageTable){
@@ -441,7 +454,7 @@ void CopyKernelStack (pte_t* pageTable){
 
         memcpy((void *)desAddr, (void *)srcAddr, PAGESIZE);
     }
-  
+
     //Restore the buffer.
     g_pageTableR0[SAFETY_MARGIN_PAGE].valid = INVALID;
     g_pageTableR0[SAFETY_MARGIN_PAGE].prot = PROT_NONE;
@@ -487,7 +500,7 @@ KernelContext *MyTrueKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
 
     lstnode* curr_pcb_node = (lstnode*) curNode;
     lstnode* next_pcb_node = (lstnode*) nxtNode;
-    
+
     pcb_t *cur_p = TurnNodeToPCB(curr_pcb_node);
     pcb_t *next_p = TurnNodeToPCB(next_pcb_node);
 
@@ -527,7 +540,7 @@ KernelContext *MyIOKCS(KernelContext *kc_in,void *curNode,void *nxtNode){
 
     lstnode* curr_pcb_node = (lstnode*) curNode;
     lstnode* next_pcb_node = (lstnode*) nxtNode;
-    
+
     pcb_t *cur_p = TurnNodeToPCB(curr_pcb_node);
     pcb_t *next_p = TurnNodeToPCB(next_pcb_node);
 
@@ -560,7 +573,7 @@ KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode)
 
     lstnode* term_pcb_node = (lstnode*) termNode;
     lstnode* next_pcb_node = (lstnode*) nxtNode;
-    
+
     pcb_t *term_p = TurnNodeToPCB(term_pcb_node);
     pcb_t *next_p = TurnNodeToPCB(next_pcb_node);
 
@@ -597,7 +610,7 @@ KernelContext *MyTerminateKCS(KernelContext *kc_in,void *termNode,void *nxtNode)
         }
 
         lstnode* node = remove_node(term_p->pid, currParent->children);
-        
+
         free(term_p->usrPtb);
         free(term_p->krnlStackPtb); 
         free(term_p->children);
