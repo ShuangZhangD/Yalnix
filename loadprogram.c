@@ -181,12 +181,12 @@ int LoadProgram(char *name, char *args[], lstnode *proc_node)
 // ==>> the "text_pg1" page in region 1 address space.  
 // ==>> These pages should be marked valid, with a protection of 
 // ==>> (PROT_READ | PROT_WRITE).
-  writepagetable(proc->usrPtb, text_pg1, text_pg1+li.t_npg - 1, VALID, (PROT_READ | PROT_WRITE));
+  WritePageTable(proc->usrPtb, text_pg1, text_pg1+li.t_npg - 1, VALID, (PROT_READ | PROT_WRITE));
 // ==>> Allocate "data_npg" physical pages and map them starting at
 // ==>> the  "data_pg1" in region 1 address space.  
 // ==>> These pages should be marked valid, with a protection of 
 // ==>> (PROT_READ | PROT_WRITE).
-  writepagetable(proc->usrPtb, data_pg1, data_pg1 + data_npg - 1, VALID, (PROT_READ | PROT_WRITE));
+  WritePageTable(proc->usrPtb, data_pg1, data_pg1 + data_npg - 1, VALID, (PROT_READ | PROT_WRITE));
   proc->brk_page = data_pg1 + data_npg;
   proc->data_page = data_pg1 + data_npg - 1;
   /*
@@ -196,7 +196,7 @@ int LoadProgram(char *name, char *args[], lstnode *proc_node)
 // ==>> of the region 1 virtual address space.
 // ==>> These pages should be marked valid, with a
 // ==>> protection of (PROT_READ | PROT_WRITE).
-  writepagetable(proc->usrPtb, MAX_PT_LEN - stack_npg, MAX_PT_LEN - 1, VALID, (PROT_READ | PROT_WRITE));
+  WritePageTable(proc->usrPtb, MAX_PT_LEN - stack_npg, MAX_PT_LEN - 1, VALID, (PROT_READ | PROT_WRITE));
   proc->stack_limit_page = MAX_PT_LEN - stack_npg;
   /*
    * All pages for the new address space are now in the page table.  
