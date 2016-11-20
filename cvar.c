@@ -25,14 +25,18 @@ int KernelCvarInit(UserContext *uctxt){
 	}
 
 	cvar_t* cvar = (cvar_t*) MallocCheck(sizeof(cvar_t));
+	//check if malloc succeeds
 	if(cvar == NULL){
 		TracePrintf(1, "Malloc Failed! Get a NULL cvar in KernelCvarInit!\n");  
 		return ERROR;
 	}
 
+	// initialize cvar
 	cvar->cvar_id = cvar_id;
 	cvar->cvarwaiting = listinit();
 	cvarnode->content = (void *) cvar;
+
+	// Put Cvar node into Cvar queue
 	insert_tail(cvarnode, cvarqueue);
 
 	//save its identifier at *cvar_idp
@@ -53,7 +57,7 @@ int KernelCvarSignal(UserContext *uctxt){
 	}
 	cvar_t* cvar = (cvar_t *) cvarnode->content;
 
-	//while the waitlist of threads waiting for the cvar is not empty 
+	//if the waitlist of threads waiting for the cvar is not empty 
 	//signal one thread waiting for the cvar
 	if (!isemptylist(cvar->cvarwaiting)){
 		lstnode* node = dewaitcvarqueue(cvar->cvarwaiting);
@@ -67,9 +71,10 @@ int KernelCvarSignal(UserContext *uctxt){
 
 int KernelCvarBroadcast(UserContext *uctxt){
 
-	//if the cvar with cvar_id is not initialized, return ERROR
-	int cvar_id = uctxt->regs[0];	
+	int cvar_id = uctxt->regs[0];
+	//get the cvar with id	
 	lstnode *cvarnode = search_node(cvar_id, cvarqueue);
+	//if the cvar with cvar_id is not initialized, return ERROR
 	if(cvarnode == NULL){
 		return ERROR;
 	}
@@ -92,7 +97,7 @@ int KernelCvarWait(UserContext *uctxt){
 	int rc;
 	int cvar_id = uctxt->regs[0];
 	int lock_id = uctxt->regs[1];
-
+	//get the cvar with id
 	lstnode *cvarnode = search_node(cvar_id, cvarqueue);
 	if(cvarnode == NULL) {
 		return ERROR;
