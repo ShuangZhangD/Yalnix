@@ -74,6 +74,20 @@ int KernelReclaim(UserContext *uctxt)
         
     }
 
+    if (search_node(id , semqueue) != NULL)
+    {
+        int id = uctxt->regs[0];
+        lstnode* semnode = remove_node(id , semqueue);
+        sem_t* sem = semnode->content;
+        if(sem->semwaitlist != NULL){
+            free(sem->semwaitlist);
+        }
+        free(sem);
+        free(semnode);
+
+        return SUCCESS;
+        
+    }
     return ERROR;
 }
 

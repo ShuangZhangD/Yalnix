@@ -86,7 +86,7 @@ typedef struct cvar{
 
 typedef struct semaphore{
     int sem_id;
-    int ownerid;
+    // int ownerid;
     int sem_val;
     dblist* semwaitlist;
 } sem_t;
